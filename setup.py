@@ -3,7 +3,7 @@
 from distutils.core import setup
 
 setup(name = "zenlib",
-      version = "0.8.0",
+      version = "0.8.1",
       description="Zepheira's private data services components",
       author='Zepheira',
       author_email='info@zepheira.com',

@@ -1,0 +1,6 @@
+^build$
+^setup.cfg$
+\.pyc$
+^dist
+^scratch
+MANIFEST

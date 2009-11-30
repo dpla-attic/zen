@@ -13,8 +13,6 @@ from akara import logger
 
 import logging; logger.setLevel(logging.DEBUG)
 
-from whenwheretools import *
-
 #AKARA is automatically defined at global scope for a module running within Akara
 MOINBASE = AKARA.module_config['moinrestbase']
 #Make sure the URl ends with a / for graceful URL resolution

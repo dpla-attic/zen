@@ -3,11 +3,25 @@
 
 """
 
-#__all__ = ['simple_xml_indexing']
+import re
 
 import amara
 from amara.lib.util import *
 from amara.namespaces import AKARA_NAMESPACE
+
+UNSUPPORTED_IN_EXHIBITKEY = re.compile('\W')
+
+def fixup_keys(ejson):
+    mod_list = []
+    for k in ejson:
+        new_k = UNSUPPORTED_IN_EXHIBITKEY.sub('_', k)
+        if k != new_k: mod_list.append((k, new_k))
+    
+    for (k, new_k) in mod_list:
+        ejson[new_k] = ejson[k]
+        del ejson[k]
+    return
+
 
 def prep_simile(items, schema=None, strict=False):
     remove_list = []

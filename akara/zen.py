@@ -323,7 +323,7 @@ def wrapped_uri(original_wiki_base, link):
     #print >> sys.stderr, 'rel_link: ', rel_link
     rest_uri = absolutize(rel_link, REST_WIKI_BASE)
     #print >> sys.stderr, 'rest_uri: ', rest_uri
-    return rest_uri
+    return rest_uri, abs_link
 
 TOP_REQUIRED = _("The 'top' query parameter is mandatory.")
 
@@ -356,8 +356,8 @@ def zen_index(top=None):
         #print >> sys.stderr, uri, relative
         #if rewrite:
         #    uri = uri.replace(rewrite, wikibase)
-        rest_uri = wrapped_uri(original_wiki_base, link)
-        jsonizer = node.factory(rest_uri, opener)
+        rest_uri, moin_link = wrapped_uri(original_wiki_base, link)
+        jsonizer = node.factory(rest_uri, moin_link, opener)
         if isinstance(jsonizer, node):
             rendered = jsonizer.render()
         else:
