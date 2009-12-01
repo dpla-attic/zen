@@ -11,15 +11,20 @@ from amara.namespaces import AKARA_NAMESPACE
 
 UNSUPPORTED_IN_EXHIBITKEY = re.compile('\W')
 
+def fixup(ejson):
+    fixup_keys(ejson)
+    for k, val in ejson.items():
+        if not val: del ejson[k]
+    return
+
+
 def fixup_keys(ejson):
-    mod_list = []
-    for k in ejson:
+    #Cannot use for k in ejson because we're mutating as we go
+    for k in ejson.keys():
         new_k = UNSUPPORTED_IN_EXHIBITKEY.sub('_', k)
-        if k != new_k: mod_list.append((k, new_k))
-    
-    for (k, new_k) in mod_list:
-        ejson[new_k] = ejson[k]
-        del ejson[k]
+        if k != new_k:
+            ejson[new_k] = ejson[k]
+            del ejson[k]
     return
 
 
