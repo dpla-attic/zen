@@ -8,20 +8,18 @@ authoring and metadata aextraction
 
 Based on Moin/CMS (see http://wiki.xml3k.org/Akara/Services/MoinCMS )
 
-@copyright: 2009 by Uche ogbuji <uche@ogbuji.net>
+@ 2009 by Zepheira LLC
 
-This file is part of the open source Akara project,
+This file is part of the open source Zen project,
 provided under the Apache 2.0 license.
 See the files LICENSE and NOTICE for details.
-Project home, documentation, distributions: http://wiki.xml3k.org/Akara
+Project home, documentation, distributions: http://foundry.zepheira.com/projects/zen
 
 See:
 
  * http://purl.org/xml3k/akara
  * http://foundry.zepheira.com/projects/zen
  
-@ 2009 by Uche ogbuji <uche@ogbuji.net>
-
 = Defined REST entry points =
 
 http://purl.org/com/zepheira/services/ct.gov.moin (ct.gov.moin) Handles POST
@@ -131,10 +129,14 @@ SERVICE_ID = 'http://purl.org/akara/services/builtin/zen.index'
 @simple_service('GET', SERVICE_ID, 'zen.index.json', 'application/json')
 def zen_index(top=None, maxcount=None):
     '''
+    Extract Exhibit JSON [1] from Moin pages according to Zen conventions
+    
     top - page on which to start looking for linked Zen resouces
     maxcount - limit to the number of records returned; unlimited by default
 
-    curl "http://localhost:8880/zen.index.json?top=http://example.com"
+    curl "http://localhost:8880/zen.index.json?top=http://example-akara.com/moin/mywiki/zentoppage"
+
+    [1] For more on Exhibit JSON see: http://www.ibm.com/developerworks/web/library/wa-realweb6/ ; see listing 3
     '''
     #Useful: http://www.voidspace.org.uk/python/articles/authentication.shtml
     #curl "http://localhost:8880/zen.index.json?top=http://community.zepheira.com/wiki/loc/LoC/Collections/"

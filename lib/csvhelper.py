@@ -1,6 +1,8 @@
 import sys
 import csv
 
+UNKNOWN_TEXT_IMT = 'text/unknown'
+
 def readcsv(text):
     sniffer = csv.Sniffer()
     data = []
