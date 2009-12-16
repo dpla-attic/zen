@@ -29,6 +29,9 @@ from akara.util import status_response
 from akara import response
 from akara import logger
 
+#GEOCODER = AKARA.module_config.get('geocoder', "geocoders.Google(resource='maps')")
+GEOCODER = AKARA.module_config.get('geocoder', "geocoders.GeoNames()")
+GEOCODER = eval(GEOCODER)
 
 def state_lookup(s):
     result = US_STATES_GEO.xml_select(u'provinces/*[@abbr="%s"]'%s)
@@ -128,7 +131,7 @@ def ipgeo_json(addr=None):
 #    geocache = simplejson.load(open(geocachejsfile))
 #except IOError:
 #    geocache = {}
-GEOCODER = geocoders.Google(resource='maps')
+#GEOCODER = 
 geocache = {}
 
 SERVICE_ID = 'http://purl.org/com/zepheira/services/geolookup.json'
