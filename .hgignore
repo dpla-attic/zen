@@ -4,3 +4,4 @@
 ^dist
 ^scratch
 MANIFEST
+geopy_export

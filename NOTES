@@ -1,0 +1,17 @@
+
+Build/distribute
+
+From this zen root directory, do:
+
+svn export http://geopy.googlecode.com/svn/trunk/ geopy_export
+
+Then apply fixes:
+
+cd geopy_export
+patch -p0 < ../geopy.diff 
+
+Then package:
+
+python setup.py build
+python setup.py sdist --formats=bztar,gztar,zip
+

@@ -62,7 +62,6 @@ from wsgiref.util import request_uri
 
 import simplejson
 from dateutil.parser import parse as dateparse
-import pytz
 
 import amara
 from amara import bindery, _
@@ -72,6 +71,7 @@ from amara.writers.struct import *
 from amara.bindery.html import parse as htmlparse
 from amara.lib.iri import split_fragment, relativize, absolutize
 from amara.bindery.util import dispatcher, node_handler, property_sequence_getter
+#from amara.lib.date import timezone, UTC
 
 from akara.registry import list_services, _current_registry
 from akara.util import copy_auth
@@ -91,10 +91,6 @@ MOINBASE = AKARA.module_config['moinrestbase']
 MOINBASE = MOINBASE.rstrip('/')+'/'
 USER = AKARA.module_config.get('moin-user', None)
 PASSWD = AKARA.module_config.get('moin-passwd', None)
-
-#DEFAULT_TZ = pytz.timezone('UTC')
-UTC = pytz.timezone('UTC')
-DEFAULT_LOCAL_TZ = pytz.timezone('UTC')
 
 #aname = partial(property_sequence_getter, u"name")
 #aemail = partial(property_sequence_getter, u"email")

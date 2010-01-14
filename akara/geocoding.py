@@ -143,7 +143,7 @@ def geolookup_json(place=None):
     Sample request:
     * curl "http://localhost:8880/geolookup.json?place=Superior,%20CO"
     '''
-    geoquery = place
+    geoquery = place.encode('utf-8')
     #geoquery = "%s in %s, %s"%(address_line, city, state_name)
     if geoquery in geocache:
         latlong = geocache[geoquery]

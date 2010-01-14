@@ -1,0 +1,30 @@
+Index: build/lib/geopy/__init__.py
+===================================================================
+--- build/lib/geopy/__init__.py	(revision 84)
++++ build/lib/geopy/__init__.py	(working copy)
+@@ -1 +1,3 @@
+-import geocoders
++from geopy.point import Point
++from geopy.location import Location
++from geopy import geocoders
+Index: setup.py
+===================================================================
+--- setup.py	(revision 84)
++++ setup.py	(working copy)
+@@ -1,13 +1,13 @@
+-from setuptools import setup, find_packages
++from distutils.core import setup
+ 
+ setup(name='geopy',
+-      version='0.93',
++      version='0.93dev.zen',
+       description='Python Geocoding Toolbox',
+       author='Brian Beck',
+       author_email='exogen@gmail.com',
+       url='http://exogen.case.edu/projects/geopy/',
+       download_url='http://geopy.googlecode.com/svn/trunk/',
+-      packages=find_packages(),
++      packages=['geopy', 'geopy.geocoders', 'geopy.parsers'],
+       license='MIT',
+       keywords='geocode geocoding gis geographical maps earth distance',
+       classifiers=["Development Status :: 3 - Alpha",

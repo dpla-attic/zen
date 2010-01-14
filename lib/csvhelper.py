@@ -53,3 +53,20 @@ def readcsv(text):
             data[-1]['id'] = '_' + str(count)
     return data
 
+
+#
+def compare_csv_dialects(a, b, attributes=[name for name in dir(csv.Dialect) if not name.startswith("_")]):
+    #Pretty obvious, but nevertheless stolen from http://groups.google.com/group/comp.lang.python/browse_thread/thread/9de18eeabd38faff
+    """
+    >>> d = csv.Sniffer().sniff("1,2,3")
+    >>> eq(d, csv.Sniffer().sniff("3,4,5"))
+    True
+    >>> eq(d, csv.Sniffer().sniff("'3','4','5'"))
+    False
+    >>> eq(d, csv.Sniffer().sniff("3;4;5"))
+    False
+    >>> eq(d, csv.Sniffer().sniff("3,4,' 5'"))
+    True
+    """
+    return all(getattr(a, n, None) == getattr(b, n, None) for n in attributes)
+
