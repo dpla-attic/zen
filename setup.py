@@ -9,7 +9,7 @@ setup(name = "zenlib",
       author_email='info@zepheira.com',
       url='http://freemix.it',
       package_dir={'zenlib': 'lib', 'geopy': 'geopy_export/geopy'},
-      packages=['zenlib', 'geopy'],
+      packages=['zenlib', 'geopy', 'geopy.geocoders', 'geopy.parsers'],
       #package_data={'akara': ["akara.conf"]},
       )
 
