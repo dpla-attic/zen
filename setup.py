@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 
 from distutils.core import setup
+from lib import __version__
 
 setup(name = "zenlib",
-      version = "0.8.5",
+      version = __version__,
       description="Zepheira's private data services components",
       author='Zepheira',
       author_email='info@zepheira.com',

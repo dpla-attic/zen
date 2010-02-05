@@ -21,22 +21,22 @@ from amara.bindery.model import *
 from amara.bindery.util import dispatcher, node_handler
 
 MODS_MODEL_XML = '''<?xml version="1.0" encoding="UTF-8"?>
-<modsCollection xmlns="http://www.loc.gov/mods/v3"
+<modsCollection xmlns="http://www.loc.gov/mods/v3" xmlns:m="http://www.loc.gov/mods/v3"
   xmlns:eg="http://examplotron.org/0/" xmlns:ak="http://purl.org/xml3k/akara/xmlmodel">
 <!--mods ID="ref1060-2004" ak:resource="@ID"-->
 <mods ID="ref1060-2004" ak:resource="">
     <ak:rel name="'resource-type'" value="'biblio:item'"/>
     <titleInfo>
-        <title ak:rel="">NetKernel Open Source Community</title>
+        <title ak:rel="" ak:context="parent::m:titleInfo/parent::m:mods">Akara Open Source Community</title>
     </titleInfo>
-    <name ak:rel="constructedName" type="personal" ak:value="concat(namePart[@type='given'], namePart[@type='family'])">
+    <name ak:rel="constructedName" type="personal" ak:value="concat(m:namePart[@type='given'], m:namePart[@type='family'])">
         <namePart type="given">Uche</namePart>
         <namePart type="given">Gerald</namePart>
         <namePart type="family">Ogbuji</namePart>
         <role>
             <roleTerm authority="marcrelator" type="text" ak:rel="">author</roleTerm>
         </role>
-        <displayForm ak:rel="">Uche Ogbuji</displayForm>
+        <displayForm>Uche Ogbuji</displayForm>
     </name>
     <originInfo>
         <dateIssued ak:rel="">2004</dateIssued>
@@ -62,18 +62,20 @@ MODS_MODEL_XML = '''<?xml version="1.0" encoding="UTF-8"?>
    	<subject authority="lcsh">
   	  	<topic eg:occurs="*" ak:rel="">Gettysburg, Battle of, Gettysburg, Pa., 1863</topic>
   	  	<geographic eg:occurs="*" ak:rel="">Alaska</geographic>
+  	  	<temporal eg:occurs="*" ak:rel="">Alaska</temporal>
    	   	<hierarchicalGeographic>
   	  	  	<country ak:rel="">United States</country>
   	  	  	<state ak:rel="">California</state>
   	  	  	<county ak:rel="">Inyo</county>
   	  	</hierarchicalGeographic>
+        <name ak:rel="'topic-name'" type="personal" ak:value="m:namePart"/>
   	</subject>
     <classification authority="lcc" ak:rel="">E475.53 .A42</classification>
     <typeOfResource ak:rel="">software, multimedia</typeOfResource>
     <genre authority="gmgpc" ak:rel="">Landscape photographs</genre>
     <identifier displayLabel="Cite key" type="citekey" ak:rel="">1060-2004</identifier>
     <location eg:occurs="*">
-        <url displayLabel="Uche's home" usage="primary display" access="preview" ak:rel="">http://uche.ogbuji.net/</url>
+        <url displayLabel="Uche's home" usage="primary display" access="preview" ak:rel="" ak:context="parent::m:location/parent::m:mods">http://uche.ogbuji.net/</url>
     </location>
     <note type="system details" ak:rel="">http://example.org/</note>
    	<relatedItem type="host" eg:occurs="*">
@@ -111,15 +113,60 @@ def mods2json(body):
     for rid, triples in groupby(generate_metadata(doc), itemgetter(0)):
         item = {'id': rid, 'label': rid}
         for row in triples:
-            item[row[1]] = datatypes.string(row[2])
+            if isinstance(row[2], datatypes.nodeset) and len(row[2]) == 0:
+                continue
+            if isinstance(row[2], datatypes.nodeset) and len(row[2]) > 1:
+                value = map(datatypes.string, row[2])
+            else:
+                value = datatypes.string(row[2])
+            smart_map(item, row[1], value)
+            #item[row[1]] = datatypes.string(row[2])
         items.append(item)
-        if 'topic' in item: item['topic'] = item['topic'].split(', ')
+        for tagkey in ['topic', 'geographic', 'topic_name']:
+            if tagkey not in item: continue
+            if isinstance(item[tagkey], basestring):
+                item[tagkey] = item[tagkey].split(', ')
+            else:
+                values = item[tagkey]
+                item[tagkey] = set()
+                for val in values:
+                    for subval in val.split(', '):
+                        item[tagkey].add(subval)
+                item[tagkey] = list(item[tagkey])
+
+        #if 'topic' in item: item['topic'] = 
         #import sys; print >> sys.stderr, item.keys()
     return items
     mods_handler = mods_content_handlers(items)
     doc.modsCollection.xml_namespaces[u'm'] = MODS_NAMESPACE
     list(mods_handler.dispatch(doc.modsCollection))
     return items
+
+
+def smart_map(mapping, key, value):
+    '''
+    Updates mapping with a key/value pair.
+    If the key does not exist, add the value as a scalar or list.
+    If the key does exist, with scalar value, turn it into a list and extend with the value
+    If the key does exist, with vector value, extend with the value
+    '''
+    if key not in mapping:
+        mapping[key] = value
+        return
+    if isinstance(value, basestring):
+        value = [value]
+    else:
+        try:
+            iter(value)
+        except TypeError:
+            value = [value]
+    try:
+        mapping[key].extend(value)
+    except AttributeError:
+        #Current value in mapping is a scalar (note: basestrings do not implement extend)
+        mapping[key] = [mapping[key]] + value
+    return
+
 
 #
 class mods_content_handlers(dispatcher):
