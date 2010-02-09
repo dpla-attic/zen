@@ -29,8 +29,9 @@ from akara.util import status_response
 from akara import response
 from akara import logger
 
-#GEOCODER = AKARA.module_config.get('geocoder', "geocoders.Google(resource='maps')")
-GEOCODER = AKARA.module_config.get('geocoder', "geocoders.GeoNames()")
+#OUTDATED: GEOCODER = AKARA.module_config.get('geocoder', "geocoders.Google(resource='maps')")
+GEOCODER = AKARA.module_config.get('geocoder', "geocoders.get_geocoder('geonames')")
+#GEOCODER = AKARA.module_config.get('geocoder', "geocoders.get_geocoder('google', resource='maps')")
 GEOCODER = eval(GEOCODER)
 
 def state_lookup(s):
@@ -143,15 +144,16 @@ def geolookup_json(place=None):
     Sample request:
     * curl "http://localhost:8880/geolookup.json?place=Superior,%20CO"
     '''
-    geoquery = place.encode('utf-8')
+    geoquery = place.decode('utf-8')
     #geoquery = "%s in %s, %s"%(address_line, city, state_name)
     if geoquery in geocache:
         latlong = geocache[geoquery]
     else:
         try:
-            place, (lat, long_) = GEOCODER.geocode(geoquery)
+            place, (lat, long_) = GEOCODER.geocode(geoquery, exactly_one=False).next()
             latlong = "%0.03f,%0.03f"%(lat, long_)
-        except ValueError, urllib2.URLError:
+        except (ValueError, urllib2.URLError, StopIteration), e:
+            logger.debug("geolookup error: " + repr(e))
             state = US_STATES_GEO.xml_select(u'provinces/*[@abbr="%s"]'%geoquery)
             if state:
                 latlong = "%s,%s"%(unicode(state[0].lat), unicode(state[0].long))
@@ -162,7 +164,6 @@ def geolookup_json(place=None):
                 else:
                     latlong = None
                     response.status = status_response(httplib.NOT_FOUND)
-                    return ''
         geocache[geoquery] = latlong
     return simplejson.dumps({geoquery: latlong}) if latlong else "{}"
 

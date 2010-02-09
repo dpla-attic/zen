@@ -7,6 +7,290 @@ Index: build/lib/geopy/__init__.py
 +from geopy.point import Point
 +from geopy.location import Location
 +from geopy import geocoders
+Index: geopy/geocoders_old.py
+===================================================================
+--- geopy/geocoders_old.py	(revision 84)
++++ geopy/geocoders_old.py	(working copy)
+@@ -24,7 +24,8 @@
+ try:
+     from BeautifulSoup import BeautifulSoup
+ except ImportError:
+-    print "BeautifulSoup was not found. " \
++    import sys
++    print >> sys.stderr, "BeautifulSoup was not found. " \
+           "Geocoders assuming malformed markup will not work."
+ 
+ try:
+@@ -33,7 +34,8 @@
+     try:
+         from django.utils import simplejson
+     except ImportError:
+-        print "simplejson was not found. " \
++        import sys
++        print >> sys.stderr, "simplejson was not found. " \
+               "Geocoders relying on JSON parsing will not work."
+ 
+ 
+Index: geopy/geocoders/virtual_earth.py
+===================================================================
+--- geopy/geocoders/virtual_earth.py	(revision 84)
++++ geopy/geocoders/virtual_earth.py	(working copy)
+@@ -1,12 +1,21 @@
+ import re
+ from urllib2 import urlopen
+ from urllib import urlencode
+-import simplejson
+ from geopy.geocoders.base import Geocoder
+ from geopy.point import Point
+ from geopy.location import Location
+ from geopy import util
+ 
++try:
++    import simplejson
++except ImportError:
++    try:
++        from django.utils import simplejson
++    except ImportError:
++        import sys
++        print >> sys.stderr, "simplejson was not found. " \
++              "Geocoders relying on JSON parsing will not work."
++
+ class VirtualEarth(Geocoder):
+     """Geocoder using Microsoft's Windows Live Local web service, powered by
+     Virtual Earth.
+Index: geopy/geocoders/google.py
+===================================================================
+--- geopy/geocoders/google.py	(revision 84)
++++ geopy/geocoders/google.py	(working copy)
+@@ -2,7 +2,6 @@
+ 
+ from urllib import urlencode
+ from urllib2 import urlopen
+-import simplejson
+ 
+ import xml
+ from xml.parsers.expat import ExpatError
+@@ -10,6 +9,16 @@
+ from geopy.geocoders.base import Geocoder
+ from geopy import Point, Location, util
+ 
++try:
++    import simplejson
++except ImportError:
++    try:
++        from django.utils import simplejson
++    except ImportError:
++        import sys
++        print >> sys.stderr, "simplejson was not found. " \
++              "Geocoders relying on JSON parsing will not work."
++
+ class Google(Geocoder):
+     """Geocoder using the Google Maps API."""
+     
+@@ -167,3 +176,6 @@
+             return (parse_marker(marker) for marker in markers)
+ 
+ 
++from geopy.geocoders import register
++register("google", Google)
++
+Index: geopy/geocoders/geonames.py
+===================================================================
+--- geopy/geocoders/geonames.py	(revision 84)
++++ geopy/geocoders/geonames.py	(working copy)
+@@ -0,0 +1,109 @@
++'''
++Use GeoNames.org Web services for geolocation http://www.geonames.org/export/ws-overview.html
++
++Uses the "search" endpoint: http://www.geonames.org/export/geonames-search.html
++'''
++
++import logging
++
++from urllib import urlencode
++from urllib2 import urlopen
++
++import xml
++from xml.parsers.expat import ExpatError
++
++from geopy.geocoders.base import Geocoder
++from geopy import Point, Location, util
++
++try:
++    import simplejson
++except ImportError:
++    try:
++        from django.utils import simplejson
++    except ImportError:
++        import sys
++        print >> sys.stderr, "simplejson was not found. " \
++              "Geocoders relying on JSON parsing will not work."
++
++
++class GeoNames(Geocoder):
++    def __init__(self, format_string='%s', output_format='xml'):
++        self.format_string = format_string
++        self.output_format = output_format
++
++    @property
++    def url(self):
++        domain = "ws.geonames.org"
++        output_format = self.output_format.lower()
++        append_formats = {'json': 'JSON'}
++        resource = "search" + append_formats.get(output_format, '')
++        return "http://%(domain)s/%(resource)s?%%s" % locals()
++
++    def geocode(self, string, exactly_one=True):
++        params = {'q': string}
++        url = self.url % urlencode(params)
++        import sys; print >> sys.stderr, (url)
++        return self.geocode_url(url, exactly_one)
++
++    def geocode_url(self, url, exactly_one=True):
++        page = urlopen(url)
++        dispatch = getattr(self, 'parse_' + self.output_format)
++        return dispatch(page, exactly_one)
++
++    def parse_json(self, page, exactly_one):
++        if not isinstance(page, basestring):
++            page = util.decode_page(page)
++        json = simplejson.loads(page)
++        codes = json.get('postalCodes', [])
++        
++        if exactly_one and len(codes) != 1:
++            raise ValueError("Didn't find exactly one code! " \
++                             "(Found %d.)" % len(codes))
++        
++        def parse_code(code):
++            place = util.join_filter(", ", [code.get('placeName'),
++                                             code.get('countryCode')])
++            location = util.join_filter(" ", [place,
++                                               code.get('postalCode')]) or None
++            latitude = code.get('lat')
++            longitude = code.get('lng')
++            latitude = latitude and float(latitude)
++            longitude = longitude and float(longitude)
++            return (location, (latitude, longitude))
++
++        if exactly_one:
++            return parse_code(codes[0])
++        else:
++            return (parse_code(code) for code in codes)
++
++    def parse_xml(self, page, exactly_one):
++        import sys; print >> sys.stderr, page
++        if not isinstance(page, basestring):
++            page = util.decode_page(page)
++        doc = xml.dom.minidom.parseString(page)
++        codes = doc.getElementsByTagName('code')
++        
++        if exactly_one and len(codes) != 1:
++            raise ValueError("Didn't find exactly one code! " \
++                             "(Found %d.)" % len(codes))
++
++        def parse_code(code):
++            place_name = self._get_first_text(code, 'name')
++            country_code = self._get_first_text(code, 'countryCode')
++            postal_code = self._get_first_text(code, 'postalcode')
++            place = util.join_filter(", ", [place_name, country_code])
++            location = util.join_filter(" ", [place, postal_code]) or None
++            latitude = util.get_first_text(code, 'lat') or None
++            longitude = util.get_first_text(code, 'lng') or None
++            latitude = latitude and float(latitude)
++            longitude = longitude and float(longitude)
++            return (location, (latitude, longitude))
++        
++        if exactly_one:
++            return parse_code(codes[0])
++        else:
++            return (parse_code(code) for code in codes)
++
++from geopy.geocoders import register
++register("geonames", GeoNames)
++
+Index: geopy/geocoders/__init__.py
+===================================================================
+--- geopy/geocoders/__init__.py	(revision 84)
++++ geopy/geocoders/__init__.py	(working copy)
+@@ -1 +1,29 @@
+-from geopy.geocoders_old import *
++#from geopy.geocoders_old import *
++
++GEOCODERS = {}
++
++def register(geocoder_name, cls):
++    GEOCODERS[geocoder_name] = cls
++    return
++
++
++def lookup(geocoder_name):
++    '''
++    Get a Geocoder class given its registered name
++    '''
++    return GEOCODERS[geocoder_name]
++
++
++def get_geocoder(geocoder_name, **kwargs):
++    '''
++    Get a Geocoder instance given its registered name, and initializer params
++    '''
++    return GEOCODERS[geocoder_name](**kwargs)
++
++
++#The default geocoders self-register upon import
++import geonames
++import google
++import yahoo
++import wiki_semantic
++
+Index: geopy/geocoders/yahoo.py
+===================================================================
+--- geopy/geocoders/yahoo.py	(revision 84)
++++ geopy/geocoders/yahoo.py	(working copy)
+@@ -62,3 +62,8 @@
+             })
+ 
+         return [parse_result(result) for result in results]
++
++
++from geopy.geocoders import register
++register("yahoo", Yahoo)
++
+Index: geopy/geocoders/wiki_semantic.py
+===================================================================
+--- geopy/geocoders/wiki_semantic.py	(revision 84)
++++ geopy/geocoders/wiki_semantic.py	(working copy)
+@@ -1,11 +1,17 @@
+ import xml.dom.minidom
+-from BeautifulSoup import BeautifulSoup
+ from geopy.geocoders.base import Geocoder
+ from geopy.point import Point
+ from geopy.location import Location
+ from geopy import util
+ 
+ try:
++    from BeautifulSoup import BeautifulSoup
++except ImportError:
++    import sys
++    print >> sys.stderr, "BeautifulSoup was not found. " \
++          "Geocoders assuming malformed markup will not work."
++
++try:
+     set
+ except NameError:
+     from sets import Set as set
+@@ -100,4 +106,9 @@
+                 if None not in (name, latitude, longitude):
+                     break
+ 
+-        return (name, (latitude, longitude))
+\ No newline at end of file
++        return (name, (latitude, longitude))
++
++
++from geopy.geocoders import register
++register("semantic_media_wiki", SemanticMediaWiki)
++
 Index: setup.py
 ===================================================================
 --- setup.py	(revision 84)
@@ -28,3 +312,61 @@ Index: setup.py
        license='MIT',
        keywords='geocode geocoding gis geographical maps earth distance',
        classifiers=["Development Status :: 3 - Alpha",
+Index: geopy.egg-info/SOURCES.txt
+===================================================================
+--- geopy.egg-info/SOURCES.txt	(revision 84)
++++ geopy.egg-info/SOURCES.txt	(working copy)
+@@ -1,11 +1,39 @@
+ LICENSE
++setup.cfg
+ setup.py
+ dist/geopy-0.93-py2.4.egg
++dist/geopy-0.93-py2.5.egg
+ geopy/__init__.py
+ geopy/distance.py
+-geopy/geocoders.py
++geopy/format.py
++geopy/geocoders_old.py
++geopy/geohash.py
++geopy/location.py
++geopy/point.py
++geopy/units.py
+ geopy/util.py
+ geopy.egg-info/PKG-INFO
+ geopy.egg-info/SOURCES.txt
+ geopy.egg-info/dependency_links.txt
+ geopy.egg-info/top_level.txt
++geopy/geocoders/__init__.py
++geopy/geocoders/base.py
++geopy/geocoders/dot_us.py
++geopy/geocoders/geonames.py
++geopy/geocoders/google.py
++geopy/geocoders/virtual_earth.py
++geopy/geocoders/wiki_gis.py
++geopy/geocoders/wiki_semantic.py
++geopy/geocoders/yahoo.py
++geopy/parsers/__init__.py
++geopy/parsers/base.py
++geopy/parsers/gpx.py
++geopy/parsers/html.py
++geopy/parsers/iso6709.py
++geopy/parsers/iso8601.py
++geopy/parsers/rdf.py
++tests/fells_loop.gpx
++tests/test_distance.py
++tests/test_geohash.py
++tests/test_gpx.py
++tests/test_microformats.py
+\ No newline at end of file
+Index: geopy.egg-info/PKG-INFO
+===================================================================
+--- geopy.egg-info/PKG-INFO	(revision 84)
++++ geopy.egg-info/PKG-INFO	(working copy)
+@@ -1,6 +1,6 @@
+ Metadata-Version: 1.0
+ Name: geopy
+-Version: 0.93
++Version: 0.93dev-r0
+ Summary: Python Geocoding Toolbox
+ Home-page: http://exogen.case.edu/projects/geopy/
+ Author: Brian Beck

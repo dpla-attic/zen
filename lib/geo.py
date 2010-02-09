@@ -19,7 +19,7 @@ def geolookup(place):
     try:
         latlong = simplejson.loads(result).itervalues().next()
         return latlong
-    except ValueError:
+    except (ValueError, StopIteration), e:
         logger.debug("Not found: " + place)
         return None
 

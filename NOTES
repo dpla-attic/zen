@@ -9,6 +9,7 @@ Then apply fixes:
 
 cd geopy_export
 patch -p0 < ../geopy.diff 
+cd ..
 
 Then package:
 
