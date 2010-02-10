@@ -143,6 +143,8 @@ def geolookup_json(place=None):
     
     Sample request:
     * curl "http://localhost:8880/geolookup.json?place=Superior,%20CO"
+    * curl "http://localhost:8880/geolookup.json?place=1600%20Amphitheatre%20Parkway,%20Mountain%20View,%20VA,%2094043"
+    * curl "http://localhost:8880/geolookup.json?place=Cerqueira%20C%C3%A9sar%2C%20Brazil"
     '''
     geoquery = place.decode('utf-8')
     #geoquery = "%s in %s, %s"%(address_line, city, state_name)
@@ -150,10 +152,12 @@ def geolookup_json(place=None):
         latlong = geocache[geoquery]
     else:
         try:
-            place, (lat, long_) = GEOCODER.geocode(geoquery, exactly_one=False).next()
+            place, (lat, long_) = GEOCODER.geocode(geoquery.encode('utf-8'), exactly_one=False).next()
             latlong = "%0.03f,%0.03f"%(lat, long_)
         except (ValueError, urllib2.URLError, StopIteration), e:
-            logger.debug("geolookup error: " + repr(e))
+            #import traceback; traceback.print_exc()
+            logger.debug("geolookup error: " + repr((geoquery, e)))
+            geoquery = geoquery.replace(u'"', u'')
             state = US_STATES_GEO.xml_select(u'provinces/*[@abbr="%s"]'%geoquery)
             if state:
                 latlong = "%s,%s"%(unicode(state[0].lat), unicode(state[0].long))
