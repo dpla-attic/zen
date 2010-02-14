@@ -94,32 +94,38 @@ def atom_moin(body, ctype, maxcount=None, folder=None, feed=None):
     
     entries = atomtools.ejsonize(feed)
     for entry in islice(entries, 0, maxcount):
-        logger.debug('ENTRY: ' + repr(entry))
-        aid = entry[u'label']
-        slug = atomtools.slug_from_title(aid)
-        #logger.debug('GRIPPO' + repr((id,)))
-        dest = folder + '/' + slug
-        chunks = [ ' title:: ' + entry[u'title'] ]
-        chunks.append(' last changed:: ' + entry[u'updated'])
-        chunks.append(' link:: ' + (first_item(entry[u'link']) or ''))
+        try:
+            logger.debug('ENTRY: ' + repr(entry))
+            aid = entry[u'label']
+            slug = atomtools.slug_from_title(aid)
+            #logger.debug('GRIPPO' + repr((id,)))
+            dest = folder + '/' + slug
+            chunks = [ ' title:: ' + entry[u'title'] ]
+            chunks.append(' last changed:: ' + entry[u'updated'])
+            chunks.append(' link:: ' + (first_item(entry[u'link']) or ''))
 
-        if u'summary' in entry: chunks.append('= Summary =\n' + entry[u'summary'])
-        if u'content_src' in entry: chunks.append('= Content =\n' + entry[u'content_src'])
-        if u'content_text' in entry: chunks.append('= Content =\n' + entry[u'content_text'])
-        #logger.debug("Result IDs: " + ids)
-        if u'categories' in entry:
-            chunks.append(u'= Categories =')
-            for categories in entry[u'categories']:
-                chunks.append(' * ' + categories)
+            if u'summary' in entry: chunks.append('= Summary =\n' + entry[u'summary'])
+            if u'content_src' in entry: chunks.append('= Content =\n' + entry[u'content_src'])
+            if u'content_text' in entry: chunks.append('= Content =\n' + entry[u'content_text'])
+            #logger.debug("Result IDs: " + ids)
+            if u'categories' in entry:
+                chunks.append(u'= Categories =')
+                for categories in entry[u'categories']:
+                    chunks.append(' * ' + categories)
 
-        chunks.append(' id:: ' + entry[u'id'])
-        chunks.append('= akara:metadata =\n akara:type:: http://purl.org/com/zepheira/zen/resource/webfeed\n')
+            chunks.append(' id:: ' + entry[u'id'])
+            chunks.append('= akara:metadata =\n akara:type:: http://purl.org/com/zepheira/zen/resource/webfeed\n')
 
-        url = absolutize(dest, MOINBASE)
-        headers = {'Content-Type' : 'text/plain'}
-        resp, content = H.request(url, "PUT", body='\n'.join(chunks).encode('utf-8'), headers=headers)
-        logger.debug("Result: " + repr((resp, content)))
-        output.send(E(u'update', {u'entry-id': entry[u'id'], u'page': url}))
+            url = absolutize(dest, MOINBASE)
+            headers = {'Content-Type' : 'text/plain'}
+            resp, content = H.request(url, "PUT", body='\n'.join(chunks).encode('utf-8'), headers=headers)
+            logger.debug("Result: " + repr((resp, content)))
+            output.send(E(u'update', {u'entry-id': entry[u'id'], u'page': url}))
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except Exception, e:
+            logger.info('Exception handling Entry page: ' + repr(e))
+            output.send(E(u'failure', {u'entry-id': entry[u'id']}))
     time.sleep(BREATHER)
         
     output.close()

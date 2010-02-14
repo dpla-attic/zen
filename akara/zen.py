@@ -157,6 +157,7 @@ def zen_index(top=None, maxcount=None):
     hrefs = doc.xml_select(u'//*[@class="navigation"]//@href')
     if maxcount:
         hrefs = islice(hrefs, 0, int(maxcount))
+    failed = []
     for navchild in hrefs:
         link = navchild.xml_value
         #print >> sys.stderr, 'LINK:', link
@@ -167,19 +168,28 @@ def zen_index(top=None, maxcount=None):
         #    uri = uri.replace(rewrite, wikibase)
         rest_uri, moin_link = wrapped_uri(original_wiki_base, link)
         jsonizer = node.factory(rest_uri, moin_link, opener)
-        if isinstance(jsonizer, node):
-            rendered = jsonizer.render()
-        else:
-            (node_uri, node_type, endpoint, doc, metadata, original_wiki_base) = jsonizer
-            #request = urllib2.Request(rest_uri, headers={'Accept': DOCBOOK_IMT})
-            #body = opener.open(request).read()
-            logger.debug('rest_uri docbook body: ' + body[:200])
-            query = urllib.urlencode({'node_uri': node_uri, 'node_type': node_type, 'original_wiki_base': original_wiki_base, 'original_wiki_link': link})
-            #XXX this will lead to a re-parse of body/doc
-            req = urllib2.Request(endpoint + '?' + query, body)
-            rendered = opener.open(req).read()
-            logger.debug('jsonizer result: ' + repr(rendered))
-        if rendered:
-            items.append(rendered)
-    return simplejson.dumps({'items': items}, indent=4)
+        try:
+            if isinstance(jsonizer, node):
+                rendered = jsonizer.render()
+            else:
+                (node_uri, node_type, endpoint, doc, metadata, original_wiki_base) = jsonizer
+                #request = urllib2.Request(rest_uri, headers={'Accept': DOCBOOK_IMT})
+                #body = opener.open(request).read()
+                logger.debug('rest_uri docbook body: ' + body[:200])
+                query = urllib.urlencode({'node_uri': node_uri, 'node_type': node_type, 'original_wiki_base': original_wiki_base, 'original_wiki_link': link})
+                #XXX this will lead to a re-parse of body/doc
+                req = urllib2.Request(endpoint + '?' + query, body)
+                rendered = opener.open(req).read()
+                logger.debug('jsonizer result: ' + repr(rendered))
+            if rendered:
+                items.append(rendered)
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except Exception, e:
+            logger.info('Exception handling Zen record: ' + rest_uri)
+            logger.info('Exception info: ' + repr(e))
+            failed.append(rest_uri)
+    result = {u'items': items}
+    if failed: result[u'failed'] = failed
+    return simplejson.dumps(result, indent=4)
 

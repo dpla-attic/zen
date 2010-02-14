@@ -98,7 +98,7 @@ Index: geopy/geocoders/geonames.py
 ===================================================================
 --- geopy/geocoders/geonames.py	(revision 84)
 +++ geopy/geocoders/geonames.py	(working copy)
-@@ -0,0 +1,109 @@
+@@ -0,0 +1,108 @@
 +'''
 +Use GeoNames.org Web services for geolocation http://www.geonames.org/export/ws-overview.html
 +
@@ -143,7 +143,7 @@ Index: geopy/geocoders/geonames.py
 +    def geocode(self, string, exactly_one=True):
 +        params = {'q': string}
 +        url = self.url % urlencode(params)
-+        import sys; print >> sys.stderr, (url)
++        #import sys; print >> sys.stderr, (url,)
 +        return self.geocode_url(url, exactly_one)
 +
 +    def geocode_url(self, url, exactly_one=True):
@@ -178,20 +178,19 @@ Index: geopy/geocoders/geonames.py
 +            return (parse_code(code) for code in codes)
 +
 +    def parse_xml(self, page, exactly_one):
-+        import sys; print >> sys.stderr, page
 +        if not isinstance(page, basestring):
 +            page = util.decode_page(page)
 +        doc = xml.dom.minidom.parseString(page)
-+        codes = doc.getElementsByTagName('code')
++        codes = doc.getElementsByTagName('geoname')
 +        
 +        if exactly_one and len(codes) != 1:
-+            raise ValueError("Didn't find exactly one code! " \
++            raise ValueError("Didn't find exactly one geoname! " \
 +                             "(Found %d.)" % len(codes))
 +
 +        def parse_code(code):
-+            place_name = self._get_first_text(code, 'name')
-+            country_code = self._get_first_text(code, 'countryCode')
-+            postal_code = self._get_first_text(code, 'postalcode')
++            place_name = util.get_first_text(code, 'name')
++            country_code = util.get_first_text(code, 'countryCode')
++            postal_code = util.get_first_text(code, 'postalcode')
 +            place = util.join_filter(", ", [place_name, country_code])
 +            location = util.join_filter(" ", [place, postal_code]) or None
 +            latitude = util.get_first_text(code, 'lat') or None
@@ -279,6 +278,15 @@ Index: geopy/geocoders/wiki_semantic.py
      set
  except NameError:
      from sets import Set as set
+@@ -18,7 +24,7 @@
+         self.relations = relations
+         self.prefer_semantic = prefer_semantic
+         self.transform_string = transform_string
+-    
++
+     def get_url(self, string):
+         return self.format_url % self.transform_string(string)
+ 
 @@ -100,4 +106,9 @@
                  if None not in (name, latitude, longitude):
                      break

@@ -10,6 +10,10 @@ MODS examples:
  * http://www.loc.gov/standards/mods/v3/mods-userguide-examples.html
  * http://www.scripps.edu/~cdputnam/software/bibutils/mods_intro.html
 
+See also:
+
+For handling MARC (via conversion to SKOS): ttp://dcpapers.dublincore.org/ojs/pubs/article/view/916/912
+
 '''
 
 from itertools import groupby
@@ -39,45 +43,46 @@ MODS_MODEL_XML = '''<?xml version="1.0" encoding="UTF-8"?>
         <displayForm>Uche Ogbuji</displayForm>
     </name>
     <originInfo>
-        <dateIssued ak:rel="">2004</dateIssued>
-        <dateCaptured point="start" encoding="iso8601" ak:rel="">20020702</dateCaptured>
-        <issuance ak:rel="">2004</issuance>
-        <publisher ak:rel="">X</publisher>
-        <copyrightDate encoding="w3cdtf" ak:rel="">2003</copyrightDate>
+        <dateIssued ak:rel="" ak:context="parent::m:originInfo/parent::m:mods">2004</dateIssued>
+        <dateCaptured point="start" encoding="iso8601" ak:rel="" ak:context="parent::m:originInfo/parent::m:mods">20020702</dateCaptured>
+        <issuance ak:rel="" ak:context="parent::m:originInfo/parent::m:mods">2004</issuance>
+        <publisher ak:rel="" ak:context="parent::m:originInfo/parent::m:mods">X</publisher>
+        <copyrightDate encoding="w3cdtf" ak:rel="" ak:context="parent::m:originInfo/parent::m:mods">2003</copyrightDate>
    	   	<place>
-  	  	  	<placeTerm type="text" ak:rel="">New York</placeTerm>
+  	  	  	<placeTerm type="text" ak:rel="" ak:context="parent::m:place/parent::m:originInfo/parent::m:mods">New York</placeTerm>
        	</place>
     </originInfo>
     <language>
-      	<languageTerm authority="iso639-2b" ak:rel="">eng</languageTerm>
+      	<languageTerm authority="iso639-2b" ak:rel="" ak:context="parent::m:language/parent::m:mods">eng</languageTerm>
     </language>
   	<physicalDescription>
-  	  	<internetMediaType eg:occurs="*" ak:rel="">text/html</internetMediaType>
-        <digitalOrigin ak:rel="">reformatted digital</digitalOrigin>
-        <note ak:rel="physicalDescriptionNote">100 f 6.3 tl</note>
-     	<form authority="marcform" ak:rel="">print</form>
-      	<extent ak:rel="">15 p.</extent>
+  	  	<internetMediaType eg:occurs="*" ak:rel="" ak:context="parent::m:physicalDescription/parent::m:mods">text/html</internetMediaType>
+        <digitalOrigin ak:rel="" ak:context="parent::m:physicalDescription/parent::m:mods">reformatted digital</digitalOrigin>
+        <note ak:rel="physicalDescriptionNote" ak:context="parent::m:physicalDescription/parent::m:mods">100 f 6.3 tl</note>
+     	<form authority="marcform" ak:rel="" ak:context="parent::m:physicalDescription/parent::m:mods">print</form>
+      	<extent ak:rel="" ak:context="parent::m:physicalDescription/parent::m:mods">15 p.</extent>
   	</physicalDescription>
-  	<abstract ak:rel="">Web site promoting the candidacy of Fran Ulmer</abstract>
+  	<abstract ak:rel="" ak:context="parent::m:mods">Web site promoting the candidacy of Fran Ulmer</abstract>
    	<subject authority="lcsh">
-  	  	<topic eg:occurs="*" ak:rel="">Gettysburg, Battle of, Gettysburg, Pa., 1863</topic>
-  	  	<geographic eg:occurs="*" ak:rel="">Alaska</geographic>
-  	  	<temporal eg:occurs="*" ak:rel="">Alaska</temporal>
+  	  	<topic eg:occurs="*" ak:rel="" ak:context="parent::m:subject/parent::m:mods">Gettysburg, Battle of, Gettysburg, Pa., 1863</topic>
+  	  	<geographic eg:occurs="*" ak:rel="" ak:context="parent::m:subject/parent::m:mods">Alaska</geographic>
+  	  	<temporal eg:occurs="*" ak:rel="" ak:context="parent::m:subject/parent::m:mods">Alaska</temporal>
    	   	<hierarchicalGeographic>
-  	  	  	<country ak:rel="">United States</country>
-  	  	  	<state ak:rel="">California</state>
-  	  	  	<county ak:rel="">Inyo</county>
+  	  	  	<country ak:rel="" ak:context="parent::m:hierarchicalGeographic/parent::m:subject/parent::m:mods">United States</country>
+  	  	  	<city ak:rel="" ak:context="parent::m:hierarchicalGeographic/parent::m:subject/parent::m:mods">Fresno</city>
+  	  	  	<state ak:rel="" ak:context="parent::m:hierarchicalGeographic/parent::m:subject/parent::m:mods">California</state>
+  	  	  	<county ak:rel="" ak:context="parent::m:hierarchicalGeographic/parent::m:subject/parent::m:mods">Inyo</county>
   	  	</hierarchicalGeographic>
-        <name ak:rel="'topic-name'" type="personal" ak:value="m:namePart"/>
+        <name ak:rel="'topic-name'" type="personal" ak:value="m:namePart"  ak:context="parent::m:subject/parent::m:mods"/>
   	</subject>
-    <classification authority="lcc" ak:rel="">E475.53 .A42</classification>
-    <typeOfResource ak:rel="">software, multimedia</typeOfResource>
-    <genre authority="gmgpc" ak:rel="">Landscape photographs</genre>
-    <identifier displayLabel="Cite key" type="citekey" ak:rel="">1060-2004</identifier>
+    <classification authority="lcc" ak:rel="" ak:context="parent::m:mods">E475.53 .A42</classification>
+    <typeOfResource ak:rel="" ak:context="parent::m:mods">software, multimedia</typeOfResource>
+    <genre authority="gmgpc" ak:rel="" ak:context="parent::m:mods">Landscape photographs</genre>
+    <identifier displayLabel="Cite key" type="citekey" ak:rel="" ak:context="parent::m:mods">1060-2004</identifier>
     <location eg:occurs="*">
         <url displayLabel="Uche's home" usage="primary display" access="preview" ak:rel="" ak:context="parent::m:location/parent::m:mods">http://uche.ogbuji.net/</url>
     </location>
-    <note type="system details" ak:rel="">http://example.org/</note>
+    <note type="system details" ak:rel="" ak:context="parent::m:mods">http://example.org/</note>
    	<relatedItem type="host" eg:occurs="*">
    	    <!-- Note: Looks like just about any of the top-level elements can go here -->
   	  	<!--
@@ -89,17 +94,17 @@ MODS_MODEL_XML = '''<?xml version="1.0" encoding="UTF-8"?>
   	  	</location>
   	  	-->
   	</relatedItem>
-  	<accessCondition ak:rel="">Personal, noncommercial use of this item is permitted in the United States of America. Please see http://digital.library.upenn.edu/women/ for other rights and restrictions that may apply to this resource.
+  	<accessCondition ak:rel="" ak:context="parent::m:mods">Personal, noncommercial use of this item is permitted in the United States of America. Please see http://digital.library.upenn.edu/women/ for other rights and restrictions that may apply to this resource.
     </accessCondition>
     <recordInfo>
-      	<recordSource ak:rel="">University of Pennsylvania Digital Library</recordSource>
-      	<recordOrigin ak:rel=""> MODS auto-converted from a simple Online Books Page metadata record. For details, see http://onlinebooks.library.upenn.edu/mods.html </recordOrigin>
-      	<languageOfCataloging ak:rel="">
+      	<recordSource ak:rel="" ak:context="parent::m:recordInfo/parent::m:mods">University of Pennsylvania Digital Library</recordSource>
+      	<recordOrigin ak:rel="" ak:context="parent::m:recordInfo/parent::m:mods"> MODS auto-converted from a simple Online Books Page metadata record. For details, see http://onlinebooks.library.upenn.edu/mods.html </recordOrigin>
+      	<languageOfCataloging ak:rel="" ak:context="parent::m:recordInfo/parent::m:mods">
       	  	<languageTerm type="code" authority="iso639-2b">eng</languageTerm>
       	</languageOfCataloging>
-      	<recordContentSource ak:rel="">Indiana University Digital Library Program</recordContentSource>
-      	<recordCreationDate encoding="w3cdtf" ak:rel="">2004-09-09</recordCreationDate>
-      	<recordIdentifier ak:rel="">archives/cushman/P07803</recordIdentifier>
+      	<recordContentSource ak:rel="" ak:context="parent::m:recordInfo/parent::m:mods">Indiana University Digital Library Program</recordContentSource>
+      	<recordCreationDate encoding="w3cdtf" ak:rel="" ak:context="parent::m:recordInfo/parent::m:mods">2004-09-09</recordCreationDate>
+      	<recordIdentifier ak:rel="" ak:context="parent::m:recordInfo/parent::m:mods">archives/cushman/P07803</recordIdentifier>
     </recordInfo>
 </mods>
 </modsCollection>

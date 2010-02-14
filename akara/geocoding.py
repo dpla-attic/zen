@@ -6,7 +6,10 @@ Requires: geopy, simplejson, and feedparser
 Copyright 2008-2009 Zepheira LLC
 """
 
-#cofigure to set: ipgeo.db 
+#See also: [[http://us.pycon.org/2009/tutorials/schedule/1PM4/|"Working with Geographic Information Systems (GIS) in Python"]]
+
+#configure to set: ipgeo.db 
+
 
 from __future__ import with_statement
 import sys, re, os, time, sqlite3
@@ -39,6 +42,8 @@ def state_lookup(s):
     return unicode(result[0]) if result else None
 
 
+#Other services:
+#* http://www.wipmania.com/en/
 def ip2geo(addr):
     '''
     See http://hostip.info for more info on the service used
