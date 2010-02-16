@@ -23,6 +23,11 @@ def smart_parse_date(date):
             return datetime.date(int(parts[2]), int(parts[0]), int(parts[1])).timetuple()
     except ValueError:
         pass
-    return datetime.datetime(*feedparser._parse_date(date)[:7])
-
+    try:
+        dt = datetime.datetime(*feedparser._parse_date(date)[:7])
+    except (KeyboardInterrupt, SystemExit):
+        raise
+    except Exception, e:
+        dt = None
+    return dt
 

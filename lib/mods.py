@@ -21,7 +21,8 @@ from operator import itemgetter
 
 from amara.xpath import datatypes
 from amara import bindery
-from amara.bindery.model import *
+from amara.bindery.model import generate_metadata
+from amara.bindery.model.examplotron import examplotron_model
 from amara.bindery.util import dispatcher, node_handler
 
 MODS_MODEL_XML = '''<?xml version="1.0" encoding="UTF-8"?>
