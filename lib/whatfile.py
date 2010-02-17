@@ -31,23 +31,36 @@ except ImportError:
     pass
 '''
 
+CHUNKSIZE = 1024
+
 def guess_imt(body):
     '''
     Support function for freemix services.  Inital processing to guess media type of post body.
     '''
     #from magic import Magic
     #fileguesser = Magic(mime=True)
-    cmdline = guess_imt.MAGIC_FILE_CMD
-    process = Popen(cmdline, stdin=PIPE, stdout=PIPE, universal_newlines=True, shell=True)
-    imt = "application/unknown"
+    process = Popen(guess_imt.MAGIC_FILE_CMD, stdin=PIPE, stdout=PIPE, shell=True)
+    #Can't really use communicate because of issues with how it handles the buffer,
+    #considering this will probably be a large body crammed into the pipe
+    #Do it in chunks, instead
+    #Besides, it seems the file command only reads as much input as it needs to to
+    #spot the magic number before shutting up shop (manifested in IOError/Broken pipe),
+    #so this will in most cases not save the overhead of feeding the entire body
     try:
-        imt, perr = process.communicate(input=body)
-        if not imt:
-            #FIXME: L10N
-            raise RuntimeError('Empty output from the command line.  Probably a failure.  Command line: "%s"'%cmdline)
-            #raise ValueError('Empty output from the command line.  Probably a failure.  Command line: "%s"'%cmdline)
-    except OSError:
-        raise RuntimeError('Error upon file type sniff.  Command line: "%s"'%cmdline)
+        for i in xrange(0, len(body), CHUNKSIZE):
+            process.stdin.write(body[i:i+CHUNKSIZE])
+    except (KeyboardInterrupt, SystemExit):
+        raise
+    except IOError:
+        pass
+    process.stdin.close()
+    #imt, perr = process.communicate(input=)
+    imt = process.stdout.read()
+    if not imt:
+        #FIXME: L10N
+        raise RuntimeError('Empty output from the command line.  Probably a failure.  Command line: "%s"'%cmdline)
+        #raise ValueError('Empty output from the command line.  Probably a failure.  Command line: "%s"'%cmdline)
+        imt = "application/unknown"
     #print >> sys.stderr, imt
     #imt might look like:
     # * foo.dat: text/plain; charset=us-ascii
@@ -57,4 +70,22 @@ def guess_imt(body):
     return imt
 
 guess_imt.MAGIC_FILE_CMD = 'file -I -'
+
+
+'''
+from subprocess import *
+
+CHUNKSIZE = 1024
+
+cmd = 'file -i -'
+process = Popen(cmd, stdin=PIPE, stdout=PIPE, universal_newlines=True, shell=True)
+data = open('/tmp/splitsSplitter00000000.xml', 'rb').read()
+for i in xrange(0, len(data), CHUNKSIZE):
+    process.stdin.write(data[i:i+CHUNKSIZE])
+
+process.stdin.close()
+#imt, perr = process.communicate(input=)
+imt = process.stdout.read()
+print imt
+'''
 

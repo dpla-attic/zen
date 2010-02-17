@@ -114,7 +114,9 @@ MODS_MODEL_XML = '''<?xml version="1.0" encoding="UTF-8"?>
 MODS_MODEL = examplotron_model(MODS_MODEL_XML)
 
 def mods2json(body):
+    import sys; print >> sys.stderr, "ONE"
     doc = bindery.parse(body, model=MODS_MODEL)
+    print >> sys.stderr, "TWO"
     items = []
     for rid, triples in groupby(generate_metadata(doc), itemgetter(0)):
         item = {'id': rid, 'label': rid}
@@ -142,6 +144,7 @@ def mods2json(body):
 
         #if 'topic' in item: item['topic'] = 
         #import sys; print >> sys.stderr, item.keys()
+    print >> sys.stderr, "THREE"
     return items
     mods_handler = mods_content_handlers(items)
     doc.modsCollection.xml_namespaces[u'm'] = MODS_NAMESPACE
