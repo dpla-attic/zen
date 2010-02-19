@@ -8,7 +8,7 @@
 # * re: python-magic http://gavinjnet.blogspot.com/2007/05/python-file-magic.html
 
 import sys, urllib
-from subprocess import *
+from subprocess import Popen, PIPE
 
 # Requires python-magic <http://pypi.python.org/pypi/python-magic/0.1>
 # >>> import magic
@@ -54,7 +54,7 @@ def guess_imt(body):
     except IOError:
         pass
     process.stdin.close()
-    #imt, perr = process.communicate(input=)
+    #imt, perr = process.communicate(input=string_body)
     imt = process.stdout.read()
     if not imt:
         #FIXME: L10N
