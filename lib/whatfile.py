@@ -32,6 +32,7 @@ except ImportError:
 '''
 
 CHUNKSIZE = 1024
+GENERIC_CDF_IMT = 'application/vnd.ms-office'
 
 def guess_imt(body):
     '''
@@ -65,11 +66,14 @@ def guess_imt(body):
     #imt might look like:
     # * foo.dat: text/plain; charset=us-ascii
     # * foo.dat: text/plain charset=us-ascii
+    if 'CDF' in imt:
+        #Hackaround (see http://foundry.zepheira.com/issues/399)
+        return GENERIC_CDF_IMT
     imt = imt.split(':')[-1].split(';')[0].split()[0].strip()
     #imt = fileguesser.from_buffer(body)
     return imt
 
-guess_imt.MAGIC_FILE_CMD = 'file -I -'
+guess_imt.MAGIC_FILE_CMD = 'file -i -'
 
 
 '''

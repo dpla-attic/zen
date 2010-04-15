@@ -1,3 +1,7 @@
+'''
+
+'''
+
 import feedparser
 import datetime
 
@@ -18,7 +22,7 @@ def plain_year(d):
     if len(d) == 4:
         try:
             #FIXME: converting via tuple to datetime, then back to tuple.  Wasteful.
-            return datetime.datetime(int(d[0:4])).timetuple()
+            return datetime.datetime(int(d[0:4]), 1, 1).timetuple()
         except ValueError:
             return None
     return None
@@ -27,11 +31,41 @@ feedparser.registerDateHandler(mods_convention_date)
 feedparser.registerDateHandler(plain_year)
 
 def smart_parse_date(date):
-    parts = date.split('/')
+    '''
+    Accepts a string or unicode date to be parsed and returns a datetime.datetime result
+    
+    A very restrictive list of dates that can be parsed (i.e. some date formats not
+    listed here should work):
+
+    W3C dates, documented here:
+
+    http://www.w3.org/TR/NOTE-datetime
+
+    A subset of undelimited ISO-8601 dates work (as prevalent in LC MODS).
+
+    YYYYDDMM
+    YYYYDDMMhhmmss
+
+    In general the dates have to be internationally unambiguous, Y2K-safe
+    One exception is support for US convention, Y2K-safe year dates.
+
+    MM/DD/YYYY
+    '''
+    #try:
+    #    date = unicode(date, 'utf-8')
+    #
     try:
+        if len(date) == 4:
+            try:
+                return datetime.datetime(int(date), 1, 1)
+            except ValueError:
+                pass
+        parts = date.split(u'/')
         if len(parts) == 3:
-            return datetime.date(int(parts[2]), int(parts[0]), int(parts[1])).timetuple()
-    except ValueError:
+            return datetime.datetime(int(parts[2]), int(parts[0]), int(parts[1]))
+    except (KeyboardInterrupt, SystemExit):
+        raise
+    except Exception, e:
         pass
     try:
         dt = datetime.datetime(*feedparser._parse_date(date)[:7])
@@ -41,3 +75,4 @@ def smart_parse_date(date):
         dt = None
     return dt
 
+smart_parse_date.serviceid = u'http://purl.org/com/zepheira/zen/smartparsedate'
