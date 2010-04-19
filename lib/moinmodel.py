@@ -40,6 +40,8 @@ from gettext import gettext as _
 
 from dateutil.parser import parse as dateparse
 
+from functools import wraps
+
 import amara
 from amara import bindery
 from amara.lib.util import first_item
@@ -56,7 +58,7 @@ from amara.lib.iri import split_fragment, relativize, absolutize, IriError
 from amara.bindery.util import dispatcher, node_handler, property_sequence_getter
 
 from akara.util import copy_auth
-from akara.util.moin import wiki_uri, ORIG_BASE_HEADER, DOCBOOK_IMT, RDF_IMT, HTML_IMT
+from akara.util.moin import wiki_uri, ORIG_BASE_HEADER, DOCBOOK_IMT, RDF_IMT, HTML_IMT, XML_IMT
 
 try:
     from akara import logger
@@ -73,7 +75,7 @@ def cleanup_text_blocks(text):
 #    def load(self):
 #        raise NotImplementedError
 
-class resolver(baseresolver):
+class moinrest_resolver(baseresolver):
     """
     Resolver that uses a specialized URL opener
     """
@@ -112,13 +114,8 @@ class resolver(baseresolver):
 #    def __init__(self, arg, uri=None, encoding=None, resolver=None, sourcetype=0, opener=None):
 #        baseinputsource.__init__(cls, arg, uri, encoding, resolver, sourcetype)
 
-def akara_type(doc, original_base, wrapped_base, rest_uri):
-    #type = U(doc.xml_select(u'//definition_list/item[term = "akara:type"]/defn'))
-    if logger: logger.debug('Type: ' + repr(list(doc.xml_select(u'//*[@title="akara:metadata"]/gloss/label[.="akara:type"]/following-sibling::item[1]//@href'))))
-    type = U(doc.xml_select(u'//*[@title="akara:metadata"]/gloss/label[.="akara:type"]/following-sibling::item[1]//@href'))
-    wrapped_type, orig_type = wiki_uri(original_base, wrapped_base, type, rest_uri)
-    if logger: logger.debug('Type URIs: ' + repr((type, wrapped_type, orig_type)))
-    return wrapped_type
+RESOURCE_TYPE_TYPE = 'http://purl.org/xml3k/akara/cms/resource-type'
+
 
 UNSPECIFIED = object()
 
@@ -129,58 +126,92 @@ class node(object):
     '''
     AKARA_TYPE = u'http://purl.org/xml3k/akara/cms/resource-type'
     NODES = {}
-    #Processing priority
-    #PRIORITY = 0
     ENDPOINTS = None
+
+    _instance_cache = {}
+
     @staticmethod
-    def factory(rest_uri, moin_link=None, opener=None):
+    def lookup(rest_uri, opener=None, resolver=None):
         '''
         rest_uri - URI of the moinrest-wrapped version of the page
-        moin_link - 
         opener - for specializing the HTTP request (e.g. to use auth)
         '''
-        r = resolver(opener=opener)
-        req = urllib2.Request(rest_uri, headers={'Accept': 'text/xml'})
-        isrc = inputsource(req, resolver=r)
+        if rest_uri in node._instance_cache:
+            #FIXME: Check for cache invalidation first. Right now this cache will last as long as the akara process
+            return node._instance_cache[rest_uri]
+        if not resolver:
+            resolver = moinrest_resolver(opener=opener)
         if logger: logger.debug('rest_uri: ' + rest_uri)
+        isrc, resp = parse_moin_xml(rest_uri, resolver=resolver)
         doc = bindery.parse(isrc)
         #doc = bindery.parse(isrc, standalone=True, model=MOIN_DOCBOOK_MODEL)
-        if logger: logger.debug('r.last_lookup_headers: ' + repr((r, r.last_lookup_headers)))
-        original_base, wrapped_base, original_page = r.last_lookup_headers[ORIG_BASE_HEADER].split()
-        #self.original_wiki_base = dict(resp.info())[ORIG_BASE_HEADER]
-        #amara.xml_print(self.content_cache)
-        #metadata, first_id = metadata_dict(generate_metadata(doc))
-        #metadata = metadata[first_id]
-        #akara_type = U(metadata[u'ak-type'])
-        atype = akara_type(doc, original_base, wrapped_base, rest_uri)
-        #akara_type = U(doc.xml_select(u'//*[@title="akara:metadata"]/gloss/label[.="akara:type"]/following-sibling::item[1]//@href'))
+        original_base, wrapped_base, original_page = resp.info()[ORIG_BASE_HEADER].split()
+        atype = resource_type.construct_id(doc, original_base, wrapped_base, rest_uri)
         #if logger: logger.debug('Type: ' + akara_type)
         #Older Moin CMS resource types are implemented by registration to the global node.NODES
         #Newer Moin CMS resource types are implemented by discovery of a URL,
         #to which a POST request executes the desired action
         cls = node.NODES.get(atype, node)
-        instance = cls(doc, rest_uri, moin_link, original_base, wrapped_base, akara_type=akara_type, resolver=r)
+        instance = cls(doc, rest_uri, original_base, wrapped_base, akara_type=atype, resolver=resolver)
+        node._instance_cache[rest_uri] = instance
         return instance
         #return node.ENDPOINTS and (rest_uri, akara_type, node.ENDPOINTS[akara_type], doc, metadata, original_wiki_base)
 
-    #FIXME: This cache is to help eliminate unnecessary trips back to moin to get
-    #The page body.  It should soon be replaced by the proposed comprehensive caching
-    def __init__(self, doc, rest_uri, moin_link, original_base, wrapped_base, akara_type=None, resolver=None):
+    @staticmethod
+    def create(resource_type, body, ctype, opener=None, resolver=None):
+        '''
+        resource_type - type of the new resource to be created
+        body - input information or document required to construct the resource page, according to the rule sheet
+        '''
+        if resource_type in node._instance_cache:
+            #FIXME: Check for cache invalidation first. Right now this cache will last as long as the akara process
+            return node._instance_cache[rest_uri]
+        if opener and not resolver:
+            resolver = moinrest_resolver(opener=opener)
+
+        rendered = resource.run_rulesheet('POST', ctype)
+
+
+
+
+
+        doc = bindery.parse(isrc)
+        #doc = bindery.parse(isrc, standalone=True, model=MOIN_DOCBOOK_MODEL)
+        if logger: logger.debug('resolver.last_lookup_headers: ' + repr((resolver, resolver.last_lookup_headers)))
+        original_base, wrapped_base, original_page = resolver.last_lookup_headers[ORIG_BASE_HEADER].split()
+        atype = resource_type.construct_id(doc, original_base, wrapped_base, rest_uri)
+        #if logger: logger.debug('Type: ' + akara_type)
+        #Older Moin CMS resource types are implemented by registration to the global node.NODES
+        #Newer Moin CMS resource types are implemented by discovery of a URL,
+        #to which a POST request executes the desired action
+        cls = node.NODES.get(atype, node)
+        instance = cls(doc, rest_uri, original_base, wrapped_base, akara_type=atype, resolver=resolver)
+        node._instance_cache[rest_uri] = instance
+        return instance
+        #return node.ENDPOINTS and (rest_uri, akara_type, node.ENDPOINTS[akara_type], doc, metadata, original_wiki_base)
+
+    
+    def __init__(self, doc, rest_uri, original_base, wrapped_base, akara_type=None, resolver=None):
         '''
         rest_uri - the full URI to the Moin/REST wrapper for this page
         relative - the URI of this page relative to the Wiki base
         '''
         self.doc = doc
         self.rest_uri = rest_uri
-        self.moin_link = moin_link
         self.original_base = original_base
         self.wrapped_base = wrapped_base
         self.resolver = resolver
         self.rulesheet = None
+        self.resource_type = None
         if node.ENDPOINTS and akara_type in node.ENDPOINTS:
+            #Uses old-style Akara services registered to endpoints
             self.endpoint = node.ENDPOINTS[akara_type]
         else:
+            #Uses rulesheets
             self.endpoint = None
+            #FIXME: Inelegant not to use polymorphism for the RESOURCE_TYPE_TYPE test
+            if isinstance(akara_type, basestring) and akara_type != RESOURCE_TYPE_TYPE:
+                self.resource_type = node.lookup(akara_type, resolver=self.resolver)
         return
 
     def load(self):
@@ -188,72 +219,6 @@ class node(object):
 
     #def render(self):
     #    raise NotImplementedError
-
-    def get_rulesheet(self):
-        if self.rulesheet is None:
-            #req = urllib2.Request(self.akara_type(), headers={'Accept': 'text/xml'})
-            #isrc = inputsource(req, resolver=self.resolver)
-            #Stupid Moin XML export uses bogus nbsps, so we can't use the above
-            req = urllib2.Request(self.akara_type(), headers={'Accept': 'text/xml'})
-            result = urllib2.urlopen(req)
-            body = result.read()
-            isrc = inputsource(body.replace('&nbsp;', '&#160;'), resolver=self.resolver)
-            if logger: logger.debug('akara type rest_uri: ' + self.akara_type())
-            #req = urllib2.Request(rest_uri, headers={'Accept': DOCBOOK_IMT})
-            doc = bindery.parse(isrc)
-            rulesheet = U(doc.xml_select(u'//*[@title="akara:metadata"]/gloss/label[.="akara:rulesheet"]/following-sibling::item[1]//@href'))
-            self.rulesheet = rulesheet or UNSPECIFIED
-            if logger: logger.debug('RULESHEET: ' + rulesheet)
-        return self.rulesheet
-
-    #def run_rulesheet(self, imt='application/json'):
-        #FIXME: actually 
-        #(node_uri, node_type, endpoint, doc, metadata, original_wiki_base) = jsonizer
-        #request = urllib2.Request(rest_uri, headers={'Accept': DOCBOOK_IMT})
-        #body = opener.open(request).read()
-        #logger.debug('rest_uri docbook body: ' + body[:200])
-    #    query = urllib.urlencode({'node_uri': self.rest_uri, 'node_type': node_type, 'original_wiki_base': original_wiki_base, 'original_wiki_link': link})
-        #FIXME: ugh. Reserialize and reparse
-    #    req = urllib2.Request(endpoint + '?' + query, self.doc.xml_encode())
-    #    output = opener.open(req).read()
-        #logger.debug('jsonizer result: ' + repr(rendered))
-    #    return output
-
-    def run_rulesheet(self, phase='generate-json'):
-        if self.endpoint:
-            #(node_uri, node_type, endpoint, doc, metadata, original_wiki_base) = jsonizer
-            #request = urllib2.Request(rest_uri, headers={'Accept': DOCBOOK_IMT})
-            #body = opener.open(request).read()
-            #logger.debug('rest_uri docbook body: ' + body[:200])
-            query = urllib.urlencode({'node_uri': node_uri, 'node_type': node_type, 'original_wiki_base': original_wiki_base, 'original_wiki_link': link})
-            #XXX this will lead to a re-parse of body/doc
-            req = urllib2.Request(endpoint + '?' + query, body)
-            output = opener.open(req).read()
-            logger.debug('jsonizer result: ' + repr(rendered))
-        else:
-            #e.g. you can sign a rulesheet as follows:
-            #python -c "import sys, hashlib; print hashlib.sha1('MYSECRET' + sys.stdin.read()).hexdigest()" < rsheet.py 
-            #Make sure the rulesheet has not already been signed (i.e. does not have a hash on the first line)
-            import hashlib
-            rulesheet = self.get_rulesheet()
-            rs = inputsource(rulesheet, resolver=self.resolver)
-            token = rs.stream.readline().strip()
-            #logger.debug('Token: ' + repr((token, self.SECRET)))
-            body = rs.stream.read()
-            if token != hashlib.sha1(self.SECRET + body).hexdigest():
-                raise RuntimeError('Security token verification failed')
-            #chunks = []
-            def U1(text): return U(text, noneok=True)
-            #def write(text):
-            #    chunks.append(text)
-            #env = {'write': write, 'resource': self, 'service': service, 'U': U1}
-            env = {'resource': self, 'service': service, 'U': U1}
-            exec body in env
-            output = None
-            if 'record' in env:
-                output = env['record']()
-            #output = ''.join(chunks)
-        return output
 
     def up_to_date(self, force_update=False):
         '''
@@ -263,12 +228,7 @@ class node(object):
         return False
 
     def akara_type(self):
-        #metadata_section = doc.xml_xpath(u'header[. = "akara:metadata"]')
-        #if metadata_section:
-        #return doc.metadata_section
-        return akara_type(self.doc, self.original_base, self.wrapped_base, self.rest_uri)
-        #type = U(doc.xml_select(u'//definition_list/item[term = "akara:type"]/defn'))
-        #return type
+        return resource_type.construct_id(self.doc, self.original_base, self.wrapped_base, self.rest_uri)
 
     def section(self, title):
         '''
@@ -305,6 +265,91 @@ class node(object):
 
 
 node.NODES[node.AKARA_TYPE] = node
+
+def parse_moin_xml(uri, resolver=None):
+    #Stupid Moin XML export uses bogus nbsps, so this function encapsulates the kludge
+    req = urllib2.Request(uri, headers={'Accept': XML_IMT})
+    resp = urllib2.urlopen(req)
+    body = resp.read()
+    return inputsource(body.replace('&nbsp;', '&#160;'), resolver=resolver), resp
+
+
+class resource_type(node):
+    @staticmethod
+    def construct_id(doc, original_base, wrapped_base, rest_uri):
+        #type = U(doc.xml_select(u'//definition_list/item[term = "akara:type"]/defn'))
+        if logger: logger.debug('Type: ' + repr(list(doc.xml_select(u'//*[@title="akara:metadata"]/gloss/label[.="akara:type"]/following-sibling::item[1]//@href'))))
+        type = U(doc.xml_select(u'//*[@title="akara:metadata"]/gloss/label[.="akara:type"]/following-sibling::item[1]//@href'))
+        wrapped_type, orig_type = wiki_uri(original_base, wrapped_base, type, rest_uri)
+        if logger: logger.debug('Type URIs: ' + repr((type, wrapped_type, orig_type)))
+        return wrapped_type
+
+    def get_rulesheet(self):
+        if self.rulesheet is None:
+            #req = urllib2.Request(self.akara_type(), headers={'Accept': XML_IMT})
+            #isrc = inputsource(req, resolver=self.resolver)
+            if logger: logger.debug('akara type rest_uri: ' + self.rest_uri)
+            isrc, resp = parse_moin_xml(self.rest_uri, resolver=self.resolver)
+            doc = bindery.parse(isrc)
+            rulesheet = U(doc.xml_select(u'//*[@title="akara:metadata"]/gloss/label[.="akara:rulesheet"]/following-sibling::item[1]//@href'))
+            self.rulesheet = rulesheet or UNSPECIFIED
+            if logger: logger.debug('RULESHEET: ' + rulesheet)
+        return self.rulesheet
+        
+    def run_rulesheet(self, method='GET', accept='application/json'):
+        if self.endpoint:
+            #FIXME: This branch has not been tested since refactoring, and almost certainly does not work
+            #FIXME: Just mobe to a subclass
+
+            #(node_uri, node_type, endpoint, doc, metadata, original_wiki_base) = jsonizer
+            #request = urllib2.Request(rest_uri, headers={'Accept': DOCBOOK_IMT})
+            #body = opener.open(request).read()
+            #logger.debug('rest_uri docbook body: ' + body[:200])
+            query = urllib.urlencode({'node_uri': node_uri, 'node_type': node_type, 'original_wiki_base': original_wiki_base, 'original_wiki_link': link})
+            #XXX this will lead to a re-parse of body/doc
+            req = urllib2.Request(endpoint + '?' + query, self.body)
+            output = opener.open(req).read()
+            logger.debug('jsonizer result: ' + repr(rendered))
+        else:
+            #e.g. you can sign a rulesheet as follows:
+            #python -c "import sys, hashlib; print hashlib.sha1('MYSECRET' + sys.stdin.read()).hexdigest()" < rsheet.py 
+            #Make sure the rulesheet has not already been signed (i.e. does not have a hash on the first line)
+            import hashlib
+            rulesheet = self.get_rulesheet()
+            rs = inputsource(rulesheet, resolver=self.resolver)
+            token = rs.stream.readline().strip()
+            #logger.debug('Token: ' + repr((token, self.SECRET)))
+            body = rs.stream.read()
+            if token != hashlib.sha1(node.SECRET + body).hexdigest():
+                raise RuntimeError('Security token verification failed')
+            #chunks = []
+            def U1(text): return U(text, noneok=True)
+            #def write(text):
+            #    chunks.append(text)
+
+            handlers = {}
+            #Decorator that allows the user to define request handler functions in rule sheets
+            def handles(method, match=None):
+                def deco(func):
+                    handlers[method] = (match, func)
+                    return func
+                return deco
+
+            #env = {'write': write, 'resource': self, 'service': service, 'U': U1}
+            env = {'service': service, 'U': U1, 'handles': handles}
+
+            #Execute the rule sheet
+            exec body in env
+            if method in handlers:
+                #output = env['record']()
+                (match, func) = handlers[method]
+                if not match or match(accept):
+                    return func
+        return None
+
+
+node.NODES[RESOURCE_TYPE_TYPE] = resource_type
+
 
 from zenlib import SERVICES
 

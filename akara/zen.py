@@ -67,9 +67,10 @@ from dateutil.parser import parse as dateparse
 import amara
 from amara import _
 from amara.namespaces import *
+from amara.lib import inputsource
 from amara.bindery.model import examplotron_model, generate_metadata
 from amara.writers.struct import *
-from amara.bindery.html import parse as htmlparse
+from amara import bindery
 from amara.lib.iri import split_fragment, relativize, absolutize, basejoin, join
 from amara.bindery.util import dispatcher, node_handler, property_sequence_getter
 #from amara.lib.date import timezone, UTC
@@ -77,14 +78,14 @@ from amara.bindery.util import dispatcher, node_handler, property_sequence_gette
 from akara.registry import list_services, _current_registry
 from akara.util import copy_auth
 #from akara.util.moin import node, ORIG_BASE_HEADER, DOCBOOK_IMT, RDF_IMT, HTML_IMT
-from akara.util.moin import ORIG_BASE_HEADER, DOCBOOK_IMT, RDF_IMT, HTML_IMT
+from akara.util.moin import ORIG_BASE_HEADER, DOCBOOK_IMT, RDF_IMT, HTML_IMT, XML_IMT
 from akara.services import simple_service
 from akara import logger
 from akara import request
 
 from akara.util.moin import wiki_uri
 
-from zenlib.moinmodel import node
+from zenlib.moinmodel import node, moinrest_resolver, parse_moin_xml
 
 #endpoints = AKARA.module_config.get('endpoints')
 #node.ENDPOINTS = endpoints and eval(endpoints)
@@ -171,9 +172,10 @@ def zen_index(top=None, maxcount=None):
         wrapped_resource, orig_resource = wiki_uri(original_base, wrapped_base, link)
         if logger: logger.debug('Resource URIs: ' + repr((link, wrapped_resource, orig_resource)))
         #rest_uri, moin_link = wrapped_uri(original_wiki_base, link)
-        resource = node.factory(wrapped_resource, orig_resource, opener)
+        resource = node.lookup(wrapped_resource, opener=opener)
         try:
-            rendered = resource.run_rulesheet('generate-json')
+            handler = resource.resource_type.run_rulesheet('GET', 'application/json')
+            rendered = handler(resource)
             if rendered:
                 items.append(rendered)
         except (KeyboardInterrupt, SystemExit):
@@ -215,10 +217,11 @@ def builtin_get_resources(type=None, limit=None):
     '''
     handler = copy_auth(request.environ, type)
     opener = urllib2.build_opener(handler) if handler else urllib2.build_opener()
-    req = urllib2.Request(type, headers={'Accept': XML_IMT, 'User-Agents': BROWSER_UA})
-    resp = opener.open(req)
-    body = resp.read()
-    doc = bindery.parse(body)
+    resolver = moinrest_resolver(opener=opener)
+    #req = urllib2.Request(type, headers={'Accept': XML_IMT, 'User-Agents': BROWSER_UA})
+    isrc, resp = parse_moin_xml(type, resolver=resolver)
+    doc = bindery.parse(isrc)
+
     try:
         original_base, wrapped_base, original_page = dict(resp.info())[ORIG_BASE_HEADER].split()
     except KeyError:
@@ -230,4 +233,65 @@ def builtin_get_resources(type=None, limit=None):
         hrefs = islice(hrefs, 0, int(limit))
     hrefs = list(hrefs); logger.debug('builtin_get_resources HREFS1: ' + repr(hrefs))
     return simplejson.dumps((original_base, wrapped_base, original_page, [ navchild.xml_value for navchild in hrefs ]))
+
+
+SERVICE_ID = 'http://purl.org/com/zepheira/zen/create'
+@simple_service('POST', SERVICE_ID, 'zen.create.json', 'application/json')
+def zen_create(body, ctype, rtype=None):
+    '''
+    Extract Exhibit JSON [1] from Moin pages according to Zen conventions
+    
+    top - page on which to start looking for linked Zen resouces
+    maxcount - limit to the number of records returned; unlimited by default
+
+    curl "http://localhost:8880/zen.index.json?top=http://example-akara.com/moin/mywiki/zentoppage"
+
+    [1] For more on Exhibit JSON see: http://www.ibm.com/developerworks/web/library/wa-realweb6/ ; see listing 3
+    '''
+    #Useful: http://www.voidspace.org.uk/python/articles/authentication.shtml
+    #curl "http://localhost:8880/zen.index.json?top=http://community.zepheira.com/wiki/loc/LoC/Collections/"
+    #top = first_item(top, next=partial(assert_not_equal, None, msg=TOP_REQUIRED))
+    this_service = request.environ['SCRIPT_NAME']
+    this_service = request_uri(request.environ)
+    if node.ENDPOINTS is None:
+        node.ENDPOINTS = dict(
+            [ (s.ident, find_peer_service(path))
+              for (path, s) in _current_registry._registered_services.iteritems()
+            ])
+        #logger.debug('Node end-points: ' + repr(node.ENDPOINTS))
+
+    #Set up to use HTTP auth for all wiki requests
+    handler = copy_auth(request.environ, top)
+    opener = urllib2.build_opener(handler) if handler else urllib2.build_opener()
+
+    node = lookup
+    items = []
+    failed = []
+    for link in resources:
+        #print >> sys.stderr, 'LINK:', link
+        #uri = split_fragment(item.resource)[0]
+        #relative = uri[wikibase_len:]
+        #print >> sys.stderr, uri, relative
+        #if rewrite:
+        #    uri = uri.replace(rewrite, wikibase)
+        wrapped_resource, orig_resource = wiki_uri(original_base, wrapped_base, link)
+        if logger: logger.debug('Resource URIs: ' + repr((link, wrapped_resource, orig_resource)))
+        #rest_uri, moin_link = wrapped_uri(original_wiki_base, link)
+        resource = node.lookup(wrapped_resource, opener=opener)
+        try:
+            rendered = resource.run_rulesheet('GET', 'application/json')
+            if rendered:
+                items.append(rendered)
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except Exception, e:
+            logger.info('Exception handling Zen record: ' + wrapped_resource)
+            logger.info('Exception info: ' + repr(e))
+            import traceback; logger.debug(traceback.format_exc())
+            failed.append(wrapped_resource)
+    result = {u'items': items}
+    if failed: result[u'failed'] = failed
+    #XXX Return a Location header
+    return simplejson.dumps(result, indent=4)
+
 
