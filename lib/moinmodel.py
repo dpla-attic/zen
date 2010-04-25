@@ -57,6 +57,7 @@ from amara.lib.iri import split_fragment, relativize, absolutize, IriError
 #from amara.bindery.model import examplotron_model, generate_metadata, metadata_dict
 from amara.bindery.util import dispatcher, node_handler, property_sequence_getter
 
+from akara import httplib2
 from akara.util import copy_auth
 from akara.util.moin import wiki_uri, ORIG_BASE_HEADER, DOCBOOK_IMT, RDF_IMT, HTML_IMT, XML_IMT
 
@@ -129,6 +130,7 @@ class node(object):
     ENDPOINTS = None
 
     _instance_cache = {}
+    H = httplib2.Http('.cache')
 
     @staticmethod
     def lookup(rest_uri, opener=None, resolver=None):
@@ -163,33 +165,15 @@ class node(object):
         resource_type - type of the new resource to be created
         body - input information or document required to construct the resource page, according to the rule sheet
         '''
-        if resource_type in node._instance_cache:
-            #FIXME: Check for cache invalidation first. Right now this cache will last as long as the akara process
-            return node._instance_cache[rest_uri]
-        if opener and not resolver:
+        if not resolver:
             resolver = moinrest_resolver(opener=opener)
+        resource_type = node.lookup(resource_type, resolver=resolver)
+        handler = resource_type.run_rulesheet('POST', ctype)
+        url, wikified = handler(body)
 
-        rendered = resource.run_rulesheet('POST', ctype)
+        resp, content = self.H.request(url, "PUT", body=wikified, headers={'Content-Type' : 'text/plain'})
 
-
-
-
-
-        doc = bindery.parse(isrc)
-        #doc = bindery.parse(isrc, standalone=True, model=MOIN_DOCBOOK_MODEL)
-        if logger: logger.debug('resolver.last_lookup_headers: ' + repr((resolver, resolver.last_lookup_headers)))
-        original_base, wrapped_base, original_page = resolver.last_lookup_headers[ORIG_BASE_HEADER].split()
-        atype = resource_type.construct_id(doc, original_base, wrapped_base, rest_uri)
-        #if logger: logger.debug('Type: ' + akara_type)
-        #Older Moin CMS resource types are implemented by registration to the global node.NODES
-        #Newer Moin CMS resource types are implemented by discovery of a URL,
-        #to which a POST request executes the desired action
-        cls = node.NODES.get(atype, node)
-        instance = cls(doc, rest_uri, original_base, wrapped_base, akara_type=atype, resolver=resolver)
-        node._instance_cache[rest_uri] = instance
-        return instance
-        #return node.ENDPOINTS and (rest_uri, akara_type, node.ENDPOINTS[akara_type], doc, metadata, original_wiki_base)
-
+        return
     
     def __init__(self, doc, rest_uri, original_base, wrapped_base, akara_type=None, resolver=None):
         '''
@@ -295,7 +279,7 @@ class resource_type(node):
             self.rulesheet = rulesheet or UNSPECIFIED
             if logger: logger.debug('RULESHEET: ' + rulesheet)
         return self.rulesheet
-        
+    
     def run_rulesheet(self, method='GET', accept='application/json'):
         if self.endpoint:
             #FIXME: This branch has not been tested since refactoring, and almost certainly does not work

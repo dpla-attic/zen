@@ -1,10 +1,11 @@
+import simplejson
+
 #Declare transform services
 strip = service(u'http://purl.org/xml3k/akara/builtins/string/strip')
 parsedate = service(u'http://purl.org/com/zepheira/zen/temporal/parse-date')
 obj_urls = service(u'http://purl.org/com/zepheira/zen/moinmodel/get-obj-urls')
 link_urls = service(u'http://purl.org/com/zepheira/zen/moinmodel/get-link-urls')
 
-@handles('GET')
 def record(resource):
     #Data extraction
     bio = resource.definition_section(u'poet:bio')
@@ -20,3 +21,12 @@ def record(resource):
       u'description': U(resource.section(u'About')),
     }
     return obj
+
+@handles('GET')
+def get_poet(resource):
+    return simplejson.dumps(record(resource))
+
+@handles('collect')
+def collect_poets(resources):
+    return simplejson.dumps(list(resources))
+

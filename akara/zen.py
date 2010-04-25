@@ -60,19 +60,21 @@ import urllib, urllib2
 import datetime
 from itertools import islice
 from wsgiref.util import request_uri
+from itertools import dropwhile
 
 import simplejson
 from dateutil.parser import parse as dateparse
 
 import amara
 from amara import _
-from amara.namespaces import *
+#from amara.namespaces import *
 from amara.lib import inputsource
 from amara.bindery.model import examplotron_model, generate_metadata
 from amara.writers.struct import *
 from amara import bindery
 from amara.lib.iri import split_fragment, relativize, absolutize, basejoin, join
 from amara.bindery.util import dispatcher, node_handler, property_sequence_getter
+from amara.lib.util import first_item
 #from amara.lib.date import timezone, UTC
 
 from akara.registry import list_services, _current_registry
@@ -80,12 +82,15 @@ from akara.util import copy_auth
 #from akara.util.moin import node, ORIG_BASE_HEADER, DOCBOOK_IMT, RDF_IMT, HTML_IMT
 from akara.util.moin import ORIG_BASE_HEADER, DOCBOOK_IMT, RDF_IMT, HTML_IMT, XML_IMT
 from akara.services import simple_service
+from akara.services import method_dispatcher
+from akara.util import status_response
 from akara import logger
 from akara import request
 
 from akara.util.moin import wiki_uri
 
 from zenlib.moinmodel import node, moinrest_resolver, parse_moin_xml
+from zenlib.util import find_peer_service
 
 #endpoints = AKARA.module_config.get('endpoints')
 #node.ENDPOINTS = endpoints and eval(endpoints)
@@ -101,6 +106,9 @@ PASSWD = AKARA.module_config.get('moin-passwd', None)
 
 node.SECRET = AKARA.module_config.get('rulesheet-secret', '')
 
+MOINREST_SERVICE_ID = 'http://purl.org/xml3k/akara/services/demo/moinrest'
+
+
 #aname = partial(property_sequence_getter, u"name")
 #aemail = partial(property_sequence_getter, u"email")
 #auri = partial(property_sequence_getter, u"uri")
@@ -111,12 +119,66 @@ UNSUPPORTED_IN_FILENAME = re.compile('\W')
 
 SELF_END_POINT = None
 
-def find_peer_service(peer_path):
-    global SELF_END_POINT
-    if SELF_END_POINT is None:
-        SELF_END_POINT = request_uri(request.environ, include_query=False)
-    return SELF_END_POINT.rsplit('/', 1)[0] + '/' + peer_path
+def zenuri_to_moinrest(environ):
+    #self_end_point = environ['SCRIPT_NAME'].rstrip('/') #$ServerPath/zen
+    #self_end_point = request_uri(environ, include_query=False).rstrip('/')
+    #self_end_point = guess_self_uri(environ)
+    #absolutize(environ['SCRIPT_NAME'].rstrip('/'), request_uri(environ, include_query=False))
+    #logger.debug('moinrest_uri: ' + repr((self_end_point, MOINREST_SERVICE_ID)))
+    moinresttop = find_peer_service(environ, MOINREST_SERVICE_ID)
+    #logger.debug('moinrest_uri: ' + repr(moinresttop))
+    #logger.debug('moinrest_uri: ' + repr(environ['PATH_INFO']))
+    moinrest_uri = join(moinresttop, environ['PATH_INFO'].lstrip('/'))
+    logger.debug('moinrest_uri: ' + repr(moinrest_uri))
+    return moinrest_uri
 
+
+DEFAULT_MOUNT = 'zen'
+SERVICE_ID = 'http://purl.org/com/zepheira/zen/main'
+
+# ----------------------------------------------------------------------
+#                       HTTP Method Handlers
+# ----------------------------------------------------------------------
+# The following functions implement versions of the various HTTP methods 
+# (GET, HEAD, POST, PUT).  Each method is actually implemented as a
+# a pair of functions.  One is a private implementation (e.g., _get_page).  
+# The other function is a wrapper that encloses each handler with the error 
+# handling function above (moin_error_handler).   Again, this is to avoid
+# excessive duplication of error handling code.
+
+#@method_dispatcher(SERVICE_ID, DEFAULT_MOUNT, wsgi_wrapper=moin_error_wrapper)
+@method_dispatcher(SERVICE_ID, DEFAULT_MOUNT)
+def dispatcher():
+    #__doc__ = SAMPLE_QUERIES_DOC
+    return
+
+
+@dispatcher.method("GET")
+def get_resource(environ, start_response):
+    #Set up to use HTTP auth for all wiki requests
+    baseuri = environ['SCRIPT_NAME'].rstrip('/') #$ServerPath/zen
+    handler = copy_auth(environ, baseuri)
+    opener = urllib2.build_opener(handler) if handler else urllib2.build_opener()
+
+    resource = node.lookup(zenuri_to_moinrest(environ), opener=opener)
+    resolver = resource.resolver
+    
+    accepted_imts = environ.get('HTTP_ACCEPT', 'application/json').split(',')
+    logger.debug('accepted_imts: ' + repr(accepted_imts))
+    imt = first_item(dropwhile(lambda x: '*' in x, accepted_imts))
+
+    #FIXME: Remove the hard-coded JSON use
+    #Idea: Let the rulesheet define a collect function, which is basically a coroutine used to aggregate the result
+
+    handler = resource.resource_type.run_rulesheet('GET', imt)
+    rendered = handler(resource)
+    start_response(status_response(httplib.OK), [("Content-Type", imt)])
+    #start_response(status_response(status), [("Content-Type", ctype), (moin.ORIG_BASE_HEADER, moin_base_info)])
+    return rendered
+
+
+
+#--- %< --- "Classic" Zen interface
 
 TOP_REQUIRED = _("The 'top' query parameter is mandatory.")
 
@@ -139,10 +201,10 @@ def zen_index(top=None, maxcount=None):
     #curl "http://localhost:8880/zen.index.json?top=http://community.zepheira.com/wiki/loc/LoC/Collections/"
     #top = first_item(top, next=partial(assert_not_equal, None, msg=TOP_REQUIRED))
     this_service = request.environ['SCRIPT_NAME']
-    this_service = request_uri(request.environ)
+    this_service = request_uri(request.environ, include_query=False).rstrip('/')
     if node.ENDPOINTS is None:
         node.ENDPOINTS = dict(
-            [ (s.ident, find_peer_service(path))
+            [ (s.ident, find_peer_service(this_service, s.id))
               for (path, s) in _current_registry._registered_services.iteritems()
             ])
         #logger.debug('Node end-points: ' + repr(node.ENDPOINTS))
@@ -157,8 +219,32 @@ def zen_index(top=None, maxcount=None):
     req = urllib2.Request(url)
     resp = opener.open(req)
     body = resp.read()
-    original_base, wrapped_base, original_page, resources = simplejson.loads(body)
+    original_base, wrapped_base, original_page, resource_links = simplejson.loads(body)
     logger.debug('HREF2: ' + repr((original_base, wrapped_base, original_page, resources)))
+
+    resources = []
+    failed = []
+    for link in resource_links:
+        #print >> sys.stderr, 'LINK:', link
+        #uri = split_fragment(item.resource)[0]
+        #relative = uri[wikibase_len:]
+        #print >> sys.stderr, uri, relative
+        #if rewrite:
+        #    uri = uri.replace(rewrite, wikibase)
+        wrapped_resource, orig_resource = wiki_uri(original_base, wrapped_base, link)
+        if logger: logger.debug('Resource URIs: ' + repr((link, wrapped_resource, orig_resource)))
+        #rest_uri, moin_link = wrapped_uri(original_wiki_base, link)
+        resource = node.lookup(wrapped_resource, opener=opener)
+        resources.append(resource)
+    handler = resource.resource_type.run_rulesheet('collect', 'application/json')
+    rendered = handler(resources)
+    return rendered
+    #result = {u'items': items}
+    #if failed: result[u'failed'] = failed
+    return simplejson.dumps(result, indent=4)
+
+#-----------
+
 
     items = []
     failed = []
@@ -174,7 +260,7 @@ def zen_index(top=None, maxcount=None):
         #rest_uri, moin_link = wrapped_uri(original_wiki_base, link)
         resource = node.lookup(wrapped_resource, opener=opener)
         try:
-            handler = resource.resource_type.run_rulesheet('GET', 'application/json')
+            handler = resource.resource_type.run_rulesheet('collect', 'application/json')
             rendered = handler(resource)
             if rendered:
                 items.append(rendered)
@@ -253,10 +339,11 @@ def zen_create(body, ctype, rtype=None):
     #top = first_item(top, next=partial(assert_not_equal, None, msg=TOP_REQUIRED))
     this_service = request.environ['SCRIPT_NAME']
     this_service = request_uri(request.environ)
+    this_service = request_uri(request.environ, include_query=False).rstrip('/')
     if node.ENDPOINTS is None:
         node.ENDPOINTS = dict(
-            [ (s.ident, find_peer_service(path))
-              for (path, s) in _current_registry._registered_services.iteritems()
+            [ (s.ident, find_peer_service(this_service, s.id))
+              for (path, s.id) in _current_registry._registered_services.iteritems()
             ])
         #logger.debug('Node end-points: ' + repr(node.ENDPOINTS))
 
