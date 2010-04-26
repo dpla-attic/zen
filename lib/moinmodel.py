@@ -40,7 +40,7 @@ from gettext import gettext as _
 
 from dateutil.parser import parse as dateparse
 
-from functools import wraps
+from functools import wraps, partial
 
 import amara
 from amara import bindery
@@ -246,6 +246,24 @@ class node(object):
         Helper to extract the first definition list from a named section
         '''
         return self.definition_list(u'.//gloss', contextnode=self.section(title), patterns=patterns)
+        
+    def list_section(self, title):
+        '''
+        Helper to extract all list items from a section
+        '''
+        #XXX: Should support flattening lists, or even returning nested lists
+        l = self.section(title).xml_select(u'.//ul')[0]
+        return list(l.li)
+
+    def get_proxy(self, method, accept=None):
+        return self.resource_type.run_rulesheet(method, accept)
+
+    def absolute_wrap(self, link):
+        link = '/' + link.lstrip('/')
+        #if logger: logger.debug('absolute_wrap: ' + repr((self.original_base, self.wrapped_base, link, self.rest_uri)))
+        wrapped_link, orig_link = wiki_uri(self.original_base, self.wrapped_base, link, self.rest_uri)
+        #if logger: logger.debug('absolute_wrap: ' + repr((link, wrapped_link, orig_link)))
+        return wrapped_link
 
 
 node.NODES[node.AKARA_TYPE] = node
@@ -315,21 +333,30 @@ class resource_type(node):
             #Decorator that allows the user to define request handler functions in rule sheets
             def handles(method, match=None):
                 def deco(func):
-                    handlers[method] = (match, func)
+                    handlers.setdefault(method, []).append((match, func))
                     return func
                 return deco
 
             #env = {'write': write, 'resource': self, 'service': service, 'U': U1}
-            env = {'service': service, 'U': U1, 'handles': handles}
+            resource_getter = partial(node.lookup, resolver=self.resolver)
+            env = {'service': service, 'U': U1, 'handles': handles, 'R': resource_getter}
 
             #Execute the rule sheet
             exec body in env
-            if method in handlers:
-                #output = env['record']()
-                (match, func) = handlers[method]
-                if not match or match(accept):
-                    return func
-        return None
+            default = None
+            matching_handler = None
+            for (match, func) in handlers.get(method, []):
+                if logger: logger.debug('(match, func): ' + repr((match, func)))
+                if isinstance(match, basestring):
+                    if match == accept:
+                        matching_handler = func
+                elif match is None:
+                    default = func
+                else:
+                    if match(accept):
+                        matching_handler = func
+            if logger: logger.debug('(matching_handler, default): ' + repr((matching_handler, default)))
+        return matching_handler or default
 
 
 node.NODES[RESOURCE_TYPE_TYPE] = resource_type

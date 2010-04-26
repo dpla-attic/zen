@@ -6,7 +6,9 @@ parsedate = service(u'http://purl.org/com/zepheira/zen/temporal/parse-date')
 obj_urls = service(u'http://purl.org/com/zepheira/zen/moinmodel/get-obj-urls')
 link_urls = service(u'http://purl.org/com/zepheira/zen/moinmodel/get-link-urls')
 
-def record(resource):
+#Used to serve requests for a raw Python dictionary
+@handles('GET', 'raw/pydict')
+def objectify(resource):
     #Data extraction
     bio = resource.definition_section(u'poet:bio')
 
@@ -22,11 +24,13 @@ def record(resource):
     }
     return obj
 
+#Used to serve normal HTTP GET requests for the default representation of this resource
 @handles('GET')
 def get_poet(resource):
-    return simplejson.dumps(record(resource))
+    return simplejson.dumps(objectify(resource))
 
-@handles('collect')
+#Used to serve requests for a collection of resources, in raw form
+@handles('collect', 'raw/pydict')
 def collect_poets(resources):
-    return simplejson.dumps(list(resources))
+    return simplejson.dumps([objectify(resource) for resource in resources])
 

@@ -204,7 +204,7 @@ def zen_index(top=None, maxcount=None):
     this_service = request_uri(request.environ, include_query=False).rstrip('/')
     if node.ENDPOINTS is None:
         node.ENDPOINTS = dict(
-            [ (s.ident, find_peer_service(this_service, s.id))
+            [ (s.ident, find_peer_service(request.environ, s.ident))
               for (path, s) in _current_registry._registered_services.iteritems()
             ])
         #logger.debug('Node end-points: ' + repr(node.ENDPOINTS))
@@ -220,7 +220,7 @@ def zen_index(top=None, maxcount=None):
     resp = opener.open(req)
     body = resp.read()
     original_base, wrapped_base, original_page, resource_links = simplejson.loads(body)
-    logger.debug('HREF2: ' + repr((original_base, wrapped_base, original_page, resources)))
+    logger.debug('HREF2: ' + repr((original_base, wrapped_base, original_page, resource_links)))
 
     resources = []
     failed = []
@@ -342,7 +342,7 @@ def zen_create(body, ctype, rtype=None):
     this_service = request_uri(request.environ, include_query=False).rstrip('/')
     if node.ENDPOINTS is None:
         node.ENDPOINTS = dict(
-            [ (s.ident, find_peer_service(this_service, s.id))
+            [ (s.ident, find_peer_service(request.environ, s.id))
               for (path, s.id) in _current_registry._registered_services.iteritems()
             ])
         #logger.debug('Node end-points: ' + repr(node.ENDPOINTS))
