@@ -156,8 +156,10 @@ def geolookup_json(place=None):
     if geoquery in geocache:
         latlong = geocache[geoquery]
     else:
+        #geonames.org all of a sudden doesn't seem to like spaces after commas
+        q = ','.join([ comp.strip() for comp in geoquery.encode('utf-8').split(',')])
         try:
-            place, (lat, long_) = GEOCODER.geocode(geoquery.encode('utf-8'), exactly_one=False).next()
+            place, (lat, long_) = GEOCODER.geocode(q, exactly_one=False).next()
             latlong = "%0.03f,%0.03f"%(lat, long_)
         except (ValueError, urllib2.URLError, StopIteration), e:
             #import traceback; traceback.print_exc()

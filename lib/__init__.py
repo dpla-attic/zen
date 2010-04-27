@@ -17,5 +17,9 @@ def register_service(s):
         SERVICES[s[0]] = s[1]
 
 #Bootstrap in the built-in ("local") services
-from zenlib import local
+try:
+    from zenlib import local
+except ImportError:
+    #This will be the case during install
+    pass #Is this really a good idea?  What if there is really a problem?
 
