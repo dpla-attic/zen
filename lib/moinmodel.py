@@ -66,8 +66,20 @@ try:
 except ImportError:
     logger = None
 
+
 def cleanup_text_blocks(text):
     return '\n'.join([line.strip() for line in text.splitlines() ])
+
+
+def linkify(link, wikibase):
+    '''
+    Try to construct Moin-style link markup from a given link
+    '''
+    rel = relativize(link, wikibase)
+    if rel:
+        return u'[[%s]]'%rel
+    else:
+        return u'[[%s]]'%link
 
 #class construct(object):
 #    '''

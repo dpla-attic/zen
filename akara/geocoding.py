@@ -1,9 +1,58 @@
 #!/usr/bin/env python
 # encoding: utf-8
 """
+geocoding.py
+
+Copyright 2008-2010 Zepheira LLC
+
+Services for geocoding
+
 Requires: geopy, simplejson, and feedparser
 
-Copyright 2008-2009 Zepheira LLC
+Accesses a Moin wiki (via the Akara moinrest wrapper) to use as a source for a
+authoring and metadata aextraction
+
+Based on Moin/CMS (see http://wiki.xml3k.org/Akara/Services/MoinCMS )
+
+@ 2009 by Zepheira LLC
+
+This file is part of the open source Zen project,
+provided under the Apache 2.0 license.
+See the files LICENSE and NOTICE for details.
+Project home, documentation, distributions: http://foundry.zepheira.com/projects/zen
+
+See:
+
+ * http://purl.org/xml3k/akara
+ * http://foundry.zepheira.com/projects/zen
+ 
+= Defined REST entry points =
+
+http://purl.org/com/zepheira/services/ct.gov.moin (ct.gov.moin) Handles POST
+http://labwiki.semioclinical.com/mywiki/resources/ct.gov/zen (ct.gov.zen.js) Handles GET
+
+= Configuration =
+
+moinrestbase (required) - the base Moin/REST URI for the place where pages should
+                          be added/updated
+A closer look at moinrestbase.  In the example value: http://localhost:8880/moin/wikiid/
+
+ * http://localhost:8880/... - the URL to the root of an Akara instance
+ * ...moin... - the moint point of the Moin/REST wrapper module under Akara (moinrest.py)
+ * ...wikiid... - the wiki ID for a specific, wrapped Moin wiki, as defined e.g.
+   in a target-xxx config var for moinrest.py e.g. "wikiid" above would correspond to
+   "target-wikiid" config var for moinrest
+
+Sample config:
+
+[zen]
+moinrestbase = http://localhost:8880/moin/wikiid/
+
+= Notes on security =
+
+To-do
+
+
 """
 
 #See also: [[http://us.pycon.org/2009/tutorials/schedule/1PM4/|"Working with Geographic Information Systems (GIS) in Python"]]
@@ -32,10 +81,10 @@ from akara.util import status_response
 from akara import response
 from akara import logger
 
-#OUTDATED: GEOCODER = AKARA.module_config.get('geocoder', "geocoders.Google(resource='maps')")
 GEOCODER = AKARA.module_config.get('geocoder', "geocoders.get_geocoder('geonames')")
 #GEOCODER = AKARA.module_config.get('geocoder', "geocoders.get_geocoder('google', resource='maps')")
 GEOCODER = eval(GEOCODER)
+DBFILE = AKARA.module_config.get('dbfile')
 
 def state_lookup(s):
     result = US_STATES_GEO.xml_select(u'provinces/*[@abbr="%s"]'%s)
@@ -48,14 +97,15 @@ def ip2geo(addr):
     '''
     See http://hostip.info for more info on the service used
     '''
-    rows = g_db.execute("select * from node where ip=?", (addr,))
-    try:
-        (ip, latlong, city, state, country, updated) = rows.next()
-        logger.debug('Found in DB: ' + addr + ":" + latlong)
-        state = state_lookup(state) or state
-        return {'latlong': latlong, 'city': city, 'state': state, 'country': country}
-    except StopIteration:
-        pass
+    if g_db:
+        rows = g_db.execute("select * from node where ip=?", (addr,))
+        try:
+            (ip, latlong, city, state, country, updated) = rows.next()
+            logger.debug('Found in DB: ' + addr + ":" + latlong)
+            state = state_lookup(state) or state
+            return {'latlong': latlong, 'city': city, 'state': state, 'country': country}
+        except StopIteration:
+            pass
 
     logger.debug('Looking up geolocation for: ' + addr)
     request = "http://api.hostip.info/?ip=" + addr
@@ -79,9 +129,10 @@ def ip2geo(addr):
         #Unknown
         latlong = country = city = state = u''
     state = state_lookup(state) or state
-    #if USAGE_LIMIT_EXCEEDED: return None
-    res = g_db.execute("insert into node values (?, ?, ?, ?, ?, ?)", (addr, latlong, city, state, country, datetime.now(),))
-    g_db.commit()
+    if g_db:
+        #if USAGE_LIMIT_EXCEEDED: return None
+        res = g_db.execute("insert into node values (?, ?, ?, ?, ?, ?)", (addr, latlong, city, state, country, datetime.now(),))
+        g_db.commit()
     return {'latlong': latlong, 'city': city, 'state': state, 'country': country}
 
 
@@ -89,7 +140,7 @@ g_db = None
 
 def check_initdb():
     global g_db
-    if g_db is None:
+    if g_db is None and DBFILE:
         g_db = sqlite3.connect(DBFILE)
         try:
             g_db.execute("select count(*) from node")
@@ -100,15 +151,6 @@ def check_initdb():
             g_db.commit()
     return
 
-
-#DBFILE = os.environ['ZEPHEIRA_AKARA_GEODBFILE']
-#print >> sys.stderr, dict(AKARA_MODULE_CONFIG)
-#print >> sys.stderr, AKARA_MODULE_CONFIG.server_root_relative('dbfile')
-#DBFILE = AKARA.module_config.server_root_relative(AKARA_MODULE_CONFIG['dbfile'])
-DBFILE = AKARA.module_config['dbfile']
-#dbfile (ServerRoot)/path/to/dbfile
-#print 'GRIPPO', DBFILE
-#print >> sys.stderr, "DBFILE: ", DBFILE
 
 SERVICE_ID = 'http://purl.org/com/zepheira/services/ipgeo.json'
 @simple_service('GET', SERVICE_ID, 'ipgeo.json', 'application/json')

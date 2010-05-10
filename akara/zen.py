@@ -8,7 +8,7 @@ authoring and metadata aextraction
 
 Based on Moin/CMS (see http://wiki.xml3k.org/Akara/Services/MoinCMS )
 
-@ 2009 by Zepheira LLC
+@ 2009-2010 by Zepheira LLC
 
 This file is part of the open source Zen project,
 provided under the Apache 2.0 license.
@@ -54,6 +54,7 @@ To-do
 import os
 import sys
 import re
+import cgi
 import pprint
 import httplib
 import urllib, urllib2
@@ -63,6 +64,7 @@ from wsgiref.util import request_uri
 from itertools import dropwhile
 
 import simplejson
+import httplib2
 from dateutil.parser import parse as dateparse
 
 import amara
@@ -78,7 +80,7 @@ from amara.lib.util import first_item
 #from amara.lib.date import timezone, UTC
 
 from akara.registry import list_services, _current_registry
-from akara.util import copy_auth
+from akara.util import copy_auth, extract_auth, read_http_body_to_temp
 #from akara.util.moin import node, ORIG_BASE_HEADER, DOCBOOK_IMT, RDF_IMT, HTML_IMT
 from akara.util.moin import ORIG_BASE_HEADER, DOCBOOK_IMT, RDF_IMT, HTML_IMT, XML_IMT
 from akara.services import simple_service
@@ -176,6 +178,45 @@ def get_resource(environ, start_response):
     #start_response(status_response(status), [("Content-Type", ctype), (moin.ORIG_BASE_HEADER, moin_base_info)])
     return rendered
 
+
+@dispatcher.method("PUT")
+def put_resource(environ, start_response):
+    #Set up to use HTTP auth for all wiki requests
+    baseuri = environ['SCRIPT_NAME'].rstrip('/') #$ServerPath/zen
+    handler = copy_auth(environ, baseuri)
+    creds = extract_auth(environ)
+    opener = urllib2.build_opener(handler) if handler else urllib2.build_opener()
+
+    import pprint; logger.debug('GRIPPO: ' + repr(pprint.pformat(environ)))
+    imt = environ['CONTENT_TYPE']
+    qparams = cgi.parse_qs(environ['QUERY_STRING'])
+    rtype = qparams.get('type')
+    if not rtype:
+        status = httplib.BAD_REQUEST
+        start_response(status_response(status), [("Content-Type", 'text/plain')])
+        return 'type URL parameter required'
+
+    resource_type = node.lookup(rtype[0], opener=opener)
+    resolver = resource_type.resource_type
+    
+    temp_fpath = read_http_body_to_temp(environ, start_response)
+    body = open(temp_fpath, "r").read()
+
+    handler = resource_type.run_rulesheet('PUT', imt)
+    wikified = handler(resource_type, body)
+    logger.debug('GRIPPO: ' + repr((wikified,)))
+
+    H = httplib2.Http('.cache')
+
+    if creds:
+        user, passwd = creds
+        H.add_credentials(user, passwd)
+    
+    headers = {'Content-Type' : 'text/plain'}
+    resp, content = H.request(zenuri_to_moinrest(environ), "PUT", body=wikified.encode('UTF-8'), headers={'Content-Type' : 'text/plain'})
+
+    start_response(status_response(httplib.OK), [("Content-Type", 'text/plain')])
+    return 'Updated OK'
 
 
 #--- %< --- "Classic" Zen interface
