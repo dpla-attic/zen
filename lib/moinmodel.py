@@ -393,20 +393,24 @@ def get_link_urls(node):
     links = [ attr.xml_value for attr in node.xml_select(u'.//@href') ]
     return links
 get_link_urls.serviceid = u'http://purl.org/com/zepheira/zen/moinmodel/get-link-urls'
-
 register_service(get_link_urls)
 
 def get_obj_urls(node):
     links = [ attr.xml_value for attr in node.xml_select(u'.//@src') ]
     return links
 get_obj_urls.serviceid = u'http://purl.org/com/zepheira/zen/moinmodel/get-obj-urls'
-
 register_service(get_obj_urls)
 
 def jsonize(obj):
     import simplejson
     return simplejson.dumps(obj)
 jsonize.serviceid = u'http://purl.org/com/zepheira/zen/exhibit/jsonize'
-
 register_service(jsonize)
+
+def extract_tags(node):
+    l = node.xml_select(u'.//ul')[0]
+    tags = [ U(li).strip() for li in list(l.li) ]
+    return tags
+extract_tags.serviceid = u'http://purl.org/com/zepheira/zen/util/extract-tags'
+register_service(extract_tags)
 

@@ -9,8 +9,9 @@ setup(name = "zenlib",
       author='Zepheira',
       author_email='info@zepheira.com',
       url='http://freemix.it',
-      package_dir={'zenlib': 'lib', 'geopy': 'geopy_export/geopy'},
+      package_dir={'zenlib': 'lib', 'geopy': 'geopy_export/geopy', '': 'thirdparty'},
       packages=['zenlib', 'geopy', 'geopy.geocoders', 'geopy.parsers'],
+      py_modules = ['diff_match_patch'],
       #package_data={'akara': ["akara.conf"]},
       )
 

@@ -11,6 +11,13 @@ cd geopy_export
 patch -p0 < ../geopy.diff 
 cd ..
 
+Check for latest version of diff_match_patch
+
+Grab http://google-diff-match-patch.googlecode.com/svn/trunk/python/diff_match_patch.py
+
+And put this in thirdparty
+
+
 Then package:
 
 python setup.py build
