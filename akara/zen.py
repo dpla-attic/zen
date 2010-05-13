@@ -99,13 +99,6 @@ from zenlib.util import find_peer_service
 #logger.debug('GRIPPO: ' + repr((endpoints, eval(endpoints))))
 #logger.debug('GRIPPO: ' + repr((endpoints, )))
 
-#AKARA is automatically defined at global scope for a module running within Akara
-MOINBASE = AKARA.module_config['moinrestbase']
-#Make sure the URl ends with a / for graceful URL resolution
-MOINBASE = MOINBASE.rstrip('/')+'/'
-USER = AKARA.module_config.get('moin-user', None)
-PASSWD = AKARA.module_config.get('moin-passwd', None)
-
 node.SECRET = AKARA.module_config.get('rulesheet-secret', '')
 
 MOINREST_SERVICE_ID = 'http://purl.org/xml3k/akara/services/demo/moinrest'
