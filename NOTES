@@ -23,3 +23,5 @@ Then package:
 python setup.py build
 python setup.py sdist --formats=bztar,gztar,zip
 
+If needed, update version info in lib/__init__.py
+
