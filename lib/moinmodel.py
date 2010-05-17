@@ -43,7 +43,7 @@ from dateutil.parser import parse as dateparse
 from functools import wraps, partial
 
 import amara
-from amara import bindery
+from amara import tree, bindery
 from amara.lib.util import first_item
 from amara.lib import inputsource
 #from amara import inputsource as baseinputsource
@@ -207,7 +207,14 @@ class node(object):
             self.endpoint = None
             #FIXME: Inelegant not to use polymorphism for the RESOURCE_TYPE_TYPE test
             if isinstance(akara_type, basestring) and akara_type != RESOURCE_TYPE_TYPE:
-                self.resource_type = node.lookup(akara_type, resolver=self.resolver)
+                try:
+                    self.resource_type = node.lookup(akara_type, resolver=self.resolver)
+                except (KeyboardInterrupt, SystemExit):
+                    raise
+                except Exception as e:
+                    #If there is an error looking up the resource type, just leave off.  Some operations will then fail
+                    logger.debug('Exception looking up resource type %s: %s'%(akara_type, repr(e)))
+                    pass
         return
 
     def load(self):
@@ -282,10 +289,66 @@ node.NODES[node.AKARA_TYPE] = node
 
 def parse_moin_xml(uri, resolver=None):
     #Stupid Moin XML export uses bogus nbsps, so this function encapsulates the kludge
+    if logger: logger.debug('parse_moin_xml: ' + repr((uri,)))
     req = urllib2.Request(uri, headers={'Accept': XML_IMT})
     resp = urllib2.urlopen(req)
     body = resp.read()
     return inputsource(body.replace('&nbsp;', '&#160;'), resolver=resolver), resp
+
+
+class rulesheet(object):
+    def __init__(self, source, safe=False):
+        '''
+        '''
+        rs = inputsource(source)
+        self.safe = safe
+        if not safe:
+            self.token = rs.stream.readline().strip().lstrip('#')
+        self.body = rs.stream.read()
+        return
+
+    #
+    def run(self, resource, method='GET', accept='application/json'):
+        #e.g. you can sign a rulesheet as follows:
+        #python -c "import sys, hashlib; print hashlib.sha1('MYSECRET' + sys.stdin.read()).hexdigest()" < rsheet.py 
+        #Make sure the rulesheet has not already been signed (i.e. does not have a hash on the first line)
+        import hashlib
+        if not self.safe:
+            if self.token != hashlib.sha1(node.SECRET + self.body).hexdigest():
+                raise RuntimeError('Security token verification failed')
+        #chunks = []
+        def U1(text): return U(text, noneok=True)
+        #def write(text):
+        #    chunks.append(text)
+
+        handlers = {}
+        #Decorator that allows the user to define request handler functions in rule sheets
+        def handles(method, match=None):
+            def deco(func):
+                handlers.setdefault(method, []).append((match, func))
+                return func
+            return deco
+
+        #env = {'write': write, 'resource': self, 'service': service, 'U': U1}
+        resource_getter = partial(node.lookup, resolver=resource.resolver)
+        env = {'service': service, 'U': U1, 'handles': handles, 'R': resource_getter}
+
+        #Execute the rule sheet
+        exec self.body in env
+        default = None
+        matching_handler = None
+        for (match, func) in handlers.get(method, []):
+            if logger: logger.debug('(match, func): ' + repr((match, func)))
+            if isinstance(match, basestring):
+                if match == accept:
+                    matching_handler = func
+            elif match is None:
+                default = func
+            else:
+                if match(accept):
+                    matching_handler = func
+        if logger: logger.debug('(matching_handler, default): ' + repr((matching_handler, default)))
+        return matching_handler or default
 
 
 class resource_type(node):
@@ -407,10 +470,51 @@ def jsonize(obj):
 jsonize.serviceid = u'http://purl.org/com/zepheira/zen/exhibit/jsonize'
 register_service(jsonize)
 
-def extract_tags(node):
+
+def handle_list(node):
+    return [ simple_struct(li) for li in node.li ]
+
+def handle_gloss(node):
+    return dict((U(l), simple_struct(first_item(l.xml_select(u'following-sibling::item'))))
+                       for l in node.label)
+
+def handle_subsection(node):
+    return {U(node.title): simple_struct(node)}
+
+
+structure_handlers = {
+    u'ul': handle_list,
+    u'p': U,
+    u'gloss': handle_gloss,
+    u's1': handle_subsection,
+    u's2': handle_subsection,
+    u's3': handle_subsection,
+    u's4': handle_subsection,
+    u's5': handle_subsection,
+}
+
+
+def simple_struct(node):
+    if len(node.xml_children) == 1 and not isinstance(node.xml_first_child, tree.element):
+        return node.xml_first_child.xml_value
+    top = []
+    for child in node.xml_elements:
+        handler = structure_handlers.get(child.xml_local, U)
+        result = handler(child)
+        if result.strip():
+            top.append(result)
+    #logger.debug("simple_struct: " + repr(top))
+    if len(top) == 1: top = top[0]
+    return top
+simple_struct.serviceid = u'http://purl.org/com/zepheira/zen/util/simple-struct'
+register_service(simple_struct)
+
+def extract_liststrings(node):
+    '''
+    '''
     l = node.xml_select(u'.//ul')[0]
-    tags = [ U(li).strip() for li in list(l.li) ]
-    return tags
-extract_tags.serviceid = u'http://purl.org/com/zepheira/zen/util/extract-tags'
-register_service(extract_tags)
+    items = [ U(li).strip() for li in list(l.li) ]
+    return items
+extract_liststrings.serviceid = u'http://purl.org/com/zepheira/zen/util/extract-liststrings'
+register_service(extract_liststrings)
 

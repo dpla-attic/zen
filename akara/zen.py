@@ -91,7 +91,7 @@ from akara import request
 
 from akara.util.moin import wiki_uri
 
-from zenlib.moinmodel import node, moinrest_resolver, parse_moin_xml
+from zenlib.moinmodel import node, rulesheet, moinrest_resolver, parse_moin_xml
 from zenlib.util import find_peer_service
 
 #endpoints = AKARA.module_config.get('endpoints')
@@ -162,10 +162,13 @@ def get_resource(environ, start_response):
     logger.debug('accepted_imts: ' + repr(accepted_imts))
     imt = first_item(dropwhile(lambda x: '*' in x, accepted_imts))
 
-    #FIXME: Remove the hard-coded JSON use
-    #Idea: Let the rulesheet define a collect function, which is basically a coroutine used to aggregate the result
+    qparams = cgi.parse_qs(environ['QUERY_STRING'])
+    rulesheet_override = qparams.get('rulesheet')
 
-    handler = resource.resource_type.run_rulesheet('GET', imt)
+    if rulesheet_override:
+        handler = rulesheet(rulesheet_override[0], safe=True).run(resource, 'GET', imt)
+    else:
+        handler = resource.resource_type.run_rulesheet('GET', imt)
     rendered = handler(resource)
     start_response(status_response(httplib.OK), [("Content-Type", imt)])
     #start_response(status_response(status), [("Content-Type", ctype), (moin.ORIG_BASE_HEADER, moin_base_info)])

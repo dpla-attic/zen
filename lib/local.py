@@ -20,6 +20,7 @@ register_service(smart_parse_date)
 from zenlib.exhibit import fixup
 
 #Other built-ins
+#This is really just a demo.  Silly to use in practice.  Just doo spam.strip()
 import string
 string.strip.serviceid = u'http://purl.org/xml3k/akara/builtins/string/strip'
 
