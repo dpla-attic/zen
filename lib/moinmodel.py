@@ -33,6 +33,7 @@ print n.akara_type()
 
 """
 
+import hashlib
 import datetime
 import urllib, urllib2
 from gettext import gettext as _
@@ -297,13 +298,11 @@ def parse_moin_xml(uri, resolver=None):
 
 
 class rulesheet(object):
-    def __init__(self, source, safe=False):
+    def __init__(self, source):
         '''
         '''
         rs = inputsource(source)
-        self.safe = safe
-        if not safe:
-            self.token = rs.stream.readline().strip().lstrip('#')
+        self.token = rs.stream.readline().strip().lstrip('#')
         self.body = rs.stream.read()
         return
 
@@ -312,10 +311,8 @@ class rulesheet(object):
         #e.g. you can sign a rulesheet as follows:
         #python -c "import sys, hashlib; print hashlib.sha1('MYSECRET' + sys.stdin.read()).hexdigest()" < rsheet.py 
         #Make sure the rulesheet has not already been signed (i.e. does not have a hash on the first line)
-        import hashlib
-        if not self.safe:
-            if self.token != hashlib.sha1(node.SECRET + self.body).hexdigest():
-                raise RuntimeError('Security token verification failed')
+        if self.token != hashlib.sha1(node.SECRET + self.body).hexdigest():
+            raise RuntimeError('Security token verification failed')
         #chunks = []
         def U1(text): return U(text, noneok=True)
         #def write(text):

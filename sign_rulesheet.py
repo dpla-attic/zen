@@ -7,5 +7,8 @@ rsheet = sys.argv[2]
 #rulesheet = sys.stdin.read()
 rulesheet = open(rsheet).read()
 
-print hashlib.sha1(secret + rulesheet).hexdigest()
+#FIXME: use / from akara.thirdparty import argparse
+sys.stdout.write('#')
+sys.stdout.write(hashlib.sha1(secret + rulesheet).hexdigest())
+sys.stdout.write('\n')
 sys.stdout.write(rulesheet)

@@ -166,7 +166,7 @@ def get_resource(environ, start_response):
     rulesheet_override = qparams.get('rulesheet')
 
     if rulesheet_override:
-        handler = rulesheet(rulesheet_override[0], safe=True).run(resource, 'GET', imt)
+        handler = rulesheet(rulesheet_override[0]).run(resource, 'GET', imt)
     else:
         handler = resource.resource_type.run_rulesheet('GET', imt)
     rendered = handler(resource)
