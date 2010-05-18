@@ -13,7 +13,6 @@ Project home, documentation, distributions: http://wiki.xml3k.org/Akara
 @copyright: 2009 by Uche ogbuji <uche@ogbuji.net>
 
 
-
 T = ''' title::  httplib2 0.6.0 
  last changed:: 2009-12-28T13:06:56-05:00
  link:: http://bitworking.org/news/2009/12/httplib2-0.6.0
@@ -66,6 +65,7 @@ try:
 except ImportError:
     logger = None
 
+from zenlib import zservice
 
 def cleanup_text_blocks(text):
     return '\n'.join([line.strip() for line in text.splitlines() ])
@@ -439,7 +439,13 @@ node.NODES[RESOURCE_TYPE_TYPE] = resource_type
 
 from zenlib import SERVICES
 
-def service(url):
+def service(url, pymodule=None):
+    '''
+    e.g. service(u'http://example.org/your-service', pymodule="pypath.to.yourmodule")
+    '''
+    if pymodule:
+        #Just importing the module should be enough if they're registering services properly
+        mod = __import__(pymodule)
     return SERVICES[url]
 
 
@@ -452,23 +458,22 @@ def register_node_type(type_id, nclass):
 from zenlib import register_service
 
 #Services for processing Moin pages
+@zservice(u'http://purl.org/com/zepheira/zen/moinmodel/get-link-urls')
 def get_link_urls(node):
     links = [ attr.xml_value for attr in node.xml_select(u'.//@href') ]
     return links
-get_link_urls.serviceid = u'http://purl.org/com/zepheira/zen/moinmodel/get-link-urls'
-register_service(get_link_urls)
 
+
+@zservice(u'http://purl.org/com/zepheira/zen/moinmodel/get-obj-urls')
 def get_obj_urls(node):
     links = [ attr.xml_value for attr in node.xml_select(u'.//@src') ]
     return links
-get_obj_urls.serviceid = u'http://purl.org/com/zepheira/zen/moinmodel/get-obj-urls'
-register_service(get_obj_urls)
 
+
+@zservice(u'http://purl.org/com/zepheira/zen/exhibit/jsonize')
 def jsonize(obj):
     import simplejson
     return simplejson.dumps(obj)
-jsonize.serviceid = u'http://purl.org/com/zepheira/zen/exhibit/jsonize'
-register_service(jsonize)
 
 
 def handle_list(node):
@@ -494,6 +499,7 @@ structure_handlers = {
 }
 
 
+@zservice(u'http://purl.org/com/zepheira/zen/util/simple-struct')
 def simple_struct(node):
     if len(node.xml_children) == 1 and not isinstance(node.xml_first_child, tree.element):
         return node.xml_first_child.xml_value
@@ -501,20 +507,20 @@ def simple_struct(node):
     for child in node.xml_elements:
         handler = structure_handlers.get(child.xml_local, U)
         result = handler(child)
-        if result.strip():
+        if not isinstance(result, basestring) or result.strip():
             top.append(result)
     #logger.debug("simple_struct: " + repr(top))
     if len(top) == 1: top = top[0]
     return top
-simple_struct.serviceid = u'http://purl.org/com/zepheira/zen/util/simple-struct'
-register_service(simple_struct)
 
+
+@zservice(u'http://purl.org/com/zepheira/zen/util/extract-liststrings')
 def extract_liststrings(node):
     '''
     '''
-    l = node.xml_select(u'.//ul')[0]
-    items = [ U(li).strip() for li in list(l.li) ]
+    items = []
+    l = node.xml_select(u'.//ul')
+    if l:
+        items = [ U(li).strip() for li in list(l[0].li) ]
     return items
-extract_liststrings.serviceid = u'http://purl.org/com/zepheira/zen/util/extract-liststrings'
-register_service(extract_liststrings)
 
