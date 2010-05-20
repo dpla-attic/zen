@@ -44,6 +44,7 @@ from functools import wraps, partial
 
 import amara
 from amara import tree, bindery
+from amara.bindery import html
 from amara.lib.util import first_item
 from amara.lib import inputsource
 #from amara import inputsource as baseinputsource
@@ -294,7 +295,7 @@ def parse_moin_xml(uri, resolver=None):
     req = urllib2.Request(uri, headers={'Accept': XML_IMT})
     resp = urllib2.urlopen(req)
     body = resp.read()
-    return inputsource(body.replace('&nbsp;', '&#160;'), resolver=resolver), resp
+    return inputsource(body.replace('&nbsp;', '&#160;').replace('<p><p>', '<p></p>').replace('<p></s2>', '</s2>'), resolver=resolver), resp
 
 
 class rulesheet(object):
@@ -320,8 +321,17 @@ class rulesheet(object):
 
         handlers = {}
         #Decorator that allows the user to define request handler functions in rule sheets
-        def handles(method, match=None):
+        def handles(method, match=None, ttl=3600):
+            '''
+            method - HTTP method for this handler to use, e.g. 'GET' or 'PUT'
+                     Might be a non-standard, internal method for special cases (e.g. 'collect')
+            match - condition to determine when this handler is to be invoked for a given method
+                    if a Unicode object, this should be an IMT to compare to the Accept info for the request
+                    if a callable, should have signature match(accept), return ing True or False
+            ttl - time-to-live for (GET) requests, for setting cache-control headers
+            '''
             def deco(func):
+                func.ttl = ttl
                 handlers.setdefault(method, []).append((match, func))
                 return func
             return deco
@@ -352,6 +362,14 @@ class resource_type(node):
     @staticmethod
     def construct_id(doc, original_base, wrapped_base, rest_uri):
         #type = U(doc.xml_select(u'//definition_list/item[term = "akara:type"]/defn'))
+        '''
+        >>> u1 = iri.absolutize('/b/c', wikibase)
+        >>> u1
+        'http://a.com/b/c'
+        >>> u2 = iri.relativize(u1, wikibase)
+        >>> u2
+        'c'
+        '''
         if logger: logger.debug('Type: ' + repr(list(doc.xml_select(u'//*[@title="akara:metadata"]/gloss/label[.="akara:type"]/following-sibling::item[1]//@href'))))
         type = U(doc.xml_select(u'//*[@title="akara:metadata"]/gloss/label[.="akara:type"]/following-sibling::item[1]//@href'))
         wrapped_type, orig_type = wiki_uri(original_base, wrapped_base, type, rest_uri)
@@ -364,7 +382,7 @@ class resource_type(node):
             #isrc = inputsource(req, resolver=self.resolver)
             if logger: logger.debug('akara type rest_uri: ' + self.rest_uri)
             isrc, resp = parse_moin_xml(self.rest_uri, resolver=self.resolver)
-            doc = bindery.parse(isrc)
+            doc = html.parse(isrc)
             rulesheet = U(doc.xml_select(u'//*[@title="akara:metadata"]/gloss/label[.="akara:rulesheet"]/following-sibling::item[1]//@href'))
             self.rulesheet = rulesheet or UNSPECIFIED
             if logger: logger.debug('RULESHEET: ' + rulesheet)

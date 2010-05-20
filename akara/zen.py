@@ -170,7 +170,7 @@ def get_resource(environ, start_response):
     else:
         handler = resource.resource_type.run_rulesheet('GET', imt)
     rendered = handler(resource)
-    start_response(status_response(httplib.OK), [("Content-Type", imt)])
+    start_response(status_response(httplib.OK), [("Content-Type", imt), ("Cache-Control", str(handler.ttl))])
     #start_response(status_response(status), [("Content-Type", ctype), (moin.ORIG_BASE_HEADER, moin_base_info)])
     return rendered
 
