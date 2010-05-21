@@ -163,7 +163,6 @@ class node(object):
         #doc = bindery.parse(isrc, standalone=True, model=MOIN_DOCBOOK_MODEL)
         original_base, wrapped_base, original_page = resp.info()[ORIG_BASE_HEADER].split()
         atype = resource_type.construct_id(doc, original_base, wrapped_base, rest_uri)
-        #if logger: logger.debug('Type: ' + akara_type)
         #Older Moin CMS resource types are implemented by registration to the global node.NODES
         #Newer Moin CMS resource types are implemented by discovery of a URL,
         #to which a POST request executes the desired action
@@ -362,14 +361,6 @@ class resource_type(node):
     @staticmethod
     def construct_id(doc, original_base, wrapped_base, rest_uri):
         #type = U(doc.xml_select(u'//definition_list/item[term = "akara:type"]/defn'))
-        '''
-        >>> u1 = iri.absolutize('/b/c', wikibase)
-        >>> u1
-        'http://a.com/b/c'
-        >>> u2 = iri.relativize(u1, wikibase)
-        >>> u2
-        'c'
-        '''
         if logger: logger.debug('Type: ' + repr(list(doc.xml_select(u'//*[@title="akara:metadata"]/gloss/label[.="akara:type"]/following-sibling::item[1]//@href'))))
         type = U(doc.xml_select(u'//*[@title="akara:metadata"]/gloss/label[.="akara:type"]/following-sibling::item[1]//@href'))
         wrapped_type, orig_type = wiki_uri(original_base, wrapped_base, type, rest_uri)
@@ -409,7 +400,7 @@ class resource_type(node):
             import hashlib
             rulesheet = self.get_rulesheet()
             rs = inputsource(rulesheet, resolver=self.resolver)
-            token = rs.stream.readline().strip()
+            token = rs.stream.readline().strip().lstrip('#')
             #logger.debug('Token: ' + repr((token, self.SECRET)))
             body = rs.stream.read()
             if token != hashlib.sha1(node.SECRET + body).hexdigest():
