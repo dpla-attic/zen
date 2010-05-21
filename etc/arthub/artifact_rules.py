@@ -25,11 +25,11 @@ def objectify(resource):
 
 #Used to serve normal HTTP GET requests for the default representation of this resource
 @handles('GET')
-def get_poet(resource):
+def get_artifact(resource):
     return simplejson.dumps(objectify(resource), indent=4)
 
 #Used to serve requests for a collection of resources, in raw form
 @handles('collect', 'raw/pydict')
-def collect_poets(resources):
+def collect_artifacts(resources):
     return simplejson.dumps([objectify(resource) for resource in resources], indent=4)
 
