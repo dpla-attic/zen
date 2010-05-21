@@ -412,8 +412,17 @@ class resource_type(node):
 
             handlers = {}
             #Decorator that allows the user to define request handler functions in rule sheets
-            def handles(method, match=None):
+            def handles(method, match=None, ttl=3600):
+                '''
+                method - HTTP method for this handler to use, e.g. 'GET' or 'PUT'
+                         Might be a non-standard, internal method for special cases (e.g. 'collect')
+                match - condition to determine when this handler is to be invoked for a given method
+                        if a Unicode object, this should be an IMT to compare to the Accept info for the request
+                        if a callable, should have signature match(accept), return ing True or False
+                ttl - time-to-live for (GET) requests, for setting cache-control headers
+                '''
                 def deco(func):
+                    func.ttl = ttl
                     handlers.setdefault(method, []).append((match, func))
                     return func
                 return deco
