@@ -1,0 +1,609 @@
+"""load_geonames - build a SQLite database based on data from geonames.org
+
+This is a command-line program with several different interfaces. See
+'usage' for details.
+
+"""
+# Copyright (c) 2009 by Zepheira, LLC
+# This module written by Andrew Dalke <dalke@dalkescientific.com>
+
+import os
+import shutil
+import sys
+import urllib2
+
+import csv
+import itertools
+import re
+import sqlite3
+import unicodedata
+import zipfile
+from cStringIO import StringIO
+
+######## Mirroring
+
+def fetch(remote_url, local_filename):
+    # I could check the ETag or the date and only update as needed,
+    # but for now, just fetch.
+    f = urllib2.urlopen(remote_url)
+    g = open(local_filename, "wb")
+    content_length = int(f.headers["content-length"])
+    bytes_read = 0
+
+    while 1:
+        buf = f.read(16384)
+        if not buf:
+            break
+        g.write(buf)
+        bytes_read += len(buf)
+        percentage = 100.0 * bytes_read / content_length
+        sys.stdout.write("\rDownloading %s: %d/%d bytes (%.1f%%)" %
+                         (local_filename, bytes_read, content_length, percentage))
+        sys.stdout.flush()
+    sys.stdout.write("... Done.\n")
+    sys.stdout.flush()
+    
+    
+
+def mirror():
+    if not os.path.isdir("mirror"):
+        os.mkdir("mirror")
+    fetch("http://download.geonames.org/export/dump/countryInfo.txt", "mirror/countryInfo.txt")
+    fetch("http://download.geonames.org/export/dump/cities1000.zip", "mirror/cities1000.zip")
+    fetch("http://download.geonames.org/export/dump/admin1CodesASCII.txt", "mirror/admin1CodesASCII.txt")
+
+############ Information about "states"
+
+# In this system, a "state" is:
+#   - one of the 50 US states, plus the US regions like DC and Puerto Rico
+#   - one of the 10 Canadian provinces and 3 territories
+#   - dependent nations which are handled by the USPS
+
+# For Freemix, some places are treated as both a state and a country.
+
+# US postal codes which are also countries
+# (Either dependent to the US or
+# Compact of Free Association countries)
+other_postal_regions = """
+2081918 \t FM \t FEDERATED STATES OF MICRONESIA  \t FM
+2080185 \t MH \t MARSHALL ISLANDS                \t MH
+1559582 \t PW \t PALAU                           \t PW
+4043988 \t GU \t GUAM                            \t GU
+5880801 \t AS \t AMERICAN SAMOA                  \t AS
+4041467 \t MP \t NORTHERN MARIANA ISLANDS        \t MP
+4566966 \t PR \t PUERTO RICO                     \t PR
+4796775 \t VI \t VIRGIN ISLANDS                  \t VI
+"""
+
+# Ignoring the armed forces designations
+
+US_postal_regions = """
+US.AL \t ALABAMA                    \t   AL \t 86.63 \t 32.84
+US.AK \t ALASKA                     \t   AK \t 152.47 \t 64.73
+US.AZ \t ARIZONA                    \t   AZ \t 111.79 \t 34.31
+US.AR \t ARKANSAS                   \t   AR \t 92.30 \t 34.81
+US.CA \t CALIFORNIA                 \t   CA \t 120.08 \t 36.97
+US.CO \t COLORADO                   \t   CO \t 105.64 \t 39.00
+US.CT \t CONNECTICUT                \t   CT \t 72.71 \t 41.59
+US.DE \t DELAWARE                   \t   DE \t 75.51 \t 38.98
+US.DC \t DISTRICT OF COLUMBIA       \t   DC \t 76.85 \t 39.17
+US.FL \t FLORIDA                    \t   FL \t 81.63 \t 28.13
+US.GA \t GEORGIA                    \t   GA \t 83.50 \t 32.71
+US.HI \t HAWAII                     \t   HI \t 157.28 \t 20.95
+US.ID \t IDAHO                      \t   ID \t 114.96 \t 44.26
+US.IL \t ILLINOIS                   \t   IL \t 89.31 \t 40.01
+US.IN \t INDIANA                    \t   IN \t 86.27 \t 39.90
+US.IA \t IOWA                       \t   IA \t 93.39 \t 41.96
+US.KS \t KANSAS                     \t   KS \t 98.70 \t 38.50
+US.KY \t KENTUCKY                   \t   KY \t 85.51 \t 37.36
+US.LA \t LOUISIANA                  \t   LA \t 92.54 \t 30.97
+US.ME \t MAINE                      \t   ME \t 69.23 \t 45.25
+US.MD \t MARYLAND                   \t   MD \t 77.37 \t 39.44
+US.MA \t MASSACHUSETTS              \t   MA \t 72.03 \t 42.34
+US.MI \t MICHIGAN                   \t   MI \t 84.94 \t 45.06
+US.MN \t MINNESOTA                  \t   MN \t 95.33 \t 46.02
+US.MS \t MISSISSIPPI                \t   MS \t 89.72 \t 32.81
+US.MO \t MISSOURI                   \t   MO \t 92.63 \t 38.49
+US.MT \t MONTANA                    \t   MT \t 109.64 \t 47.03
+US.NE \t NEBRASKA                   \t   NE \t 99.86 \t 41.52
+US.NV \t NEVADA                     \t   NV \t 116.93 \t 39.51
+US.NH \t NEW HAMPSHIRE              \t   NH \t 71.57 \t 43.64
+US.NJ \t NEW JERSEY                 \t   NJ \t 74.56 \t 40.07
+US.NM \t NEW MEXICO                 \t   NM \t 106.11 \t 34.50
+US.NY \t NEW YORK                   \t   NY \t 76.02 \t 42.97
+US.NC \t NORTH CAROLINA             \t   NC \t 79.45 \t 35.60
+US.ND \t NORTH DAKOTA               \t   ND \t 100.57 \t 47.41
+US.OH \t OHIO                       \t   OH \t 82.74 \t 40.36
+US.OK \t OKLAHOMA                   \t   OK \t 97.66 \t 35.54
+US.OR \t OREGON                     \t   OR \t 120.98 \t 43.87
+US.PA \t PENNSYLVANIA               \t   PA \t 77.75 \t 40.90
+US.RI \t RHODE ISLAND               \t   RI \t 71.58 \t 41.67
+US.SC \t SOUTH CAROLINA             \t   SC \t 80.87 \t 33.83
+US.SD \t SOUTH DAKOTA               \t   SD \t 100.48 \t 44.40
+US.TN \t TENNESSEE                  \t   TN \t 86.62 \t 35.80
+US.TX \t TEXAS                      \t   TX \t 99.46 \t 31.24
+US.UT \t UTAH                       \t   UT \t 111.69 \t 39.39
+US.VT \t VERMONT                    \t   VT \t 72.67 \t 43.93
+US.VA \t VIRGINIA                   \t   VA \t 78.56 \t 37.49
+US.WA \t WASHINGTON                 \t   WA \t 120.27 \t 47.33
+US.WV \t WEST VIRGINIA              \t   WV \t 80.70 \t 38.60
+US.WI \t WISCONSIN                  \t   WI \t 89.76 \t 44.43
+US.WY \t WYOMING                    \t   WY \t 107.67 \t 42.97
+"""
+
+Canada_postal_regions = """
+CA.01 \t Alberta                  \t  AB \t 53.566667 \t -113.516667
+CA.02 \t British Columbia         \t  BC \t 49.25 \t -123.1
+CA.03 \t Manitoba                 \t  MB \t 49.88 \t -97.17
+CA.04 \t New Brunswick            \t  NB \t 46.7 \t -66.116667
+CA.05 \t Newfoundland and Labrador\t  NL \t 52.624444 \t -59.685
+CA.13 \t Northwest Territories    \t  NT \t 64.266667 \t -119.183333
+CA.07 \t Nova Scotia              \t  NS \t 45.216667 \t -62.7
+CA.14 \t Nunavut                  \t  NU \t 63.748611 \t -68.519722
+CA.08 \t Ontario                  \t  ON \t 50.7 \t -86.05
+CA.09 \t Prince Edward Island     \t  PE \t 46.333333 \t -63.5
+CA.10 \t Quebec                   \t  QC \t 45.508889 \t -73.554167
+CA.11 \t Saskatchewan             \t  SK \t 52.13 \t -106.65
+CA.12 \t Yukon                    \t  YT \t 60.716667 \t -135.05
+"""
+
+_state_lat_long = {
+    "US": US_postal_regions,
+    "Canada": Canada_postal_regions,
+    "other": other_postal_regions,
+    }
+
+def read_state_info(name):
+    s = _state_lat_long[name]
+    for line in s.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        yield [word.strip() for word in line.split("\t")]
+
+################ Primary geographical information from cities1000.txt
+
+"""
+geonameid         : integer id of record in geonames database
+name              : name of geographical point (utf8) varchar(200)
+asciiname         : name of geographical point in plain ascii characters, varchar(200)
+alternatenames    : alternatenames, comma separated varchar(4000) (varchar(5000) for SQL Server)
+latitude          : latitude in decimal degrees (wgs84)
+longitude         : longitude in decimal degrees (wgs84)
+feature class     : see http://www.geonames.org/export/codes.html, char(1)
+feature code      : see http://www.geonames.org/export/codes.html, varchar(10)
+country code      : ISO-3166 2-letter country code, 2 characters
+cc2               : alternate country codes, comma separated, ISO-3166 2-letter country code, 60 characters
+admin1 code       : fipscode (subject to change to iso code), isocode for the us and ch, see file admin1Codes.txt for display names of this code; varchar(20)
+admin2 code       : code for the second administrative division, a county in the US, see file admin2Codes.txt; varchar(80) 
+admin3 code       : code for third level administrative division, varchar(20)
+admin4 code       : code for fourth level administrative division, varchar(20)
+population        : bigint (4 byte int) 
+elevation         : in meters, integer
+gtopo30           : average elevation of 30'x30' (ca 900mx900m) area in meters, integer
+timezone          : the timezone id (see file timeZone.txt)
+modification date : date of last modification in yyyy-MM-dd format
+"""
+class Geoname(object):
+    __slots__ = ("geonameid name asciiname alternatenames latitude longitude feature_class "
+                 "feature_code country_code cc2 admin1_code admin2_code admin3_code admin4_code "
+                 "population elevation gtopo30 timezone modification_date").split()
+    def __init__(self, 
+                 geonameid, name, asciiname, alternatenames, latitude, longitude, feature_class,
+                 feature_code, country_code, cc2, admin1_code, admin2_code, admin3_code, admin4_code,
+                 population, elevation, gtopo30, timezone, modification_date):
+        self.geonameid = geonameid
+        self.name = name # UTF-8 encoded
+        self.asciiname = asciiname
+        self.alternatenames = alternatenames # comma-separated, UTF-8 encoded
+        self.latitude = latitude # decimal
+        self.longitude = longitude # decimal
+        self.feature_class = feature_class
+        self.feature_code = feature_code
+        self.country_code = country_code
+        self.cc2 = cc2
+        self.admin1_code = admin1_code
+        self.admin2_code = admin2_code
+        self.admin3_code = admin3_code
+        self.admin4_code = admin4_code
+        self.population = population
+        self.elevation = elevation
+        self.gtopo30 = gtopo30
+        self.timezone = timezone
+        self.modification_date = modification_date
+
+# open("cities1000.txt")
+def read_cities(infile):
+    for line in infile:
+        terms = line.rstrip("\n").split("\t")
+        terms[1] = unicode(terms[1], "utf-8") # name
+        terms[3] = unicode(terms[3], "utf-8") # alternatenames
+        terms[14] = int(terms[14])  # population
+        yield Geoname(*terms)
+
+
+########## 
+
+# Currently not used, but likely should be.
+
+# I use cities1000 as the source for the alternate names, since that's
+# a documented way to get the information. Experience found some
+# problems. Some city names have a comma in them, but comma is used as
+# the name delimiter. Instead of using my workaround, I could just get
+# the list from the aliases. Another problem is the cities1000 list
+# includes machine-generated transliterations, which might not be
+# listed as an alternate name. For example, "Goteborg" Sweden is in
+# the cities1000 list but not in the aliases list.
+
+"""
+alternateNameId   : the id of this alternate name, int
+geonameid         : geonameId referring to id in table 'geoname', int
+isolanguage       : iso 639 language code 2- or 3-characters;
+                       4-characters 'post' for postal codes
+                       and 'iata' or 'icao' for airport codes,
+                       fr-1793 for French Revolution names, varchar(7)
+alternate name    : alternate name or name variant, varchar(200)
+isPreferredName   : '1', if this alternate name is an official/preferred name
+isShortName       : '1', if this is a short name like 'California' for 'State of California'
+"""
+
+class AlternateName(object):
+    __slots__ = ("alernateNameId geonameid isolanguage alternate_name "
+                 "isPreferredName isShortName").split()
+    def __init__(self, alernateNameId, geonameid, isolanguage, alternate_name,
+                 isPreferredName, isShortName):
+        self.alernateNameId = alernateNameId
+        self.geonameid = geonameid
+        self.isolanguage = isolanguage
+        self.alternate_name = alternate_name
+        self.isPreferredName = isPreferredName
+        self.isShortName = isShortName
+
+def read_alternate_names(infile):
+    for line in infile:
+        yield AlternateNames(*line.split())
+
+######### Top-level administrative regions of different countries
+
+# country.admin1  (US.FL and SE.28)
+# name
+# english_name
+# geoid
+class AdminCode(object):
+    __slots__ = "code name english_name geonameid".split()
+    def __init__(self, code, name, english_name, geonameid):
+        self.code = code
+        self.name = name
+        self.english_name = english_name
+        self.geonameid = geonameid
+
+# open("mirror/admin1CodesASCII.txt")
+def read_admin_codes(infile):
+    for line in infile:
+        line = line.rstrip("\n")
+        yield AdminCode(*line.split("\t"))
+
+############ Country information
+
+class CountryInfo(object):
+    __slots__ = ("iso iso3 iso_numeric fips country capital area population continent "
+                 "tld currency_code currency_name phone postal postal_regex "
+                 "languages geonameid neighbours equivalent_fips_code").split()
+    def __init__(self, iso, iso3, iso_numeric, fips, country, capital, area, population,
+                 continent, tld, currency_code, currency_name, phone, postal,
+                 postal_regex, languages, geonameid, neighbours, equivalent_fips_code):
+        self.iso = iso   # field #0
+        self.iso3 = iso3
+        self.iso_numeric = iso_numeric
+        self.fips = fips
+        self.country = country  # field #4
+        self.capital = capital
+        self.area = area
+        self.population = population  # field #7
+        self.continent = continent
+        self.tld = tld
+        self.currency_code = currency_code
+        self.currency_name = currency_name
+        self.phone = phone
+        self.postal = postal
+        self.postal_regex = postal_regex
+        self.languages = languages
+        self.geonameid = geonameid
+        self.neighbours = neighbours
+        self.equivalent_fips_code = equivalent_fips_code
+
+# open("countryInfo.txt")
+def read_country_info(infile):
+    for line in infile:
+        if line.startswith("#"):
+            continue
+        line = line.rstrip("\n")
+        #print repr(line)
+        fields = line.split("\t")
+        fields[4] = unicode(fields[4], "utf-8")  # country name
+        fields[7] = int(fields[7])  # population to integer
+        ci = CountryInfo(*fields)
+        if ci.iso == "CS":
+            # Skip Serbia and Montenegro; as of 2006 it no longer exists
+            continue
+        yield ci
+
+
+######### Lat/long information for the countries
+
+class CountryLatLong(object):
+    def __init__(self, iso, name, latitude, longitude):
+        self.iso = iso
+        self.name = name
+        self.latitude = latitude
+        self.longitude = longitude
+
+# open("average-latitude-longitude-countries.csv")
+def read_country_lat_long(infile):
+    reader = csv.reader(infile)
+    reader.next()
+    for row in reader:
+        yield CountryLatLong(*row)
+
+########### Working with the database schema
+
+
+def create_schema(cursor):
+    c = cursor
+    c.execute("""
+create table geoname (
+  geonameid integer primary key,
+  city_name text,
+  city_asciiname text,
+  admin1_code text,
+  country_code text,
+  population int,
+  latitude text,
+  longitude text
+)""")
+    # I have state_alias and country_alias to disambituate 
+    # some name names like "CO", which is Colorado and Colombia.
+    # I also have to deal with some countries, like Puerto Rico,
+    # which the USPS allows in a state field.
+    c.execute("""
+create table country_alias (
+  geonameid integer,
+  name text unique
+)
+""")
+    c.execute("""
+create table state_alias (
+  geonameid integer,
+  name text unique,
+  is_a_country integer
+)
+""")
+    c.execute("""
+create table city_alias (
+  geonameid integer,
+  name text
+)
+""")
+
+## Handle all sorts of names like
+# Kindhausen(Dorf)
+# Stadt Winterthur(Kreis 1)/Altstadt
+# Turns "U.S. Virgin Islands" -> "U.S.Virgin Islands"
+#
+# Short explaination: Get rid of spaces on either side
+#   of something which isn't a word or space character.
+#   Using the Unicode definition of those metacharacters.
+#   Crossing my fingers and hoping that's correct.
+_normalize_special = re.compile(ur"\s*([^\w\s])\s*", re.UNICODE).sub
+
+def normalize_name(name):
+    # remove spaces on either side of special charcters
+    name = _normalize_special(ur"\1", name)
+
+    # Remove extra spaces
+    name = u" ".join(name.split())
+
+    return name.upper()
+
+def normalize_asciiname(name):
+    try:
+        name = unicode(name)
+    except UnicodeDecodeError, err:
+        # Do my best to clean up bad data.
+        # All of the errors I found except for one have been
+        # cleaned and removed.
+        name = unicode(name, "utf8")
+        name = unicodedata.normalize("NFKD", name).encode("ASCII", "ignore")
+        name = name.strip()
+        if not name:
+            name = "(unknown)"
+    return normalize_name(name)
+    
+
+def _add_geonames(cursor, geoname_fields):
+    assert len(geoname_fields[0]) == 8, geoname_fields[0]
+    cursor.executemany("insert into geoname values (?, ?, ?, ?, ?, ?, ?, ?)",
+                       geoname_fields)
+
+def _add_country_aliases(cursor, country_fields):
+    cursor.executemany("insert into country_alias values (?, ?)", country_fields)
+
+def _add_state_aliases(cursor, state_fields):
+    cursor.executemany("insert into state_alias values (?, ?, ?)",
+                       state_fields)
+
+def _add_city_aliases(cursor, city_fields):
+    cursor.executemany("insert into city_alias values (?, ?)", city_fields)
+
+def add_country_info(cursor):
+    # Get the country lat/long info
+    country_lat_long = {}
+    for country in read_country_lat_long(open("average-latitude-longitude-countries.csv")):
+        country_lat_long[country.iso] = (country.latitude, country.longitude)
+
+    # Get and populate the country info
+    geoname_fields = []
+    country_aliases = []
+    for ci in read_country_info(open("mirror/countryInfo.txt")):
+        lat_long = country_lat_long[ci.iso]
+        geoname_fields.append( 
+            (ci.geonameid, None, None, None, ci.iso, ci.population, lat_long[0], lat_long[1]) )
+        country_aliases.append( (ci.geonameid, ci.iso) )
+        country_aliases.append( (ci.geonameid, ci.iso3) )
+        country_aliases.append( (ci.geonameid, normalize_name(ci.country)) )
+
+    _add_geonames(cursor, geoname_fields)
+    _add_country_aliases(cursor, country_aliases)
+
+def add_state_info(cursor):
+    # Get the admin codes
+    admin_code_table = dict(
+        (admin.code, admin) for admin in read_admin_codes(open("mirror/admin1CodesASCII.txt")) )
+
+    geoname_fields = []
+    state_fields = []
+
+    # US states and Canadian provinces
+
+    for category_name in ("US", "Canada"):
+        for (code, name, state_code, lat, long) in read_state_info(category_name):
+            admin = admin_code_table[code]
+            iso, admin1_code = code.split(".")
+            # Missing the population info; using -1 since it doesn't matter
+            geoname_fields.append( (admin.geonameid, None, None, admin1_code, iso, -1, lat, long) )
+            state_fields.append( (admin.geonameid, normalize_name(name), 0) )
+            state_fields.append( (admin.geonameid, state_code, 0) )
+
+    # Dependent and independent nations served by the USPS
+    for (geonameid, iso, name, state_code) in read_state_info("other"):
+        state_fields.append( (geonameid, normalize_name(name), 1) )
+        state_fields.append( (geonameid, state_code, 1) )
+
+    _add_geonames(cursor, geoname_fields)
+    _add_state_aliases(cursor, state_fields)
+
+# The record for geonameid 6292397 has the alternatenames
+#    Dorfzentrum, Suedl. Teil,Dorfzentrum, S<C3><BC>dl. Teil
+# Note the "," in the name. This is broken up as:
+#    Dorfzentrum, Suedl. Teil,
+#    Dorfzentrum, S<C3><BC>dl. Teil
+# I split only on commas which don't have a space afterwards
+# See http://groups.google.com/group/geonames/browse_thread/thread/aff844cf1aea35a8
+# where I found out that this field is not meant to be parsed,
+# which contradicts the documentation. TODO: get the alternate
+# name info from the alternateNames.txt file.
+_split_comma = re.compile(r",(?!\s)").split
+
+def add_city_info(cursor):
+    zf = zipfile.ZipFile("mirror/cities1000.zip")
+    # This requires about 11MB of memory.
+    # Python 2.6 added a zf.open() but I can't yet use that.
+    f = StringIO(zf.read("cities1000.txt"))
+
+    cities = read_cities(f)
+    # Process a country at a time
+    for iso, geonames in itertools.groupby(cities, lambda geoname: geoname.country_code):
+        geoname_fields = []
+        alias_fields = []
+        for geoname in geonames:
+            geoname_fields.append(
+                (geoname.geonameid, normalize_name(geoname.name), normalize_asciiname(geoname.asciiname),
+                 geoname.admin1_code, iso, geoname.population, geoname.latitude,
+                 geoname.longitude) )
+            if geoname.alternatenames:
+                alternatenames = _split_comma(geoname.alternatenames)
+
+                alternatenames = map(normalize_name, alternatenames)
+                # 3040132 contains both "la Massana" and "La Massana"
+                # These are normalized to the same name
+                alternatenames = set(alternatenames)
+
+
+                for alternatename in alternatenames:
+                    alias_fields.append( (geoname.geonameid, alternatename) )
+        _add_geonames(cursor, geoname_fields)
+        _add_city_aliases(cursor, alias_fields)
+
+######################
+
+def populate_database(cursor):
+    print "Loading country and state info"
+    add_country_info(cursor)
+    add_state_info(cursor)
+    print "Loading city info"
+    add_city_info(cursor)
+
+def index_database(cursor):
+    cursor.execute("create index idx_geoname on geoname (geonameid)")
+    cursor.execute("create index idx_city_name on geoname (city_name)")
+    cursor.execute("create index idx_city_asciiname on geoname (city_asciiname)")
+    cursor.execute("create index idx_admin1_code on geoname (admin1_code)")
+    cursor.execute("create index idx_country_code on geoname (country_code)")
+    cursor.execute("create index idx_city_alias_id on city_alias (geonameid)")
+    cursor.execute("create index idx_city_alias_name on city_alias (name)")
+
+def report_stats(cursor):
+    def get(sql):
+        cursor.execute(sql)
+        return cursor.fetchone()[0]
+    num_records = get("select count(*) from geoname")
+    num_cities = get("select count(*) from geoname where city_name is not NULL")
+    num_states = get("select count(*) from geoname "
+                     "where city_name is NULL and admin1_code is not NULL")
+    num_countries = get("select count(*) from geoname "
+                        "where city_name is NULL and admin1_code is NULL")
+    print "%d geoname records: %d countries, %d 'states', %d cities" % (
+        num_records, num_countries, num_states, num_cities)
+
+    num_country_aliases = get("select count(*) from country_alias")
+    num_state_aliases = get("select count(*) from state_alias")
+    num_city_aliases = get("select count(*) from city_alias")
+    print "Aliases: %d countries, %d 'states', %d cities" % (
+        num_country_aliases, num_state_aliases, num_city_aliases)
+
+
+def usage(f):
+    """load_geonames.py [mirror|create|stats|delete]
+
+Populate the SQLite database 'geonames.sqlite3' using data from geonames.org
+Possible commands are:
+
+  mirror - fetch the latest version of the data files from geonames.org
+            and store them in mirror/
+  create - create the SQLite database, set up the schema, load
+            the geoname data into the schema, and index the fields.
+  stats  - report statistics about the loaded data
+  delete - delete the SQLite database file
+"""
+    f.write(usage.__doc__)
+
+if __name__ == "__main__":
+    FILENAME = "geonames.sqlite3"
+    if len(sys.argv) == 2:
+        if sys.argv[1] == "mirror":
+            mirror()
+        elif sys.argv[1] == "create":
+            if os.path.exists(FILENAME):
+                os.unlink(FILENAME)
+            con = sqlite3.connect(FILENAME)
+            c = con.cursor()
+            print "Creating schema"
+            create_schema(c)
+            populate_database(c)
+            print "Indexing database"
+            index_database(c)
+            con.commit()
+        elif sys.argv[1] == "stats":
+            con = sqlite3.connect(FILENAME)
+            c = con.cursor()
+            report_stats(c)
+        elif sys.argv[1] == "delete":
+            os.unlink(FILENAME)
+        elif sys.argv[1] in ("-h", "--help"):
+            usage(sys.stdout)
+        else:
+            raise SystemExit("Unknown command %r: use one of [mirror|create|stats|delete]" %
+                             (sys.argv[1],))
+    else:
+        usage(sys.stderr)
+        raise SystemExit(1)
