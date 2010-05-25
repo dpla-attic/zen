@@ -419,7 +419,7 @@ add_template("YYYY S* MONTH_NAME")
 
 # November 2003
 # Nov 2003
-add_template("MONTH_NAME S* YYYY")
+add_template("MONTH_NAME /(,\s*)? S* YYYY")
 
 # 2003-Nov-16
 # 2003-November-16
