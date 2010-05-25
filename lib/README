@@ -1,0 +1,21 @@
+
+
+
+= dateparser =
+
+This module parses dates and to some extent times into an ISO
+timestamp. If the date is before 1AD then the timestamp will start
+with a "-" but (in violation of the ISO spec) dates from 1AD and later
+do not start with a '+'.
+
+>>> import dateparser
+>>> dateparser.to_iso8601("22 August, 1970")
+'1970-08-22'
+>>> 
+
+See the 'dateparser.py' docstring for more examples of use. For a full
+example of all supported formats, see the implementation and the tests.
+
+Use 'nosetests' to run the tests.
+
+

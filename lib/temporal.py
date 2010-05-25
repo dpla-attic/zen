@@ -2,8 +2,14 @@
 
 '''
 
+# Useful resources:
+# http://seehuhn.de/pages/pdate
+# 
+
+
 import feedparser
 import datetime
+from zenlib import dateparser, iso8601
 
 from amara.lib.date import timezone, UTC
 
@@ -51,6 +57,14 @@ def smart_parse_date(date):
 
     MM/DD/YYYY
     '''
+    #FIXME: Yes, layers on layers.  Streamline it.
+    try:
+        dt = iso8601.parse_date(dateparser.to_iso8601(date))
+        return dt
+    except (KeyboardInterrupt, SystemExit):
+        raise
+    except Exception, e:
+        pass
     #try:
     #    date = unicode(date, 'utf-8')
     #
