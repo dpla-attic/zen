@@ -389,6 +389,14 @@ add_template(r"ISOYEAR - MM - DD")
 add_template(r"ISOYEAR - MM")
 add_template(r"ISOYEAR")
 
+# 2003 November
+# 2003 Nov
+add_template("YYYY S* MONTH_NAME")
+
+# November 2003
+# Nov 2003
+add_template("MONTH_NAME /(,\s*)? S* YYYY")
+
 # 16 November 2003
 # 16 November 2003 AD
 # 16 November 2003 BC
@@ -412,14 +420,6 @@ add_template("MONTH_NAME S* DAY S* /(,\s*)? S* YEAR S* ERA?")
 # 2003 November 16
 # 2003 Nov 16
 add_template("YYYY S* MONTH_NAME S* DAY")
-
-# 2003 November
-# 2003 Nov
-add_template("YYYY S* MONTH_NAME")
-
-# November 2003
-# Nov 2003
-add_template("MONTH_NAME /(,\s*)? S* YYYY")
 
 # 2003-Nov-16
 # 2003-November-16
