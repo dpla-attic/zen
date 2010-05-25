@@ -57,6 +57,7 @@ def smart_parse_date(date):
 
     MM/DD/YYYY
     '''
+    date = date.strip()
     #FIXME: Yes, layers on layers.  Streamline it.
     try:
         dt = iso8601.parse_date(dateparser.to_iso8601(date))

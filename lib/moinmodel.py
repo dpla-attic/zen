@@ -207,7 +207,7 @@ class node(object):
             #Uses rulesheets
             self.endpoint = None
             #FIXME: Inelegant not to use polymorphism for the RESOURCE_TYPE_TYPE test
-            if isinstance(akara_type, basestring) and akara_type != RESOURCE_TYPE_TYPE:
+            if isinstance(akara_type, basestring) and akara_type and akara_type != RESOURCE_TYPE_TYPE:
                 try:
                     self.resource_type = node.lookup(akara_type, resolver=self.resolver)
                 except (KeyboardInterrupt, SystemExit):
@@ -294,7 +294,8 @@ def parse_moin_xml(uri, resolver=None):
     req = urllib2.Request(uri, headers={'Accept': XML_IMT})
     resp = urllib2.urlopen(req)
     body = resp.read()
-    return inputsource(body.replace('&nbsp;', '&#160;').replace('<p><p>', '<p></p>').replace('<p></s2>', '</s2>'), resolver=resolver), resp
+    return inputsource(body, resolver=resolver), resp
+    #return inputsource(body.replace('&nbsp;', '&#160;').replace('<p><p>', '<p></p>').replace('<p></s2>', '</s2>'), resolver=resolver), resp
 
 
 class rulesheet(object):
@@ -357,12 +358,19 @@ class rulesheet(object):
         return matching_handler or default
 
 
+TYPE_PATTERN = u'//*[@title="akara:metadata"]/gloss/label[.="akara:type"]/following-sibling::item[1]//jump'
+RULESHEET_PATTERN = u'//*[@title="akara:metadata"]/gloss/label[.="akara:rulesheet"]/following-sibling::item[1]//jump'
+
+
 class resource_type(node):
     @staticmethod
     def construct_id(doc, original_base, wrapped_base, rest_uri):
+        #TYPE_PATTERN = u'//*[@title="akara:metadata"]/gloss/label[.="akara:type"]/following-sibling::item[1]//@href'
+        #TYPE_PATTERN = u'//*[@title="akara:metadata"]/following-sibling::gloss/label[.="akara:type"]/following-sibling::item[1]//jump'
         #type = U(doc.xml_select(u'//definition_list/item[term = "akara:type"]/defn'))
-        if logger: logger.debug('Type: ' + repr(list(doc.xml_select(u'//*[@title="akara:metadata"]/gloss/label[.="akara:type"]/following-sibling::item[1]//@href'))))
-        type = U(doc.xml_select(u'//*[@title="akara:metadata"]/gloss/label[.="akara:type"]/following-sibling::item[1]//@href'))
+        if logger: logger.debug('Type: ' + repr(list(doc.xml_select(TYPE_PATTERN))))
+        type = U(doc.xml_select(TYPE_PATTERN))
+        if not type: return None
         wrapped_type, orig_type = wiki_uri(original_base, wrapped_base, type, rest_uri)
         if logger: logger.debug('Type URIs: ' + repr((type, wrapped_type, orig_type)))
         return wrapped_type
@@ -373,8 +381,8 @@ class resource_type(node):
             #isrc = inputsource(req, resolver=self.resolver)
             if logger: logger.debug('akara type rest_uri: ' + self.rest_uri)
             isrc, resp = parse_moin_xml(self.rest_uri, resolver=self.resolver)
-            doc = html.parse(isrc)
-            rulesheet = U(doc.xml_select(u'//*[@title="akara:metadata"]/gloss/label[.="akara:rulesheet"]/following-sibling::item[1]//@href'))
+            doc = bindery.parse(isrc)
+            rulesheet = U(doc.xml_select(RULESHEET_PATTERN))
             self.rulesheet = rulesheet or UNSPECIFIED
             if logger: logger.debug('RULESHEET: ' + rulesheet)
         return self.rulesheet
