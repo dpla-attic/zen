@@ -3,8 +3,8 @@
 '''
 
 # Useful resources:
+# http://wiki.python.org/moin/WorkingWithTime
 # http://seehuhn.de/pages/pdate
-# 
 
 
 import feedparser

@@ -129,7 +129,7 @@ class moinrest_resolver(baseresolver):
 #    def __init__(self, arg, uri=None, encoding=None, resolver=None, sourcetype=0, opener=None):
 #        baseinputsource.__init__(cls, arg, uri, encoding, resolver, sourcetype)
 
-RESOURCE_TYPE_TYPE = 'http://purl.org/xml3k/akara/cms/resource-type'
+RESOURCE_TYPE_TYPE = u'http://purl.org/xml3k/akara/cms/resource-type'
 
 
 UNSPECIFIED = object()
@@ -207,7 +207,7 @@ class node(object):
             #Uses rulesheets
             self.endpoint = None
             #FIXME: Inelegant not to use polymorphism for the RESOURCE_TYPE_TYPE test
-            if isinstance(akara_type, basestring) and akara_type and akara_type != RESOURCE_TYPE_TYPE:
+            if akara_type and isinstance(akara_type, basestring) and akara_type != RESOURCE_TYPE_TYPE:
                 try:
                     self.resource_type = node.lookup(akara_type, resolver=self.resolver)
                 except (KeyboardInterrupt, SystemExit):
@@ -368,12 +368,12 @@ class resource_type(node):
         #TYPE_PATTERN = u'//*[@title="akara:metadata"]/gloss/label[.="akara:type"]/following-sibling::item[1]//@href'
         #TYPE_PATTERN = u'//*[@title="akara:metadata"]/following-sibling::gloss/label[.="akara:type"]/following-sibling::item[1]//jump'
         #type = U(doc.xml_select(u'//definition_list/item[term = "akara:type"]/defn'))
-        if logger: logger.debug('Type: ' + repr(list(doc.xml_select(TYPE_PATTERN))))
+        if logger: logger.debug('Type: ' + repr(U(doc.xml_select(TYPE_PATTERN))))
         type = U(doc.xml_select(TYPE_PATTERN))
         if not type: return None
         wrapped_type, orig_type = wiki_uri(original_base, wrapped_base, type, rest_uri)
         if logger: logger.debug('Type URIs: ' + repr((type, wrapped_type, orig_type)))
-        return wrapped_type
+        return wrapped_type or type
 
     def get_rulesheet(self):
         if self.rulesheet is None:
