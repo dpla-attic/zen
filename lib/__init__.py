@@ -20,8 +20,10 @@ def register_service(s):
 #Bootstrap in the built-in ("local") services
 try:
     from zenlib import local
-except ImportError:
-    #This will be the case during install
+except (KeyboardInterrupt, SystemExit):
+    raise
+except Exception as e:
+    #e.g. there will be ImportError during install
     pass #Is this really a good idea?  What if there is really a problem?
 
 
@@ -37,4 +39,7 @@ def zservice(service_id):
         register_service(func)
         return func
     return zregister
+
+
+from httpmodel import *
 

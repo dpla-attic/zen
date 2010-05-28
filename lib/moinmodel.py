@@ -157,12 +157,13 @@ class node(object):
             return node._instance_cache[rest_uri]
         if not resolver:
             resolver = moinrest_resolver(opener=opener)
-        if logger: logger.debug('rest_uri: ' + rest_uri)
+        if logger: logger.debug('node.lookup rest_uri: ' + rest_uri)
         isrc, resp = parse_moin_xml(rest_uri, resolver=resolver)
         doc = bindery.parse(isrc)
         #doc = bindery.parse(isrc, standalone=True, model=MOIN_DOCBOOK_MODEL)
         original_base, wrapped_base, original_page = resp.info()[ORIG_BASE_HEADER].split()
         atype = resource_type.construct_id(doc, original_base, wrapped_base, rest_uri)
+        if logger: logger.debug('node.lookup akara type: ' + atype)
         #Older Moin CMS resource types are implemented by registration to the global node.NODES
         #Newer Moin CMS resource types are implemented by discovery of a URL,
         #to which a POST request executes the desired action
@@ -368,23 +369,22 @@ class resource_type(node):
         #TYPE_PATTERN = u'//*[@title="akara:metadata"]/gloss/label[.="akara:type"]/following-sibling::item[1]//@href'
         #TYPE_PATTERN = u'//*[@title="akara:metadata"]/following-sibling::gloss/label[.="akara:type"]/following-sibling::item[1]//jump'
         #type = U(doc.xml_select(u'//definition_list/item[term = "akara:type"]/defn'))
-        if logger: logger.debug('Type: ' + repr(U(doc.xml_select(TYPE_PATTERN))))
         type = U(doc.xml_select(TYPE_PATTERN))
+        if logger: logger.debug('resource_type.construct_id type: ' + repr(type))
         if not type: return None
         wrapped_type, orig_type = wiki_uri(original_base, wrapped_base, type, rest_uri)
-        if logger: logger.debug('Type URIs: ' + repr((type, wrapped_type, orig_type)))
+        if logger: logger.debug('resource_type.construct_id wiki_uri trace: ' + repr((wrapped_type, orig_type, original_base, wrapped_base, rest_uri)))
         return wrapped_type or type
 
     def get_rulesheet(self):
         if self.rulesheet is None:
             #req = urllib2.Request(self.akara_type(), headers={'Accept': XML_IMT})
             #isrc = inputsource(req, resolver=self.resolver)
-            if logger: logger.debug('akara type rest_uri: ' + self.rest_uri)
             isrc, resp = parse_moin_xml(self.rest_uri, resolver=self.resolver)
             doc = bindery.parse(isrc)
             rulesheet = U(doc.xml_select(RULESHEET_PATTERN))
             self.rulesheet = rulesheet or UNSPECIFIED
-            if logger: logger.debug('RULESHEET: ' + rulesheet)
+            if logger: logger.debug('resource_type.get_rulesheet rest_uri, rulesheet: ' + repr((self.rest_uri, rulesheet)))
         return self.rulesheet
     
     def run_rulesheet(self, method='GET', accept='application/json'):
@@ -462,13 +462,21 @@ node.NODES[RESOURCE_TYPE_TYPE] = resource_type
 
 from zenlib import SERVICES
 
-def service(url, pymodule=None):
+def use(pymodule):
     '''
-    e.g. service(u'http://example.org/your-service', pymodule="pypath.to.yourmodule")
+    e.g. use("pypath.to.yourmodule")
     '''
-    if pymodule:
-        #Just importing the module should be enough if they're registering services properly
+    #Just importing the module should be enough if they're registering services properly
+    try:
         mod = __import__(pymodule)
+    except ImportError as e:
+        logger.debug('Unable to import declared module, so will have to be available through discovery: ' + repr(e))
+    return
+
+def service(url):
+    '''
+    e.g. service(u'http://example.org/your-service')
+    '''
     return SERVICES[url]
 
 
