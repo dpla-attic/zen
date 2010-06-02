@@ -1,5 +1,15 @@
 #zenlib.exhibit
 """
+For more on Exhibit JSON conventions see:
+
+* http://simile.mit.edu/wiki/Exhibit/Understanding_Exhibit_Database
+* http://simile.mit.edu/wiki/Exhibit/Creating,_Importing,_and_Managing_Data
+
+Uche's quick guidelines:
+
+* Make sure you always have an ID (note: whether the ID should be a simple string or a URI depends on whether you need to use a focused view; if so, it should be a simple string; yes Exhibit is pretty broken in this respect)
+* It's a good idea to include a type, even though it will be the same for all. I think a URI is safe here.
+* It's a good idea to include a human-readable label for each.
 
 """
 

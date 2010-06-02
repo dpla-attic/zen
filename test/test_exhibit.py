@@ -24,7 +24,6 @@ ENTRY_PIPELINE = {
 PIPELINES = { u'atom:entry': ENTRY_PIPELINE, u'atom:feed': None }
 
 def test_pre_simile1():
-
     obj = atomtools.ejsonize(filesource('rfc4287-1-1-2.atom').source)
     obj[0][u'type'] = u'atom:entry'
     #del obj[0][u'id']

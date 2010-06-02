@@ -267,14 +267,6 @@ class node(object):
         Helper to extract the first definition list from a named section
         '''
         return self.definition_list(u'.//gloss', contextnode=self.section(title), patterns=patterns)
-        
-    def list_section(self, title):
-        '''
-        Helper to extract all list items from a section
-        '''
-        #XXX: Should support flattening lists, or even returning nested lists
-        l = self.section(title).xml_select(u'.//ul')[0]
-        return list(l.li)
 
     def get_proxy(self, method, accept=None):
         return self.resource_type.run_rulesheet(method, accept)
@@ -339,7 +331,7 @@ class rulesheet(object):
 
         #env = {'write': write, 'resource': self, 'service': service, 'U': U1}
         resource_getter = partial(node.lookup, resolver=resource.resolver)
-        env = {'service': service, 'U': U1, 'handles': handles, 'R': resource_getter}
+        env = {'service': service, 'U': U1, 'handles': handles, 'R': resource_getter, 'use': use}
 
         #Execute the rule sheet
         exec self.body in env
@@ -437,7 +429,7 @@ class resource_type(node):
 
             #env = {'write': write, 'resource': self, 'service': service, 'U': U1}
             resource_getter = partial(node.lookup, resolver=self.resolver)
-            env = {'service': service, 'U': U1, 'handles': handles, 'R': resource_getter}
+            env = {'service': service, 'U': U1, 'handles': handles, 'R': resource_getter, 'use': use}
 
             #Execute the rule sheet
             exec body in env
@@ -548,6 +540,7 @@ def simple_struct(node):
 @zservice(u'http://purl.org/com/zepheira/zen/util/extract-liststrings')
 def extract_liststrings(node):
     '''
+    Helper to extract all list items from a section
     '''
     items = []
     l = node.xml_select(u'.//ul')
