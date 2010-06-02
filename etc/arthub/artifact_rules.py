@@ -3,23 +3,22 @@ import simplejson
 #Declare transform services
 parsedate = service(u'http://purl.org/com/zepheira/zen/temporal/parse-date')
 obj_urls = service(u'http://purl.org/com/zepheira/zen/moinmodel/get-obj-urls')
-link_urls = service(u'http://purl.org/com/zepheira/zen/moinmodel/get-link-urls')
+#link_urls = service(u'http://purl.org/com/zepheira/zen/moinmodel/get-link-urls')
 
 #Used to serve requests for a raw Python dictionary
 @handles('GET', 'raw/pydict')
 def objectify(resource):
     #Data extraction
-    bio = resource.definition_section(u'poet:bio')
+    meta = resource.definition_section(u'artifact:metadata')
 
     #Output
     obj = {
       u'id': resource.rest_uri,
-      u'name': U(bio[u'poet:name'])strip(),
-      u'born': U(parsedate(U(bio[u'poet:born']))),
-      u'died': U(parsedate(U(bio[u'poet:died']))),
-      u'images': obj_urls(bio[u'poet:image']),
-      u'wikipedia': link_urls(bio[u'poet:wikipedia']),
-      u'description': U(resource.section(u'About')),
+      u'medium': U(meta[u'Medium'])strip(),
+      u'date': U(parsedate(U(meta[u'Date']))),
+      u'creator': U(meta[u'Creator']),
+      u'thimage': obj_urls(meta[u'Thumbnail image']),
+      u'images': obj_urls(meta[u'Full image']),
     }
     return obj
 
@@ -48,8 +47,8 @@ ARTIFACT_PAGE_TEMPLATE = Template(u'''\
  Creator: $creator
  Label: $label
  Date: $date
- Thimage: {{$thimage}}
- Image: {{$image}}
+ Thumbnail image: {{$thimage}}
+ Full image: {{$image}}
 
 = akara:metadata =
 ##Here generic metadata at the Zen/Akara level
