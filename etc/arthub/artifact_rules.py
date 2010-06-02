@@ -33,3 +33,27 @@ def get_artifact(resource):
 def collect_artifacts(resources):
     return simplejson.dumps([objectify(resource) for resource in resources], indent=4)
 
+#Used to process HTTP PUT requests to update this resource
+@handles('PUT')
+def put_artifact(resource_type, body):
+    data = simplejson.loads(body)
+    #e.g. "id" : "http://potlach.org/2008/02/whitart/whitart/7"
+    return ARTIFACT_PAGE_TEMPLATE.substitute(data)
+
+
+ARTIFACT_PAGE_TEMPLATE = Template(u'''\
+= artifact:metadata =
+
+ Medium: $medium
+ Creator: $creator
+ Label: $label
+ Date: $date
+ Thimage: {{$thimage}}
+ Image: {{$image}}
+
+= akara:metadata =
+##Here generic metadata at the Zen/Akara level
+
+ akara:type:: [[poetpaedia/collection]]
+''')
+
