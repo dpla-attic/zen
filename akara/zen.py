@@ -1,10 +1,10 @@
 # -*- coding: iso-8859-1 -*-
 # 
 """
-z_zen.py
+zen.py
 
-Accesses a Moin wiki (via the Akara moinrest wrapper) to use as a source for a
-authoring and metadata aextraction
+Accesses a Moin wiki (via the Akara moinrest wrapper) to use as a source for
+authoring and metadata extraction
 
 Based on Moin/CMS (see http://wiki.xml3k.org/Akara/Services/MoinCMS )
 
@@ -184,7 +184,7 @@ def put_resource(environ, start_response):
     creds = extract_auth(environ)
     opener = urllib2.build_opener(handler) if handler else urllib2.build_opener()
 
-    import pprint; logger.debug('GRIPPO: ' + repr(pprint.pformat(environ)))
+    #import pprint; logger.debug('put_resource input environ: ' + repr(pprint.pformat(environ)))
     imt = environ['CONTENT_TYPE']
     qparams = cgi.parse_qs(environ['QUERY_STRING'])
     rtype = qparams.get('type')
@@ -201,7 +201,7 @@ def put_resource(environ, start_response):
 
     handler = resource_type.run_rulesheet('PUT', imt)
     wikified = handler(resource_type, body)
-    logger.debug('GRIPPO: ' + repr((wikified,)))
+    #logger.debug('put_resource wikified result: ' + repr((wikified,)))
 
     H = httplib2.Http('.cache')
 
@@ -214,210 +214,5 @@ def put_resource(environ, start_response):
 
     start_response(status_response(httplib.OK), [("Content-Type", 'text/plain')])
     return 'Updated OK'
-
-
-#--- %< --- "Classic" Zen interface
-
-TOP_REQUIRED = _("The 'top' query parameter is mandatory.")
-
-BROWSER_UA = 'Mozilla/5.0 (X11; U; Linux i686; de; rv:1.9.1.8) Gecko/20100202 Firefox/3.5.8'
-
-SERVICE_ID = 'http://purl.org/com/zepheira/zen/index'
-@simple_service('GET', SERVICE_ID, 'zen.index.json', 'application/json')
-def zen_index(top=None, maxcount=None):
-    '''
-    Extract Exhibit JSON [1] from Moin pages according to Zen conventions
-    
-    top - page on which to start looking for linked Zen resouces
-    maxcount - limit to the number of records returned; unlimited by default
-
-    curl "http://localhost:8880/zen.index.json?top=http://example-akara.com/moin/mywiki/zentoppage"
-
-    [1] For more on Exhibit JSON see: http://www.ibm.com/developerworks/web/library/wa-realweb6/ ; see listing 3
-    '''
-    #Useful: http://www.voidspace.org.uk/python/articles/authentication.shtml
-    #curl "http://localhost:8880/zen.index.json?top=http://community.zepheira.com/wiki/loc/LoC/Collections/"
-    #top = first_item(top, next=partial(assert_not_equal, None, msg=TOP_REQUIRED))
-    this_service = request.environ['SCRIPT_NAME']
-    this_service = request_uri(request.environ, include_query=False).rstrip('/')
-    if node.ENDPOINTS is None:
-        node.ENDPOINTS = dict(
-            [ (s.ident, find_peer_service(request.environ, s.ident))
-              for (path, s) in _current_registry._registered_services.iteritems()
-            ])
-        #logger.debug('Node end-points: ' + repr(node.ENDPOINTS))
-
-    #Set up to use HTTP auth for all wiki requests
-    handler = copy_auth(request.environ, top)
-    opener = urllib2.build_opener(handler) if handler else urllib2.build_opener()
-
-    #Invoke service to get resources for this type
-    #FIXME: Use service discovery instead
-    url = basejoin(this_service, 'zen.find.resources?type=' + top)
-    req = urllib2.Request(url)
-    resp = opener.open(req)
-    body = resp.read()
-    original_base, wrapped_base, original_page, resource_links = simplejson.loads(body)
-    logger.debug('HREF2: ' + repr((original_base, wrapped_base, original_page, resource_links)))
-
-    resources = []
-    failed = []
-    for link in resource_links:
-        #print >> sys.stderr, 'LINK:', link
-        #uri = split_fragment(item.resource)[0]
-        #relative = uri[wikibase_len:]
-        #print >> sys.stderr, uri, relative
-        #if rewrite:
-        #    uri = uri.replace(rewrite, wikibase)
-        wrapped_resource, orig_resource = wiki_uri(original_base, wrapped_base, link)
-        if logger: logger.debug('Resource URIs: ' + repr((link, wrapped_resource, orig_resource)))
-        #rest_uri, moin_link = wrapped_uri(original_wiki_base, link)
-        resource = node.lookup(wrapped_resource, opener=opener)
-        resources.append(resource)
-    handler = resource.resource_type.run_rulesheet('collect', 'application/json')
-    rendered = handler(resources)
-    return rendered
-    #result = {u'items': items}
-    #if failed: result[u'failed'] = failed
-    return simplejson.dumps(result, indent=4)
-
-
-#-----------
-
-
-    items = []
-    failed = []
-    for link in resources:
-        #print >> sys.stderr, 'LINK:', link
-        #uri = split_fragment(item.resource)[0]
-        #relative = uri[wikibase_len:]
-        #print >> sys.stderr, uri, relative
-        #if rewrite:
-        #    uri = uri.replace(rewrite, wikibase)
-        wrapped_resource, orig_resource = wiki_uri(original_base, wrapped_base, link)
-        if logger: logger.debug('Resource URIs: ' + repr((link, wrapped_resource, orig_resource)))
-        #rest_uri, moin_link = wrapped_uri(original_wiki_base, link)
-        resource = node.lookup(wrapped_resource, opener=opener)
-        try:
-            handler = resource.resource_type.run_rulesheet('collect', 'application/json')
-            rendered = handler(resource)
-            if rendered:
-                items.append(rendered)
-        except (KeyboardInterrupt, SystemExit):
-            raise
-        except Exception, e:
-            logger.info('Exception handling Zen record: ' + wrapped_resource)
-            logger.info('Exception info: ' + repr(e))
-            import traceback; logger.debug(traceback.format_exc())
-            failed.append(wrapped_resource)
-    result = {u'items': items}
-    if failed: result[u'failed'] = failed
-    return simplejson.dumps(result, indent=4)
-
-
-def resolve_rule_sheet(resource):
-    '''
-    A Zen rule sheet can be:
-    * A full Akara service, indexed by service ID
-    * A signed URL referenced from a resource type page (signature not yet implemented)
-    * An globally imported node class (deprecated)
-    '''
-    return rulesheet
-
-#Really just serves as a warning that the following function shadows type builtin, and provides a way to get it back
-PYTHON_TYPE_BUILTIN = type
-
-SERVICE_ID = 'http://purl.org/com/zepheira/zen/find-resources'
-@simple_service('GET', SERVICE_ID, 'zen.find.resources', 'application/json')
-def builtin_get_resources(type=None, limit=None):
-    '''
-    Find resources from Moin pages according to Zen conventions, returned in simple JSON
-    
-    rtype - resource type
-    limit - max number of records returned; unlimited by default
-    
-    Note: this method is technically quite brittle because it relies on the HTML rendering skin
-
-    curl "http://localhost:8880/zen.find.resources?type=http://example-akara.com/moin/mywiki/zentoppage"
-    '''
-    handler = copy_auth(request.environ, type)
-    opener = urllib2.build_opener(handler) if handler else urllib2.build_opener()
-    resolver = moinrest_resolver(opener=opener)
-    #req = urllib2.Request(type, headers={'Accept': XML_IMT, 'User-Agents': BROWSER_UA})
-    isrc, resp = parse_moin_xml(type, resolver=resolver)
-    doc = bindery.parse(isrc)
-
-    try:
-        original_base, wrapped_base, original_page = dict(resp.info())[ORIG_BASE_HEADER].split()
-    except KeyError:
-        raise RuntimeError('"type" parameter value appears to be a direct link to a Moin instance, rather than its Moin/REST proxy')
-    #wikibase, outputdir, rewrite, pattern
-    #wikibase_len = len(rewrite)
-    hrefs = doc.xml_select(u'//table[@class="navigation"]//@href')
-    if limit:
-        hrefs = islice(hrefs, 0, int(limit))
-    hrefs = list(hrefs); logger.debug('builtin_get_resources HREFS1: ' + repr(hrefs))
-    return simplejson.dumps((original_base, wrapped_base, original_page, [ navchild.xml_value for navchild in hrefs ]))
-
-
-SERVICE_ID = 'http://purl.org/com/zepheira/zen/create'
-@simple_service('POST', SERVICE_ID, 'zen.create.json', 'application/json')
-def zen_create(body, ctype, rtype=None):
-    '''
-    Extract Exhibit JSON [1] from Moin pages according to Zen conventions
-    
-    top - page on which to start looking for linked Zen resouces
-    maxcount - limit to the number of records returned; unlimited by default
-
-    curl "http://localhost:8880/zen.index.json?top=http://example-akara.com/moin/mywiki/zentoppage"
-
-    [1] For more on Exhibit JSON see: http://www.ibm.com/developerworks/web/library/wa-realweb6/ ; see listing 3
-    '''
-    #Useful: http://www.voidspace.org.uk/python/articles/authentication.shtml
-    #curl "http://localhost:8880/zen.index.json?top=http://community.zepheira.com/wiki/loc/LoC/Collections/"
-    #top = first_item(top, next=partial(assert_not_equal, None, msg=TOP_REQUIRED))
-    this_service = request.environ['SCRIPT_NAME']
-    this_service = request_uri(request.environ)
-    this_service = request_uri(request.environ, include_query=False).rstrip('/')
-    if node.ENDPOINTS is None:
-        node.ENDPOINTS = dict(
-            [ (s.ident, find_peer_service(request.environ, s.id))
-              for (path, s.id) in _current_registry._registered_services.iteritems()
-            ])
-        #logger.debug('Node end-points: ' + repr(node.ENDPOINTS))
-
-    #Set up to use HTTP auth for all wiki requests
-    handler = copy_auth(request.environ, top)
-    opener = urllib2.build_opener(handler) if handler else urllib2.build_opener()
-
-    node = lookup
-    items = []
-    failed = []
-    for link in resources:
-        #print >> sys.stderr, 'LINK:', link
-        #uri = split_fragment(item.resource)[0]
-        #relative = uri[wikibase_len:]
-        #print >> sys.stderr, uri, relative
-        #if rewrite:
-        #    uri = uri.replace(rewrite, wikibase)
-        wrapped_resource, orig_resource = wiki_uri(original_base, wrapped_base, link)
-        if logger: logger.debug('Resource URIs: ' + repr((link, wrapped_resource, orig_resource)))
-        #rest_uri, moin_link = wrapped_uri(original_wiki_base, link)
-        resource = node.lookup(wrapped_resource, opener=opener)
-        try:
-            rendered = resource.run_rulesheet('GET', 'application/json')
-            if rendered:
-                items.append(rendered)
-        except (KeyboardInterrupt, SystemExit):
-            raise
-        except Exception, e:
-            logger.info('Exception handling Zen record: ' + wrapped_resource)
-            logger.info('Exception info: ' + repr(e))
-            import traceback; logger.debug(traceback.format_exc())
-            failed.append(wrapped_resource)
-    result = {u'items': items}
-    if failed: result[u'failed'] = failed
-    #XXX Return a Location header
-    return simplejson.dumps(result, indent=4)
 
 

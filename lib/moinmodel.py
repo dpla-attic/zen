@@ -308,6 +308,7 @@ class rulesheet(object):
         if self.token != hashlib.sha1(node.SECRET + self.body).hexdigest():
             raise RuntimeError('Security token verification failed')
         #chunks = []
+        #U1 is just a smarter variant of the "Unicode, dammit!"
         def U1(text): return U(text, noneok=True)
         #def write(text):
         #    chunks.append(text)
@@ -380,73 +381,8 @@ class resource_type(node):
         return self.rulesheet
     
     def run_rulesheet(self, method='GET', accept='application/json'):
-        if self.endpoint:
-            #FIXME: This branch has not been tested since refactoring, and almost certainly does not work
-            #FIXME: Just mobe to a subclass
-
-            #(node_uri, node_type, endpoint, doc, metadata, original_wiki_base) = jsonizer
-            #request = urllib2.Request(rest_uri, headers={'Accept': DOCBOOK_IMT})
-            #body = opener.open(request).read()
-            #logger.debug('rest_uri docbook body: ' + body[:200])
-            query = urllib.urlencode({'node_uri': node_uri, 'node_type': node_type, 'original_wiki_base': original_wiki_base, 'original_wiki_link': link})
-            #XXX this will lead to a re-parse of body/doc
-            req = urllib2.Request(endpoint + '?' + query, self.body)
-            output = opener.open(req).read()
-            logger.debug('jsonizer result: ' + repr(rendered))
-        else:
-            #e.g. you can sign a rulesheet as follows:
-            #python -c "import sys, hashlib; print hashlib.sha1('MYSECRET' + sys.stdin.read()).hexdigest()" < rsheet.py 
-            #Make sure the rulesheet has not already been signed (i.e. does not have a hash on the first line)
-            import hashlib
-            rulesheet = self.get_rulesheet()
-            rs = inputsource(rulesheet, resolver=self.resolver)
-            token = rs.stream.readline().strip().lstrip('#')
-            #logger.debug('Token: ' + repr((token, self.SECRET)))
-            body = rs.stream.read()
-            if token != hashlib.sha1(node.SECRET + body).hexdigest():
-                raise RuntimeError('Security token verification failed')
-            #chunks = []
-            def U1(text): return U(text, noneok=True)
-            #def write(text):
-            #    chunks.append(text)
-
-            handlers = {}
-            #Decorator that allows the user to define request handler functions in rule sheets
-            def handles(method, match=None, ttl=3600):
-                '''
-                method - HTTP method for this handler to use, e.g. 'GET' or 'PUT'
-                         Might be a non-standard, internal method for special cases (e.g. 'collect')
-                match - condition to determine when this handler is to be invoked for a given method
-                        if a Unicode object, this should be an IMT to compare to the Accept info for the request
-                        if a callable, should have signature match(accept), return ing True or False
-                ttl - time-to-live for (GET) requests, for setting cache-control headers
-                '''
-                def deco(func):
-                    func.ttl = ttl
-                    handlers.setdefault(method, []).append((match, func))
-                    return func
-                return deco
-
-            #env = {'write': write, 'resource': self, 'service': service, 'U': U1}
-            resource_getter = partial(node.lookup, resolver=self.resolver)
-            env = {'service': service, 'U': U1, 'handles': handles, 'R': resource_getter, 'use': use}
-
-            #Execute the rule sheet
-            exec body in env
-            default = None
-            matching_handler = None
-            for (match, func) in handlers.get(method, []):
-                if logger: logger.debug('(match, func): ' + repr((match, func)))
-                if isinstance(match, basestring):
-                    if match == accept:
-                        matching_handler = func
-                elif match is None:
-                    default = func
-                else:
-                    if match(accept):
-                        matching_handler = func
-            if logger: logger.debug('(matching_handler, default): ' + repr((matching_handler, default)))
-        return matching_handler or default
+        #FIXME: Deprecate
+        return rulesheet(self.get_rulesheet()).run(self, 'GET', imt)
 
 
 node.NODES[RESOURCE_TYPE_TYPE] = resource_type
@@ -547,4 +483,41 @@ def extract_liststrings(node):
     if l:
         items = [ U(li).strip() for li in list(l[0].li) ]
     return items
+
+# MARK: you can ignore everything below this :) .  Will be working it in more elegantly next, but it's presently unused
+
+
+#
+SERVICE_ID = 'http://purl.org/com/zepheira/zen/direct-find-resources'
+@simple_service('GET', SERVICE_ID, 'zen.direct.find.resources', 'application/json')
+def builtin_get_resources(rtype=None, limit=None):
+    '''
+    Find resources from Moin pages according to Zen conventions, returned in simple JSON
+    
+    rtype - resource type
+    limit - max number of records returned; unlimited by default
+    
+    Note: this method is technically quite brittle because it relies on the HTML rendering skin
+
+    curl "http://localhost:8880/zen.find.resources?type=http://example-akara.com/moin/mywiki/zentoppage"
+    '''
+    handler = copy_auth(request.environ, type)
+    opener = urllib2.build_opener(handler) if handler else urllib2.build_opener()
+    resolver = moinrest_resolver(opener=opener)
+    #req = urllib2.Request(type, headers={'Accept': XML_IMT, 'User-Agents': BROWSER_UA})
+    isrc, resp = parse_moin_xml(type, resolver=resolver)
+    doc = bindery.parse(isrc)
+
+    try:
+        original_base, wrapped_base, original_page = dict(resp.info())[ORIG_BASE_HEADER].split()
+    except KeyError:
+        raise RuntimeError('"type" parameter value appears to be a direct link to a Moin instance, rather than its Moin/REST proxy')
+    #wikibase, outputdir, rewrite, pattern
+    #wikibase_len = len(rewrite)
+    hrefs = doc.xml_select(u'//table[@class="navigation"]//@href')
+    if limit:
+        hrefs = islice(hrefs, 0, int(limit))
+    hrefs = list(hrefs); logger.debug('builtin_get_resources HREFS1: ' + repr(hrefs))
+    return simplejson.dumps((original_base, wrapped_base, original_page, [ navchild.xml_value for navchild in hrefs ]))
+
 
