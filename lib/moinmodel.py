@@ -61,6 +61,7 @@ from amara.bindery.util import dispatcher, node_handler, property_sequence_gette
 from akara import httplib2
 from akara.util import copy_auth
 from akara.util.moin import wiki_uri, ORIG_BASE_HEADER, DOCBOOK_IMT, RDF_IMT, HTML_IMT, XML_IMT
+from akara.services import simple_service
 
 try:
     from akara import logger
@@ -343,7 +344,7 @@ class rulesheet(object):
             if isinstance(match, basestring):
                 if match == accept:
                     matching_handler = func
-            elif match is None:
+            elif (match is None) or (match=='application/json'):
                 default = func
             else:
                 if match(accept):
