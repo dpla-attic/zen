@@ -344,7 +344,7 @@ class rulesheet(object):
             if isinstance(match, basestring):
                 if match == accept:
                     matching_handler = func
-            elif (match is None) or (match=='application/json'):
+            elif (match is None):
                 default = func
             else:
                 if match(accept):
@@ -383,7 +383,7 @@ class resource_type(node):
     
     def run_rulesheet(self, method='GET', accept='application/json'):
         #FIXME: Deprecate
-        return rulesheet(self.get_rulesheet()).run(self, 'GET', imt)
+        return rulesheet(self.get_rulesheet()).run(self, 'GET', accept)
 
 
 node.NODES[RESOURCE_TYPE_TYPE] = resource_type
