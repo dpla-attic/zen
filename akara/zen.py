@@ -162,7 +162,7 @@ def get_resource(environ, start_response):
     # default, and stripping out any wildcard types and type parameters
     #
     # FIXME Ideally, this should use the q values and pick the best media type, rather than
-    # just picking the first non-wildcard type.
+    # just picking the first non-wildcard type.  Perhaps: http://code.google.com/p/mimeparse/
     accepted_imts = [ type.split(';')[0] for type in environ.get('HTTP_ACCEPT').split(',') ]
     accepted_imts.append('application/json')
     logger.debug('accepted_imts: ' + repr(accepted_imts))
