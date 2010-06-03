@@ -158,7 +158,9 @@ def get_resource(environ, start_response):
     resource = node.lookup(zenuri_to_moinrest(environ), opener=opener)
     resolver = resource.resolver
     
-    accepted_imts = environ.get('HTTP_ACCEPT').split(',')
+    # Choose a preferred media type from the Accept header, using application/json as presumed
+    # default, and stripping out any wildcard types and type parameters
+    accepted_imts = [ type.split(';')[0] for type in environ.get('HTTP_ACCEPT').split(',') ]
     accepted_imts.append('application/json')
     logger.debug('accepted_imts: ' + repr(accepted_imts))
     imt = first_item(dropwhile(lambda x: '*' in x, accepted_imts))
@@ -171,7 +173,8 @@ def get_resource(environ, start_response):
     else:
         handler = resource.resource_type.run_rulesheet('GET', imt)
     rendered = handler(resource)
-    start_response(status_response(httplib.OK), [("Content-Type", imt), ("Cache-Control", "max-age="+str(handler.ttl))])
+
+    start_response(status_response(httplib.OK), [("Content-Type", str(handler.imt)), ("Cache-Control", "max-age="+str(handler.ttl))])
     #start_response(status_response(status), [("Content-Type", ctype), (moin.ORIG_BASE_HEADER, moin_base_info)])
     return rendered
 

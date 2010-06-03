@@ -327,6 +327,7 @@ class rulesheet(object):
             '''
             def deco(func):
                 func.ttl = ttl
+                func.imt = match
                 handlers.setdefault(method, []).append((match, func))
                 return func
             return deco
