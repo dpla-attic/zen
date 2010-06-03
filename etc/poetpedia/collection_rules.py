@@ -1,5 +1,5 @@
 from string import Template
-import simplejson
+from amara.thirdparty import json
 from zenlib.moinmodel import linkify
 
 #Declare transform services
@@ -25,12 +25,12 @@ def objectify(resource):
 #Used to serve normal HTTP GET requests for the default representation of this resource
 @handles('GET')
 def get_collection(resource):
-    return simplejson.dumps(objectify(resource), indent=4)
+    return json.dumps(objectify(resource), indent=4)
 
 #Used to process HTTP PUT requests to update this resource
 @handles('PUT')
 def put_collection(resource_type, body):
-    data = simplejson.loads(body)
+    data = json.loads(body)
     items = u'\n'.join([ u' * ' + linkify(item, resource_type.wrapped_base) for item in data[u'items'] ])
     return COLLECTION_PAGE_TEMPLATE.substitute(locals())
 

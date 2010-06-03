@@ -7,8 +7,6 @@ Copyright 2008-2010 Zepheira LLC
 
 Services for geocoding
 
-Requires: geopy, simplejson, and feedparser
-
 Accesses a Moin wiki (via the Akara moinrest wrapper) to use as a source for a
 authoring and metadata aextraction
 
@@ -72,8 +70,7 @@ from contextlib import closing
 
 import amara
 from amara import bindery
-import simplejson
-import feedparser
+from amara.thirdparty import json
 from geopy import geocoders
 
 from akara.services import simple_service
@@ -172,11 +169,11 @@ def ipgeo_json(addr=None):
         return ''
     check_initdb()
     result = ip2geo(ipaddr)
-    return simplejson.dumps({ipaddr: result}) if result else "{}"
+    return json.dumps({ipaddr: result}) if result else "{}"
 
 
 #try:
-#    geocache = simplejson.load(open(geocachejsfile))
+#    geocache = json.load(open(geocachejsfile))
 #except IOError:
 #    geocache = {}
 #GEOCODER = 
@@ -218,7 +215,7 @@ def geolookup_json(place=None):
                     latlong = None
                     response.status = status_response(httplib.NOT_FOUND)
         geocache[geoquery] = latlong
-    return simplejson.dumps({geoquery: latlong}) if latlong else "{}"
+    return json.dumps({geoquery: latlong}) if latlong else "{}"
 
 
 geohashcache = {}
@@ -240,7 +237,7 @@ def geohash_json(place=None):
         query = urllib.urlencode({'q' : geoquery})
         url = 'http://geohash.org/?%s' % (query)
         with closing(urllib.urlopen(url)) as search_results:
-            json = simplejson.loads(search_results.read())
+            json = json.loads(search_results.read())
         results = json['responseData']['results']
         return results[0]['url'].encode('utf-8') + '\n'
 
@@ -260,7 +257,7 @@ def geohash_json(place=None):
                     res = HTTPNotFound()
                     return res(environ, start_response)
         geocache[geoquery] = latlong
-    return simplejson.dumps({geoquery: latlong}) if latlong else "{}"
+    return json.dumps({geoquery: latlong}) if latlong else "{}"
 
 
 US_STATES_GEO = bindery.parse("""<provinces>

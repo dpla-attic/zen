@@ -63,7 +63,6 @@ from itertools import islice
 from wsgiref.util import request_uri
 from itertools import dropwhile
 
-import simplejson
 import httplib2
 from dateutil.parser import parse as dateparse
 
