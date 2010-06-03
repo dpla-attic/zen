@@ -435,8 +435,8 @@ def get_obj_urls(node):
 
 @zservice(u'http://purl.org/com/zepheira/zen/exhibit/jsonize')
 def jsonize(obj):
-    import simplejson
-    return simplejson.dumps(obj)
+    from amara.thirdparty import json
+    return json.dumps(obj)
 
 
 def handle_list(node):
@@ -493,7 +493,7 @@ def extract_liststrings(node):
 
 #
 SERVICE_ID = 'http://purl.org/com/zepheira/zen/direct-find-resources'
-@simple_service('GET', SERVICE_ID, 'zen.direct.find.resources', 'application/json')
+#@simple_service('GET', SERVICE_ID, 'zen.direct.find.resources', 'application/json')
 def builtin_get_resources(rtype=None, limit=None):
     '''
     Find resources from Moin pages according to Zen conventions, returned in simple JSON
@@ -505,6 +505,7 @@ def builtin_get_resources(rtype=None, limit=None):
 
     curl "http://localhost:8880/zen.find.resources?type=http://example-akara.com/moin/mywiki/zentoppage"
     '''
+    from amara.thirdparty import json
     handler = copy_auth(request.environ, type)
     opener = urllib2.build_opener(handler) if handler else urllib2.build_opener()
     resolver = moinrest_resolver(opener=opener)
@@ -522,6 +523,6 @@ def builtin_get_resources(rtype=None, limit=None):
     if limit:
         hrefs = islice(hrefs, 0, int(limit))
     hrefs = list(hrefs); logger.debug('builtin_get_resources HREFS1: ' + repr(hrefs))
-    return simplejson.dumps((original_base, wrapped_base, original_page, [ navchild.xml_value for navchild in hrefs ]))
+    return json.dumps((original_base, wrapped_base, original_page, [ navchild.xml_value for navchild in hrefs ]))
 
 

@@ -53,6 +53,6 @@ ARTIFACT_PAGE_TEMPLATE = Template(u'''\
 = akara:metadata =
 ##Here generic metadata at the Zen/Akara level
 
- akara:type:: [[poetpaedia/collection]]
+ akara:type:: [[arthub/artifact]]
 ''')
 

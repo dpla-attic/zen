@@ -26,6 +26,7 @@ def readcsv(text):
             elif not(row):
                 continue
             elif len(row) != sanity_check_length:
+                print 1, (len(row),sanity_check_length)
                 data = []
                 imt = UNKNOWN_TEXT_IMT
                 break
@@ -45,6 +46,7 @@ def readcsv(text):
             elif not(row):
                 continue
             elif len(row) != sanity_check_length:
+                print 2, (len(row),sanity_check_length)
                 data = []
                 imt = UNKNOWN_TEXT_IMT
                 break

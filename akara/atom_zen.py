@@ -44,9 +44,7 @@ To-do
 import sys
 import time
 import urllib, httplib2, urllib2
-from itertools import *
-
-import simplejson
+from itertools import islice
 
 from amara import bindery
 from amara.lib.iri import absolutize
