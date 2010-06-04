@@ -73,7 +73,7 @@ from amara.lib import inputsource
 from amara.bindery.model import examplotron_model, generate_metadata
 from amara.writers.struct import *
 from amara import bindery
-from amara.lib.iri import split_fragment, relativize, absolutize, basejoin, join
+from amara.lib.iri import split_fragment, relativize, absolutize, is_absolute, join
 from amara.bindery.util import dispatcher, node_handler, property_sequence_getter
 from amara.lib.util import first_item
 #from amara.lib.date import timezone, UTC
@@ -90,7 +90,7 @@ from akara import request
 
 from akara.util.moin import wiki_uri
 
-from zenlib.moinmodel import node, rulesheet, moinrest_resolver, parse_moin_xml
+from zenlib.moinmodel import node, rulesheet, moinrest_resolver, parse_moin_xml, zenuri_to_moinrest, MOINREST_SERVICE_ID
 from zenlib.util import find_peer_service
 
 #endpoints = AKARA.module_config.get('endpoints')
@@ -99,8 +99,6 @@ from zenlib.util import find_peer_service
 #logger.debug('GRIPPO: ' + repr((endpoints, )))
 
 node.SECRET = AKARA.module_config.get('rulesheet-secret', '')
-
-MOINREST_SERVICE_ID = 'http://purl.org/xml3k/akara/services/demo/moinrest'
 
 
 #aname = partial(property_sequence_getter, u"name")
@@ -112,19 +110,6 @@ UNSUPPORTED_IN_FILENAME = re.compile('\W')
 #POST_TO = AKARA_MODULE_CONFIG['post-to']
 
 SELF_END_POINT = None
-
-def zenuri_to_moinrest(environ):
-    #self_end_point = environ['SCRIPT_NAME'].rstrip('/') #$ServerPath/zen
-    #self_end_point = request_uri(environ, include_query=False).rstrip('/')
-    #self_end_point = guess_self_uri(environ)
-    #absolutize(environ['SCRIPT_NAME'].rstrip('/'), request_uri(environ, include_query=False))
-    #logger.debug('moinrest_uri: ' + repr((self_end_point, MOINREST_SERVICE_ID)))
-    moinresttop = find_peer_service(environ, MOINREST_SERVICE_ID)
-    #logger.debug('moinrest_uri: ' + repr(moinresttop))
-    #logger.debug('moinrest_uri: ' + repr(environ['PATH_INFO']))
-    moinrest_uri = join(moinresttop, environ['PATH_INFO'].lstrip('/'))
-    logger.debug('moinrest_uri: ' + repr(moinrest_uri))
-    return moinrest_uri
 
 
 DEFAULT_MOUNT = 'zen'
@@ -198,7 +183,11 @@ def put_resource(environ, start_response):
         start_response(status_response(status), [("Content-Type", 'text/plain')])
         return 'type URL parameter required'
 
-    resource_type = node.lookup(rtype[0], opener=opener)
+    rtype = rtype[0]
+    if not is_absolute(rtype):
+        moinresttop = find_peer_service(environ, MOINREST_SERVICE_ID)
+        rtype = join(moinresttop, environ['PATH_INFO'].lstrip('/').split('/')[0], rtype)
+    resource_type = node.lookup(rtype, opener=opener)
     resolver = resource_type.resource_type
     
     temp_fpath = read_http_body_to_temp(environ, start_response)

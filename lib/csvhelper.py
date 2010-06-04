@@ -1,3 +1,5 @@
+#See also: http://www.doughellmann.com/PyMOTW/csv/
+
 import sys
 import csv
 
