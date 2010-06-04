@@ -154,7 +154,12 @@ def get_resource(environ, start_response):
     handler = copy_auth(environ, baseuri)
     opener = urllib2.build_opener(handler) if handler else urllib2.build_opener()
 
-    resource = node.lookup(zenuri_to_moinrest(environ), opener=opener)
+    try :
+        resource = node.lookup(zenuri_to_moinrest(environ), opener=opener)
+    except urllib2.HTTPError as he :
+        start_response(status_response(he.code),[('Content-Type','text/plain')])
+        return( "%(code)d %(msg)s\n" % {'code':he.code,'msg':he.msg} )
+
     resolver = resource.resolver
     
     # Choose a preferred media type from the Accept header, using application/json as presumed
