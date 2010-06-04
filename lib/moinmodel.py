@@ -54,7 +54,7 @@ from amara.lib.irihelpers import resolver as baseresolver
 #from amara.writers.struct import *
 #from amara.bindery.html import parse as htmlparse
 from amara.lib import U
-from amara.lib.iri import split_fragment, relativize, absolutize, IriError
+from amara.lib.iri import split_fragment, relativize, absolutize, IriError, join
 #from amara.bindery.model import examplotron_model, generate_metadata, metadata_dict
 from amara.bindery.util import dispatcher, node_handler, property_sequence_getter
 
@@ -69,6 +69,10 @@ except ImportError:
     logger = None
 
 from zenlib import zservice
+from zenlib.util import find_peer_service
+
+MOINREST_SERVICE_ID = 'http://purl.org/xml3k/akara/services/demo/moinrest'
+
 
 def cleanup_text_blocks(text):
     return '\n'.join([line.strip() for line in text.splitlines() ])
@@ -84,12 +88,27 @@ def linkify(link, wikibase):
     else:
         return u'[[%s]]'%link
 
-#class construct(object):
-#    '''
-#    A data construct derived from a Moin wiki page
-#    '''
-#    def load(self):
-#        raise NotImplementedError
+
+def zenuri_to_moinrest(environ, uri=None):
+    #self_end_point = environ['SCRIPT_NAME'].rstrip('/') #$ServerPath/zen
+    #self_end_point = request_uri(environ, include_query=False).rstrip('/')
+    #self_end_point = guess_self_uri(environ)
+    #absolutize(environ['SCRIPT_NAME'].rstrip('/'), request_uri(environ, include_query=False))
+    #logger.debug('moinrest_uri: ' + repr((self_end_point, MOINREST_SERVICE_ID)))
+    moinresttop = find_peer_service(environ, MOINREST_SERVICE_ID)
+    #logger.debug('zenuri_to_moinrest: ' + repr((moinresttop, environ['PATH_INFO'], environ['SCRIPT_NAME'])))
+    if uri:
+        if uri.startswith(moinresttop):
+        #if moinresttop.split('/')[-1] == environ['SCRIPT_NAME'].strip('/'):
+            #It is already a moin URL
+            return uri or request_uri(environ)
+        else:
+            raise NotImplementedError('For now a Zen uri is required')
+    else:
+        moinrest_uri = join(moinresttop, environ['PATH_INFO'].lstrip('/'))
+    logger.debug('moinrest_uri: ' + repr(moinrest_uri))
+    return moinrest_uri
+
 
 class moinrest_resolver(baseresolver):
     """
@@ -386,7 +405,7 @@ class resource_type(node):
     
     def run_rulesheet(self, method='GET', accept='application/json'):
         #FIXME: Deprecate
-        return rulesheet(self.get_rulesheet()).run(self, 'GET', accept)
+        return rulesheet(self.get_rulesheet()).run(self, method, accept)
 
 
 node.NODES[RESOURCE_TYPE_TYPE] = resource_type
