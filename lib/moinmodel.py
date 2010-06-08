@@ -346,7 +346,7 @@ class rulesheet(object):
             '''
             def deco(func):
                 func.ttl = ttl
-                func.imt = match or 'application/json'
+                func.imt = match
                 handlers.setdefault(method, []).append((match, func))
                 return func
             return deco
@@ -364,13 +364,14 @@ class rulesheet(object):
             if isinstance(match, basestring):
                 if match == accept:
                     matching_handler = func
-                    logger.debug("Found matching function: " + repr(func))
+                    if logger: logger.debug("Found matching function: " + repr(func))
             elif (match is None):
                 default = func
-                logger.debug("Setting default function: " + repr(func))
+                if logger: logger.debug("Setting default function: " + repr(func))
             else:
                 if match(accept):
                     matching_handler = func
+                    if logger: logger.debug("Found matching function: " + repr(func))
         if logger: logger.debug('(matching_handler, default): ' + repr((matching_handler, default)))
         return matching_handler or default
 
