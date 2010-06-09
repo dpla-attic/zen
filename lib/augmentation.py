@@ -9,7 +9,16 @@ Data augmentation services supplied with Zen
 >>> result
 {u'_1': {u'shredded': [u'text', u'text', u'text'], u'id': u'_1', u'label': u'_1'}}
 
+>>> source = [{u"id": u"_1", u"label": u"_1", u"orig": u"text, text and text"}]
+>>> propinfo = {u"pattern": u"(,)|(and)", u"extract": u"orig", u"property": u"shredded", u"enabled": True, u"label": "shredded result", u"tags": [u"property:type=text"]}
+>>> result = {}
+>>> augmentation.augment_shredded_list(source, propinfo, result)
+>>> result
+{u'_1': {u'shredded': [u'text', u'text', u'text'], u'id': u'_1', u'label': u'_1'}}
+
 '''
+
+import re
 
 from amara.lib import U
 from amara.lib.date import timezone, UTC
@@ -137,12 +146,13 @@ def augment_shredded_list(source, propertyinfo, items_dict):
     extract = propertyinfo[u"extract"]
     pname = propertyinfo.get(u"property", u'shreddedlist')
     pattern = propertyinfo.get(u"pattern")
+    if pattern: pattern = re.compile(pattern)
     delim = propertyinfo.get(u"delimiter", u',')
     for obj in source:
         try:
             if pattern:
                 #FIXME: Needs to be better spec'ed
-                result = re.pattern.split(obj[extract])
+                result = pattern.split(obj[extract])
             else:
                 result = [ item.strip() for item in obj[extract].split(delim) ]
             if logger: logger.debug("augment_shredded_list: " + repr((obj[extract], pattern, delim)))

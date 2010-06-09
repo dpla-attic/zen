@@ -11,7 +11,8 @@ from gettext import gettext as _
 
 from dateutil.parser import parse as dateparse
 
-from functools import wraps, partial
+from functools import partial
+from itertools import islice, dropwhile
 
 import amara
 from amara import tree, bindery
@@ -407,6 +408,40 @@ def register_node_type(type_id, nclass):
     node.NODES[type_id] = nclass
 
 #
+
+def curation_ingest(rest_uri, mointext, user, H, auth_headers):
+    import diff_match_patch
+    from akara.util.moin import HISTORY_MODEL
+    from akara.util.moin import wiki_normalize
+
+    resp, content = H.request(rest_uri + ';history', "GET", headers=auth_headers)
+    historydoc = bindery.parse(content, model=HISTORY_MODEL)
+    rev = first_item(dropwhile(lambda rev: unicode(rev.editor) != user, (historydoc.history.rev or [])))
+    if not rev or historydoc.history.rev.editor == user:
+        #New record, or the most recent modification is also by the akara user
+        logger.debug('Direct update (no conflict scenario)')
+        return mointext
+    else:
+        #Potential conflict
+        logger.debug('Potential conflict scenario')
+        resp, prior_akara_rev = H.request(rest_uri + '?rev=' + rev.id, "GET", headers=auth_headers)
+        prior_akara_rev = wiki_normalize(prior_akara_rev)
+        dmp = diff_match_patch.diff_match_patch()
+        patches = dmp.patch_make(prior_akara_rev, mointext)
+        logger.debug('PATCHES: ' + dmp.patch_toText(patches))
+        #XXX Possible race condition.  Should probably figure out a way to get all revs atomically
+        resp, present_rev = H.request(rest_uri, "GET", headers=auth_headers)
+        present_rev = wiki_normalize(present_rev)
+        patched, flags = dmp.patch_apply(patches, present_rev)
+        if all(flags):
+            #Patch can be completely automated
+            return patched
+        else:
+            #At least one patch hunk failed
+            logger.debug('CONFLICT: ' + repr(flags))
+            return None
+    return
+
 
 from zenlib import register_service
 
