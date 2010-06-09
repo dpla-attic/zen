@@ -2,35 +2,6 @@
 # 
 """
 
-See: http://wiki.xml3k.org/Akara/Services/MoinCMS
-
-Copyright 2009 Uche Ogbuji
-This file is part of the open source Akara project,
-provided under the Apache 2.0 license.
-See the files LICENSE and NOTICE for details.
-Project home, documentation, distributions: http://wiki.xml3k.org/Akara
-
-@copyright: 2009 by Uche ogbuji <uche@ogbuji.net>
-
-
-T = ''' title::  httplib2 0.6.0 
- last changed:: 2009-12-28T13:06:56-05:00
- link:: http://bitworking.org/news/2009/12/httplib2-0.6.0
-= Summary =
-None
-= akara:metadata =
- akara:type:: http://purl.org/com/zepheira/zen/resource/webfeed
-'''
-
-from amara.tools.creoletools import parse
-from amara.writers import lookup
-from zenlib import moinmodel
-
-doc = parse(T)
-#doc.xml_write(lookup('xml-indent'))
-n = moinmodel.node(doc, 'http://localhost:8880/moin/mywiki/spam/eggs', 'http://localhost:8080/spam/eggs')
-print n.akara_type()
-
 """
 
 import hashlib
@@ -57,6 +28,7 @@ from amara.lib import U
 from amara.lib.iri import split_fragment, relativize, absolutize, IriError, join
 #from amara.bindery.model import examplotron_model, generate_metadata, metadata_dict
 from amara.bindery.util import dispatcher, node_handler, property_sequence_getter
+from amara.thirdparty import json
 
 from akara import httplib2
 from akara.util import copy_auth
@@ -68,7 +40,7 @@ try:
 except ImportError:
     logger = None
 
-from zenlib import zservice
+from zenlib import zservice, service_proxy
 from zenlib.util import find_peer_service
 
 MOINREST_SERVICE_ID = 'http://purl.org/xml3k/akara/services/demo/moinrest'
@@ -353,7 +325,7 @@ class rulesheet(object):
 
         #env = {'write': write, 'resource': self, 'service': service, 'U': U1}
         resource_getter = partial(node.lookup, resolver=resource.resolver)
-        env = {'service': service, 'U': U1, 'handles': handles, 'R': resource_getter, 'use': use}
+        env = {'service': service_proxy, 'U': U1, 'handles': handles, 'R': resource_getter, 'use': use}
 
         #Execute the rule sheet
         exec self.body in env
@@ -425,12 +397,6 @@ def use(pymodule):
         logger.debug('Unable to import declared module, so will have to be available through discovery: ' + repr(e))
     return
 
-def service(url):
-    '''
-    e.g. service(u'http://example.org/your-service')
-    '''
-    return SERVICES[url]
-
 
 #XXX: do we really need this function indirection for simple global dict assignment?
 def register_node_type(type_id, nclass):
@@ -455,7 +421,6 @@ def get_obj_urls(node):
 
 @zservice(u'http://purl.org/com/zepheira/zen/exhibit/jsonize')
 def jsonize(obj):
-    from amara.thirdparty import json
     return json.dumps(obj)
 
 
@@ -511,38 +476,27 @@ def extract_liststrings(node):
 # MARK: you can ignore everything below this :) .  Will be working it in more elegantly next, but it's presently unused
 
 
-#
-SERVICE_ID = 'http://purl.org/com/zepheira/zen/direct-find-resources'
-#@simple_service('GET', SERVICE_ID, 'zen.direct.find.resources', 'application/json')
-def builtin_get_resources(rtype=None, limit=None):
+@zservice(u'http://purl.org/com/zepheira/zen/util/get-child-pages')
+def get_child_pages(node, limit=None):
     '''
-    Find resources from Moin pages according to Zen conventions, returned in simple JSON
+    node - the node for the page to be processed
+    limit - return no more than this many pages
     
-    rtype - resource type
-    limit - max number of records returned; unlimited by default
+    >>> from zenlib.moinmodel import node, get_child_pages
+    >>> p = node.lookup(u'http://localhost:8880/moin/x/poetpaedia/poet')
+    >>> print get_child_pages(p)
+    [u'http://localhost:8880/moin/x/poetpaedia/poet/epound', u'http://localhost:8880/moin/x/poetpaedia/poet/splath']
     
-    Note: this method is technically quite brittle because it relies on the HTML rendering skin
-
-    curl "http://localhost:8880/zen.find.resources?type=http://example-akara.com/moin/mywiki/zentoppage"
     '''
-    from amara.thirdparty import json
-    handler = copy_auth(request.environ, type)
-    opener = urllib2.build_opener(handler) if handler else urllib2.build_opener()
-    resolver = moinrest_resolver(opener=opener)
-    #req = urllib2.Request(type, headers={'Accept': XML_IMT, 'User-Agents': BROWSER_UA})
-    isrc, resp = parse_moin_xml(type, resolver=resolver)
-    doc = bindery.parse(isrc)
-
-    try:
-        original_base, wrapped_base, original_page = dict(resp.info())[ORIG_BASE_HEADER].split()
-    except KeyError:
-        raise RuntimeError('"type" parameter value appears to be a direct link to a Moin instance, rather than its Moin/REST proxy')
-    #wikibase, outputdir, rewrite, pattern
-    #wikibase_len = len(rewrite)
-    hrefs = doc.xml_select(u'//table[@class="navigation"]//@href')
+    #isrc, resp = parse_moin_xml(node.rest_uri, resolver=node.resolver)
+    #hrefs = node.doc.xml_select(u'//h:table[@class="navigation"]//@href', prefixes={u'h': u'http://www.w3.org/1999/xhtml'})
+    #For some reason some use XHTML NS and some don't
+    #if not hrefs:
+    #    hrefs = node.doc.xml_select(u'//table[@class="navigation"]//@href')
+    hrefs = node.doc.xml_select(u'//*[@class="navigation"]//@href')
     if limit:
         hrefs = islice(hrefs, 0, int(limit))
-    hrefs = list(hrefs); logger.debug('builtin_get_resources HREFS1: ' + repr(hrefs))
-    return json.dumps((original_base, wrapped_base, original_page, [ navchild.xml_value for navchild in hrefs ]))
-
+    hrefs = list(hrefs); logger.debug('get_child_pages HREFS1: ' + repr(hrefs))
+    hrefs = [ wiki_uri(node.original_base, node.wrapped_base, navchild.xml_value, node.rest_uri)[0] for navchild in hrefs ]
+    return hrefs
 

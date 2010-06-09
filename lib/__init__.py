@@ -41,5 +41,13 @@ def zservice(service_id):
     return zregister
 
 
+def service_proxy(url):
+    '''
+    Returns a proxy callable corresponding to a service
+    e.g. service(u'http://example.org/your-service')
+    '''
+    return SERVICES[url]
+
+
 from httpmodel import *
 
