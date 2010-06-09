@@ -6,6 +6,9 @@ from testconfig import config
 
 """
 Nosetests for Zen's HTTP-related features such as media type handling and cache control.
+
+This could use some simplification; there's lots of repeated code.  I suppose a pipeline would help?
+
 """
 
 POET_RESOURCE_TYPE_URI = 'http://localhost:8880/%s/testwiki/poetpaedia/poet'
@@ -28,13 +31,13 @@ Children: <<Navigation(children)>>
 
  akara:type:: http://purl.org/xml3k/akara/cms/resource-type
  akara:rulesheet:: http://www.markbaker.ca/poet.txt
- #akara:rulesheet:: [[poetpaedia/rulesheet]]
 '''
+#akara:rulesheet:: [[poetpaedia/rulesheet]]
 
 POET_RULESHEET_URI = 'http://localhost:8880/%s/testwiki/poetpaedia/rulesheet'
 
 POET_RULESHEET = '''
-import simplejson
+from amara.thirdparty import json
 
 #Declare transform services
 strip = service(u'http://purl.org/xml3k/akara/builtins/string/strip')
@@ -63,7 +66,7 @@ def objectify(resource):
 #Used to serve normal HTTP GET requests for the default representation of this resource
 @handles('GET',ttl=3600)
 def get_poet(resource):
-    return simplejson.dumps(objectify(resource))
+    return json.dumps(objectify(resource))
 
 #A simple text/plain representation
 @handles('GET','text/plain',86400)
@@ -71,10 +74,15 @@ def get_poet(resource):
     poet = objectify(resource)
     return poet.name + ': ' + poet.description
 
+@handles('GET','text/html',43200)
+def get_poet(resource):
+    poet = objectify(resource)
+    return "<html><head><title>%s</title></head><body><p>%s</p></body></html" % (poet.name, poet.description)
+
 #Used to serve requests for a collection of resources, in raw form
-@handles('collect', 'raw/pydict')
+@handles('collect','raw/pydict')
 def collect_poets(resources):
-    return simplejson.dumps([objectify(resource) for resource in resources])
+    return json.dumps([objectify(resource) for resource in resources])
 '''
 
 POET_URI = 'http://localhost:8880/%s/testwiki/poetpaedia/poet/pound'
@@ -115,7 +123,7 @@ class TestHttpResponses :
         H = httplib2.Http()
         headers = {'Content-Type': 'text/plain'};
         try:
-            resp, content = H.request(POET_RESOURCE_TYPE_URI % BASE_MOIN, "PUT",
+            resp, content = H.request(POET_RESOURCE_TYPE_URI % BASE_MOIN, 'PUT',
                                       body=POET_RESOURCE_TYPE_CREOLE, headers=headers)
         except Exception as e:
             assert 0
@@ -125,13 +133,13 @@ class TestHttpResponses :
         signed_rulesheet = "#" + hashlib.sha1(secret + POET_RULESHEET).hexdigest() + POET_RULESHEET
 
         try:
-            resp, content = H.request(POET_RULESHEET_URI % BASE_MOIN, "PUT",
+            resp, content = H.request(POET_RULESHEET_URI % BASE_MOIN, 'PUT',
                                       body=signed_rulesheet, headers=headers)
         except Exception as e:
             assert 0
 
         try:
-            resp, content = H.request(POET_URI % BASE_MOIN, "PUT",
+            resp, content = H.request(POET_URI % BASE_MOIN, 'PUT',
                                       body=POET_CREOLE, headers=headers)
         except Exception as e:
             assert 0
@@ -145,57 +153,77 @@ class TestHttpResponses :
         EXPECTED_IMT = 'text/plain'
 
         H = httplib2.Http()
-        H.headers={'Accept': "text/*;q=0.9,text/plain;q=0.6,text/html,application/xhtml+xml"}
         try:
-            resp, content = H.request(POET_URI % BASE_ZEN, "GET")
+            resp, content = H.request(POET_URI % BASE_ZEN, 'GET',headers={'accept': ACCEPT_HEADER})
         except Exception as e:
             assert 0
 
-        assert resp.has_key(HTTP_CT)
-#        print "Content type = " + resp[HTTP_CT]
-        assert resp[HTTP_CT] == EXPECTED_IMT
+        print "Content type: " + resp.get(HTTP_CT,"")
+        assert resp.get(HTTP_CT,"") == EXPECTED_IMT
 
-    def test_conneg2(self) :
+    def test_conneg1(self) :
 
         ACCEPT_HEADER = '*/*,application/xhtml+xml,application/json,text/plain'
         EXPECTED_IMT = 'application/json'
 
         H = httplib2.Http()
-        H.headers={'Accept': "text/*;q=0.9,text/plain;q=0.6,text/html,application/xhtml+xml"}
         try:
-            resp, content = H.request(POET_URI % BASE_ZEN, "GET")
+            resp, content = H.request(POET_URI % BASE_ZEN, 'GET',headers={'accept': ACCEPT_HEADER})
+        except Exception as e:
             assert 0
 
-        assert resp[HTTP_CT] == EXPECTED_IMT
+        print "Content type: " + resp.get(HTTP_CT,"")
+        assert resp.get(HTTP_CT,"") == EXPECTED_IMT
 
     def test_conneg_default(self) :
 
-        # ACCEPT_HEADER =
+        # No accept header
         EXPECTED_IMT = 'application/json'
 
         H = httplib2.Http()
         try:
-            resp, content = H.request(POET_URI % BASE_ZEN, "GET")
+            resp, content = H.request(POET_URI % BASE_ZEN, 'GET')
         except Exception as e:
             assert 0
 
-        assert resp[HTTP_CT] == EXPECTED_IMT
+        print "Content type: " + resp.get(HTTP_CT,"")
+        print "Content : " + content
+        assert resp.get(HTTP_CT,"") == EXPECTED_IMT
 
     def test_ttl1(self) :
 
         EXPECTED_CC = 'max-age=86400'
+        ACCEPT_HEADER = 'text/plain'
 
         H = httplib2.Http()
-        H.headers={'Accept': "text/plain"} # The poet text/plain repr has a known ttl
         try:
-            resp, content = H.request(POET_URI % BASE_ZEN, "GET")
+            resp, content = H.request(POET_URI % BASE_ZEN, 'GET',headers={'accept': ACCEPT_HEADER})
         except Exception as e:
             assert 0
 
+        print "Content type: " + resp.get(HTTP_CT,"N/A")
+        print "Cache control: " + resp.get(HTTP_CC,"N/A")
+        print "Content : " + content
+        assert resp.get(HTTP_STATUS,"9")[0] == "2" # successful response
         # FIXME Should be more robust than simple equality here
-        assert resp[HTTP_STATUS][0] == "2" # successful response
-        assert resp.has_key(HTTP_CC)
-        assert resp[HTTP_CC] == EXPECTED_CC
+        assert resp.get(HTTP_CC,"") == EXPECTED_CC
+
+    def test_ttl2(self) :
+
+        EXPECTED_CC = 'max-age=43200'
+        ACCEPT_HEADER = 'text/html'
+
+        H = httplib2.Http()
+        try:
+            resp, content = H.request(POET_URI % BASE_ZEN, 'GET',headers={'accept': ACCEPT_HEADER})
+        except Exception as e:
+            assert 0
+
+        print "Content type: " + resp.get(HTTP_CT,"N/A")
+        print "Cache control: " + resp.get(HTTP_CC,"N/A")
+        assert resp.get(HTTP_STATUS,"9")[0] == "2" # successful response
+        # FIXME Should be more robust than simple equality here
+        assert resp.get(HTTP_CC,"") == EXPECTED_CC
 
     def test_ttl_default(self) :
 
@@ -203,9 +231,9 @@ class TestHttpResponses :
 
         H = httplib2.Http()
         try:
-            resp, content = H.request(POET_URI % BASE_ZEN, "GET")
+            resp, content = H.request(POET_URI % BASE_ZEN, 'GET')
         except Exception as e:
             assert 0
 
-        assert resp[HTTP_STATUS][0] == "2"
-        assert resp[HTTP_CC] == EXPECTED_CC
+        assert resp.get(HTTP_STATUS,"9")[0] == "2"
+        assert resp.get(HTTP_CC,"") == EXPECTED_CC

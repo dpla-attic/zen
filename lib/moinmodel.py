@@ -346,7 +346,14 @@ class rulesheet(object):
             '''
             def deco(func):
                 func.ttl = ttl
-                func.imt = match
+                # Set appropriate default media type when no match is specified in @handles
+                if match is None :
+                    if method == 'collect' :
+                        func.imt = 'raw/pydict'
+                    else :
+                        func.imt = 'application/json'
+                else :
+                    func.imt = match
                 handlers.setdefault(method, []).append((match, func))
                 return func
             return deco
@@ -360,18 +367,15 @@ class rulesheet(object):
         default = None
         matching_handler = None
         for (match, func) in handlers.get(method, []):
-            if logger: logger.debug('(match, func): ' + repr((match, func)))
+            if logger: logger.debug('(match, func), method : ' + repr((match, func)) + "," + method )
             if isinstance(match, basestring):
                 if match == accept:
                     matching_handler = func
-                    if logger: logger.debug("Found matching function: " + repr(func))
             elif (match is None):
                 default = func
-                if logger: logger.debug("Setting default function: " + repr(func))
             else:
                 if match(accept):
                     matching_handler = func
-                    if logger: logger.debug("Found matching function: " + repr(func))
         if logger: logger.debug('(matching_handler, default): ' + repr((matching_handler, default)))
         return matching_handler or default
 
