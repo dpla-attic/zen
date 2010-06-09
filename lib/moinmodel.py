@@ -25,7 +25,7 @@ from amara.lib.irihelpers import resolver as baseresolver
 #from amara.writers.struct import *
 #from amara.bindery.html import parse as htmlparse
 from amara.lib import U
-from amara.lib.iri import split_fragment, relativize, absolutize, IriError, join
+from amara.lib.iri import split_uri_ref, split_fragment, relativize, absolutize, IriError, join
 #from amara.bindery.model import examplotron_model, generate_metadata, metadata_dict
 from amara.bindery.util import dispatcher, node_handler, property_sequence_getter
 from amara.thirdparty import json
@@ -477,8 +477,6 @@ def extract_liststrings(node):
         items = [ U(li).strip() for li in list(l[0].li) ]
     return items
 
-# MARK: you can ignore everything below this :) .  Will be working it in more elegantly next, but it's presently unused
-
 
 @zservice(u'http://purl.org/com/zepheira/zen/util/get-child-pages')
 def get_child_pages(node, limit=None):
@@ -501,6 +499,6 @@ def get_child_pages(node, limit=None):
     if limit:
         hrefs = islice(hrefs, 0, int(limit))
     hrefs = list(hrefs); logger.debug('get_child_pages HREFS1: ' + repr(hrefs))
-    hrefs = [ wiki_uri(node.original_base, node.wrapped_base, navchild.xml_value, node.rest_uri)[0] for navchild in hrefs ]
+    hrefs = [ wiki_uri(node.original_base, node.wrapped_base, navchild.xml_value, node.rest_uri, raw=True)[0] for navchild in hrefs ]
     return hrefs
 

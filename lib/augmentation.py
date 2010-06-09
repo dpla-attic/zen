@@ -1,5 +1,14 @@
 '''
-The catalog of local services supplied with Zen
+Data augmentation services supplied with Zen
+
+>>> from zenlib import augmentation
+>>> source = [{u"id": u"_1", u"label": u"_1", u"orig": u"text, text, text"}]
+>>> propinfo = {u"delimiter": u",", u"extract": u"orig", u"property": u"shredded", u"enabled": True, u"label": "shredded result", u"tags": [u"property:type=text"]}
+>>> result = {}
+>>> augmentation.augment_shredded_list(source, propinfo, result)
+>>> result
+{u'_1': {u'shredded': [u'text', u'text', u'text'], u'id': u'_1', u'label': u'_1'}}
+
 '''
 
 from amara.lib import U
