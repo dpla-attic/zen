@@ -152,9 +152,12 @@ def get_resource(environ, start_response):
     #
     # FIXME Ideally, this should use the q values and pick the best media type, rather than
     # just picking the first non-wildcard type.  Perhaps: http://code.google.com/p/mimeparse/
-    accepted_imts = [ type.split(';')[0] for type in environ.get('HTTP_ACCEPT').split(',') ]
+    accepted_imts = []
+    accept_header = environ.get('HTTP_ACCEPT')
+    if accept_header :
+        accepted_imts = [ type.split(';')[0] for type in accept_header.split(',') ]
     accepted_imts.append('application/json')
-    logger.debug('accepted_imts: ' + repr(accepted_imts))
+    if logger: logger.debug('accepted_imts: ' + repr(accepted_imts))
     imt = first_item(dropwhile(lambda x: '*' in x, accepted_imts))
 
     qparams = cgi.parse_qs(environ['QUERY_STRING'])
