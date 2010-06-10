@@ -1,6 +1,6 @@
 #freemixlib
 
-__version__ = '0.9.1'
+__version__ = '0.9.2'
 
 #Mapping from service ID URI too URL template and/or callable
 SERVICES = {}
@@ -20,11 +20,12 @@ def register_service(s):
 #Bootstrap in the built-in ("local") services
 try:
     from zenlib import local
+    from httpmodel import *
 except (KeyboardInterrupt, SystemExit):
     raise
-except Exception as e:
-    #e.g. there will be ImportError during install
-    pass #Is this really a good idea?  What if there is really a problem?
+except ImportError:
+    #There will be ImportError during install
+    pass
 
 
 #Convenience decorator for registering services
@@ -48,6 +49,4 @@ def service_proxy(url):
     '''
     return SERVICES[url]
 
-
-from httpmodel import *
 

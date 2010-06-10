@@ -142,6 +142,7 @@ def augment_luckygoogle(source, propertyinfo, items_dict):
 @zservice(u'http://purl.org/com/zepheira/augmentation/shredded-list')
 def augment_shredded_list(source, propertyinfo, items_dict):
     '''
+    See: http://community.zepheira.com/wiki/loc/ValidPatternsList
     '''
     extract = propertyinfo[u"extract"]
     pname = propertyinfo.get(u"property", u'shreddedlist')
