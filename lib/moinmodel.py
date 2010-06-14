@@ -290,7 +290,11 @@ class rulesheet(object):
         '''
         rs = inputsource(source)
         self.token = rs.stream.readline().strip().lstrip('#')
-        self.body = rs.stream.read()
+        #XXX In theory this is a microscopic security hole.  If someone could find a way
+        #to open up an expliot by changing whitespace *in the middle of the line*
+        #(wiki_normalize does not touch WS at the beginning of a line)
+        #In practice, we accept this small risk
+        self.body = wiki_normalize(rs.stream.read())
         return
 
     #

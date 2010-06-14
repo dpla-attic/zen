@@ -1,0 +1,90 @@
+#!/usr/bin/env python
+
+
+"""
+wikibootstrap
+
+"""
+
+import re
+import sys
+import os
+import glob
+import time
+from itertools import islice
+
+import httplib2
+from amara.writers.struct import structwriter, structencoder, E, NS, ROOT, RAW, E_CURSOR
+
+def run(targetbase=None, root=None, out=None, secrets=None):
+    '''
+    See the command line help
+    '''
+    #print >> sys.stderr, 'ARGS ', (search, filesource, limit, out)
+    H = httplib2.Http('.cache')
+    auth_headers = {}
+    if secrets:
+        user, passwd = secrets.read().split(':')
+        user, passwd = user.strip(), passwd.strip()
+        auth_headers = header_credentials(user, passwd)
+
+    #files = glob.glob(os.path.join(filesource, '*.xml'))
+    #Prepare the envelope for the output 
+    targetbase = targetbase.rstrip('/')
+    w = structwriter(stream=out, indent=True)
+    output = w.cofeed(ROOT(E_CURSOR(u'wikipost')))
+
+    for xroot, dirs, files in os.walk(root):
+        print (xroot, dirs, files)
+        wikipath = xroot[len(root):]
+        print (wikipath)
+        for f in files:
+            if f == "__pagetext__.txt":
+                headers = {'Content-Type': 'application/xml'}; headers.update(auth_headers)
+                try:
+                    print '/'.join((targetbase, wikipath))
+                    continue
+                    resp, content = H.request('/'.join((targetbase, wikipath)), "PUT", body=stream.read(), headers=headers)
+                    output.send(
+                        E(u'update', {u'ctgov-id': rid, u'ctgov-page': ctgov_link, u'rest-wrapped-uri': rest_wrapped_uri},
+                            (E(u'pubmed-update', {u'id': pmid, u'status': u'failed' if pmid in failed_pmids else u'success' })
+                            for pmid in pmids)
+                        )
+                    )
+                except (KeyboardInterrupt, SystemExit):
+                    raise
+                except Exception as e:
+                    #FIXME: Provide an option to override localhost:8880
+                    print >> sys.stderr, 'An exception here might mean you do not have Akara running at localhost:8880:', e
+
+    output.close()
+    return
+
+
+# Handle the command-line arguments
+
+from akara.thirdparty import argparse #Sorry PEP 8 ;)
+
+#import signal
+#import shutil
+
+if __name__ == '__main__':
+    #parser = argparse.ArgumentParser(prog="bootstrap", add_help=False)
+    parser = argparse.ArgumentParser()
+    #parser.add_argument('-o', '--output')
+    parser.add_argument('root', metavar='root', nargs=1,
+                        help='The root dir for the pages and attachments')
+    parser.add_argument('--out', type=argparse.FileType('w'), default=sys.stdout,
+        help='file where output should be written '
+             '(default: write to stdout)')
+    parser.add_argument('--secrets', type=argparse.FileType('r'),
+        help='file from which wiki login can be read, in the format username:passwd ')
+    parser.add_argument("--target", metavar="TARGET_MOINREST_URL", dest="target",
+                        #default="http://localhost:8880/moin/mywiki",
+                        help="Akara moin/REST endpoint for the wiki to update")
+    #
+    args = parser.parse_args()
+
+    run(targetbase=args.target, root=args.root[0], out=args.out, secrets=args.secrets)
+    args.out.close()
+

@@ -1,0 +1,19 @@
+= resource:name =
+
+Poet
+
+= resource:description =
+
+A poet is a person who writes poems
+
+= Children =
+
+Generated listing of poets who lie under this page in hierarchy:
+
+Children: <<Navigation(children)>>
+
+= akara:metadata =
+
+ akara:type:: http://purl.org/xml3k/akara/cms/resource-type
+ akara:rulesheet:: http://gonzaga.akara.info/~uogbuji/etc/2010-04/poet_rules.py
+

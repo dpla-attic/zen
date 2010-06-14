@@ -1,0 +1,13 @@
+= resource:name =
+
+Collection
+
+= resource:description =
+
+A collection of Zen resources
+
+= akara:metadata =
+
+ akara:type:: http://purl.org/xml3k/akara/cms/resource-type
+ akara:rulesheet:: http://gonzaga.akara.info/~uogbuji/etc/2010-04/collection_rules.py
+
