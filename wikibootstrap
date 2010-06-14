@@ -16,6 +16,8 @@ from itertools import islice
 import httplib2
 from amara.writers.struct import structwriter, structencoder, E, NS, ROOT, RAW, E_CURSOR
 
+WIKITEXT_FNAME = "__pagetext__.txt"
+
 def run(targetbase=None, root=None, out=None, secrets=None):
     '''
     See the command line help
@@ -34,23 +36,44 @@ def run(targetbase=None, root=None, out=None, secrets=None):
     w = structwriter(stream=out, indent=True)
     output = w.cofeed(ROOT(E_CURSOR(u'wikipost')))
 
+    #headers = {'Content-Type': 'application/xml'}; headers.update(auth_headers)
+    headers = auth_headers
     for xroot, dirs, files in os.walk(root):
-        print (xroot, dirs, files)
         wikipath = xroot[len(root):]
-        print (wikipath)
-        for f in files:
-            if f == "__pagetext__.txt":
-                headers = {'Content-Type': 'application/xml'}; headers.update(auth_headers)
-                try:
-                    print '/'.join((targetbase, wikipath))
-                    continue
-                    resp, content = H.request('/'.join((targetbase, wikipath)), "PUT", body=stream.read(), headers=headers)
+        if WIKITEXT_FNAME in files:
+            try:
+                content = open(os.path.join(xroot, WIKITEXT_FNAME)).read()
+                moinid = '/'.join((targetbase, wikipath))
+                resp, respbody = H.request(moinid, "PUT", body=content, headers=headers)
+                if resp.get('status').startswith('20'):
                     output.send(
-                        E(u'update', {u'ctgov-id': rid, u'ctgov-page': ctgov_link, u'rest-wrapped-uri': rest_wrapped_uri},
-                            (E(u'pubmed-update', {u'id': pmid, u'status': u'failed' if pmid in failed_pmids else u'success' })
-                            for pmid in pmids)
-                        )
+                        E(u'update-page', {u'moinid': moinid})
                     )
+                else:
+                    output.send(
+                        E(u'page-failure', {u'moinid': moinid, u'status': resp.get('status')})
+                    )
+                    #print >> sys.stderr, 'Failed to update page %s (%s).  See Akara logs.'%(moinid, resp.get('status'))
+            except (KeyboardInterrupt, SystemExit):
+                raise
+            except Exception as e:
+                #FIXME: Provide an option to override localhost:8880
+                print >> sys.stderr, 'An exception here might mean you do not have Akara running at localhost:8880:', e
+            files.remove(WIKITEXT_FNAME)
+        for fname in files:
+                try:
+                    content = open(os.path.join(xroot, fname)).read()
+                    moinid = '%s/%s;attachment=%s'%(targetbase, wikipath, fname)
+                    resp, respbody = H.request(moinid, "POST", body=content, headers=headers)
+                    if resp.get('status').startswith('20'):
+                        output.send(
+                            E(u'update-page', {u'moinid': moinid})
+                        )
+                    else:
+                        output.send(
+                            E(u'page-failure', {u'moinid': moinid, u'status': resp.get('status')})
+                        )
+                        #print >> sys.stderr, 'Failed to update page %s (%s).  See Akara logs.'%(moinid, resp.get('status'))
                 except (KeyboardInterrupt, SystemExit):
                     raise
                 except Exception as e:
