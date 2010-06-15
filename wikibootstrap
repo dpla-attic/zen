@@ -15,6 +15,7 @@ from itertools import islice
 
 import httplib2
 from amara.writers.struct import structwriter, structencoder, E, NS, ROOT, RAW, E_CURSOR
+from akara.util import header_credentials
 
 WIKITEXT_FNAME = "__pagetext__.txt"
 
