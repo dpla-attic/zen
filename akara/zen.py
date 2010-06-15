@@ -207,14 +207,20 @@ def put_resource(environ, start_response):
 
     H = httplib2.Http('.cache')
 
+    # This was originally always returning 200 even if moinrest failed, so an improvement
+    # would be to return the moinrest response as the Zen response.  FIXME Even better would
+    # be to decide exactly what this relationship should look like, e.g. how redirects
+    # or auth responses are managed, if any content needs URL-rewriting, how other response or
+    # entity headers are handled, etc..., plus general be-a-good-proxy behaviour
+    #
+    # This httplib2 feature permits a single code path for proxying responses
+    H.force_exception_to_status_code = True;
+
     if creds:
         user, passwd = creds
         H.add_credentials(user, passwd)
     
-    headers = {'Content-Type' : 'text/plain'}
     resp, content = H.request(zenuri_to_moinrest(environ), "PUT", body=wikified.encode('UTF-8'), headers={'Content-Type' : 'text/plain'})
 
-    start_response(status_response(httplib.OK), [("Content-Type", 'text/plain')])
-    return 'Updated OK'
-
-
+    start_response(status_response(resp.status), [("Content-Type", resp['content-type'])])
+    return content
