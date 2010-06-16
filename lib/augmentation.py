@@ -33,6 +33,9 @@ from zenlib import register_service, zservice
 from zenlib.temporal import smart_parse_date
 from zenlib.geo import geolookup
 
+import time; from functools import partial; isobase = partial(time.strftime, "%Y-%m-%dT%H:%M:%S")
+
+
 #def UU(obj, k): return U(obj[k]) if k in obj and obj[k] is not None and U(k).strip() else u''
 def UU(obj, k):
     result = U(obj.get(k), noneok=True)

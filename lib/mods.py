@@ -25,6 +25,8 @@ from amara.bindery.model import generate_metadata
 from amara.bindery.model.examplotron import examplotron_model
 from amara.bindery.util import dispatcher, node_handler
 
+MODS_NAMESPACE = 'http://www.loc.gov/mods/v3'
+
 MODS_MODEL_XML = '''<?xml version="1.0" encoding="UTF-8"?>
 <modsCollection xmlns="http://www.loc.gov/mods/v3" xmlns:m="http://www.loc.gov/mods/v3"
   xmlns:eg="http://examplotron.org/0/" xmlns:ak="http://purl.org/xml3k/akara/xmlmodel">
