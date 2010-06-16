@@ -33,7 +33,7 @@ from amara.thirdparty import json
 
 from akara import httplib2
 from akara.util import copy_auth
-from akara.util.moin import wiki_uri, ORIG_BASE_HEADER, DOCBOOK_IMT, RDF_IMT, HTML_IMT, XML_IMT
+from akara.util.moin import wiki_uri, wiki_normalize, ORIG_BASE_HEADER, DOCBOOK_IMT, RDF_IMT, HTML_IMT, XML_IMT
 from akara.services import simple_service
 
 try:
@@ -298,7 +298,7 @@ class rulesheet(object):
         return
 
     #
-    def run(self, resource, method='GET', accept='application/json'):
+    def run(self, environ, method='GET', accept='application/json'):
         #e.g. you can sign a rulesheet as follows:
         #python -c "import sys, hashlib; print hashlib.sha1('MYSECRET' + sys.stdin.read()).hexdigest()" < rsheet.py 
         #Make sure the rulesheet has not already been signed (i.e. does not have a hash on the first line)
@@ -337,7 +337,8 @@ class rulesheet(object):
 
         #env = {'write': write, 'resource': self, 'service': service, 'U': U1}
         resource_getter = partial(node.lookup, resolver=resource.resolver)
-        env = {'service': service_proxy, 'U': U1, 'handles': handles, 'R': resource_getter, 'use': use}
+        env = {'service': service_proxy, 'U': U1, 'handles': handles, 'R': resource_getter,
+                'use': use, 'environ': environ}
 
         #Execute the rule sheet
         exec self.body in env
@@ -385,9 +386,9 @@ class resource_type(node):
             if logger: logger.debug('resource_type.get_rulesheet rest_uri, rulesheet: ' + repr((self.rest_uri, rulesheet)))
         return self.rulesheet
     
-    def run_rulesheet(self, method='GET', accept='application/json'):
+    def run_rulesheet(self, environ, method='GET', accept='application/json'):
         #FIXME: Deprecate
-        return rulesheet(self.get_rulesheet()).run(self, method, accept)
+        return rulesheet(self.get_rulesheet()).run(environ, method, accept)
 
 
 node.NODES[RESOURCE_TYPE_TYPE] = resource_type
@@ -403,7 +404,7 @@ def use(pymodule):
     try:
         mod = __import__(pymodule)
     except ImportError as e:
-        logger.debug('Unable to import declared module, so will have to be available through discovery: ' + repr(e))
+        logger.debug('Unable to import declared module, so associated services will have to be available through discovery: ' + repr(e))
     return
 
 
@@ -414,6 +415,8 @@ def register_node_type(type_id, nclass):
 #
 
 def curation_ingest(rest_uri, mointext, user, H, auth_headers):
+    '''
+    '''
     import diff_match_patch
     from akara.util.moin import HISTORY_MODEL
     from akara.util.moin import wiki_normalize
@@ -433,10 +436,13 @@ def curation_ingest(rest_uri, mointext, user, H, auth_headers):
         dmp = diff_match_patch.diff_match_patch()
         patches = dmp.patch_make(prior_akara_rev, mointext)
         logger.debug('PATCHES: ' + dmp.patch_toText(patches))
+        diff_match_patch.patch_fixup(patches) #Uche's hack-around for an apparent bug in diff_match_patch
+        logger.debug('PATCHES: ' + dmp.patch_toText(patches))
         #XXX Possible race condition.  Should probably figure out a way to get all revs atomically
         resp, present_rev = H.request(rest_uri, "GET", headers=auth_headers)
         present_rev = wiki_normalize(present_rev)
         patched, flags = dmp.patch_apply(patches, present_rev)
+        logger.debug('PATCH RESULTS: ' + repr((flags)))
         if all(flags):
             #Patch can be completely automated
             return patched

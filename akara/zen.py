@@ -139,11 +139,12 @@ def get_resource(environ, start_response):
     handler = copy_auth(environ, baseuri)
     opener = urllib2.build_opener(handler) if handler else urllib2.build_opener()
 
-    try :
+    try:
         resource = node.lookup(zenuri_to_moinrest(environ), opener=opener)
-    except urllib2.HTTPError as he :
+    except urllib2.HTTPError as he:
+        import traceback; logger.debug(traceback.format_exc())
         start_response(status_response(he.code),[('Content-Type','text/plain')])
-        return( "%(code)d %(msg)s\n" % {'code':he.code,'msg':he.msg} )
+        return( "%(code)d %(msg)s\n" % {'code': he.code, 'msg': he.msg} )
 
     resolver = resource.resolver
     
@@ -164,9 +165,9 @@ def get_resource(environ, start_response):
     rulesheet_override = qparams.get('rulesheet')
 
     if rulesheet_override:
-        handler = rulesheet(rulesheet_override[0]).run(resource, 'GET', imt)
+        handler = rulesheet(rulesheet_override[0]).run(environ, 'GET', imt)
     else:
-        handler = resource.resource_type.run_rulesheet('GET', imt)
+        handler = resource.resource_type.run_rulesheet(environ, 'GET', imt)
     rendered = handler(resource)
 
     start_response(status_response(httplib.OK), [("Content-Type", str(handler.imt)), ("Cache-Control", "max-age="+str(handler.ttl))])
@@ -201,7 +202,7 @@ def put_resource(environ, start_response):
     temp_fpath = read_http_body_to_temp(environ, start_response)
     body = open(temp_fpath, "r").read()
 
-    handler = resource_type.run_rulesheet('PUT', imt)
+    handler = resource_type.run_rulesheet(environ, 'PUT', imt)
     wikified = handler(resource_type, body)
     #logger.debug('put_resource wikified result: ' + repr((wikified,)))
 

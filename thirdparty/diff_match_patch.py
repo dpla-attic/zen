@@ -31,6 +31,18 @@ import time
 import urllib
 import re
 
+def patch_fixup(patches):
+    '''
+    Seems in some cases there is a bug where patches get DIFF_EQUAL when it should have
+    been DIFF_INSERT
+    '''
+    for p in patches:
+        for i, d in enumerate(p.diffs):
+            if d[0] == diff_match_patch.DIFF_EQUAL and i and p.diffs[i-1][0] == diff_match_patch.DIFF_DELETE:
+                p.diffs[i] = (diff_match_patch.DIFF_INSERT, d[1])
+    return
+
+
 class diff_match_patch:
   """Class containing the diff, match and patch methods.
 
