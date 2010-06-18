@@ -285,7 +285,7 @@ def parse_moin_xml(uri, resolver=None):
 
 
 class rulesheet(object):
-    def __init__(self, source):
+    def __init__(self, source, rtype):
         '''
         '''
         rs = inputsource(source)
@@ -295,6 +295,7 @@ class rulesheet(object):
         #(wiki_normalize does not touch WS at the beginning of a line)
         #In practice, we accept this small risk
         self.body = wiki_normalize(rs.stream.read())
+        self.rtype = rtype
         return
 
     #
@@ -336,7 +337,7 @@ class rulesheet(object):
             return deco
 
         #env = {'write': write, 'resource': self, 'service': service, 'U': U1}
-        resource_getter = partial(node.lookup, resolver=resource.resolver)
+        resource_getter = partial(node.lookup, resolver=self.rtype.resolver)
         env = {'service': service_proxy, 'U': U1, 'handles': handles, 'R': resource_getter,
                 'use': use, 'environ': environ}
 
@@ -388,7 +389,7 @@ class resource_type(node):
     
     def run_rulesheet(self, environ, method='GET', accept='application/json'):
         #FIXME: Deprecate
-        return rulesheet(self.get_rulesheet()).run(environ, method, accept)
+        return rulesheet(self.get_rulesheet(), self).run(environ, method, accept)
 
 
 node.NODES[RESOURCE_TYPE_TYPE] = resource_type
@@ -451,6 +452,88 @@ def curation_ingest(rest_uri, mointext, user, H, auth_headers):
             logger.debug('CONFLICT: ' + repr(flags))
             return None
     return
+
+
+DIFF_CMD = 'diff -u'
+PATCH_CMD = 'patch -p0'
+
+def curation_ingest_via_subprocess(rest_uri, mointext, user, H, auth_headers):
+    '''
+    Support function for freemix services.  Inital processing to guess media type of post body.
+    '''
+    import os
+    import tempfile
+    from subprocess import Popen, PIPE
+
+    from akara.util.moin import HISTORY_MODEL
+    from akara.util.moin import wiki_normalize
+
+    resp, content = H.request(rest_uri + ';history', "GET", headers=auth_headers)
+    historydoc = bindery.parse(content, model=HISTORY_MODEL)
+    rev = first_item(dropwhile(lambda rev: unicode(rev.editor) != user, (historydoc.history.rev or [])))
+    if not rev or historydoc.history.rev.editor == user:
+        #New record, or the most recent modification is also by the akara user
+        logger.debug('Direct update (no conflict scenario)')
+        return mointext
+    else:
+        #Potential conflict
+        logger.debug('Potential conflict scenario')
+        resp, prior_akara_rev = H.request(rest_uri + '?rev=' + rev.id, "GET", headers=auth_headers)
+        prior_akara_rev = wiki_normalize(prior_akara_rev)
+
+        oldwiki = tempfile.mkstemp(suffix=".txt")
+        newwiki = tempfile.mkstemp(suffix=".txt")
+        os.write(oldwiki[0], prior_akara_rev)
+        os.write(newwiki[0], mointext)
+        #os.fsync(oldwiki[0]) #is this needed with the close below?
+        os.close(oldwiki[0])
+        os.close(newwiki[0])
+
+        cmdline = ' '.join([DIFF_CMD, oldwiki[1], newwiki[1]])
+        logger.debug('cmdline1: \n' + cmdline)
+        process = Popen(cmdline, stdout=PIPE, shell=True)
+        patch = process.stdout.read()
+
+        logger.debug('PATCHES: \n' + patch)
+        #XXX Possible race condition.  Should probably figure out a way to get all revs atomically
+        resp, present_rev = H.request(rest_uri, "GET", headers=auth_headers)
+        present_rev = wiki_normalize(present_rev)
+
+        currwiki = tempfile.mkstemp(suffix=".txt")
+        os.write(currwiki[0], present_rev)
+        #os.fsync(currwiki[0]) #is this needed with the close below?
+        os.close(currwiki[0])
+
+        cmdline = ' '.join([PATCH_CMD, currwiki[1]])
+        logger.debug('cmdline1: \n' + cmdline)
+        process = Popen(cmdline, stdin=PIPE, stdout=PIPE, shell=True)
+        process.stdin.write(patch)
+        process.stdin.close()
+        cmdoutput = process.stdout.read()
+
+        #Apparently process.returncode isn't a useful indicator of patch rejection
+        conflict = 'FAILED' in cmdoutput and 'rejects' in cmdoutput
+
+        logger.debug('PATCH COMMAND OUTPUT: ' + repr((cmdoutput)))
+        patched = open(currwiki[1]).read()
+        patched = wiki_normalize(patched)
+        
+        logger.debug('PATCH RESULTS: ' + repr((patched)))
+        
+        logger.debug('RETURN CODE: ' + repr((process.returncode)))
+        process.returncode
+        
+        if conflict:
+            #At least one patch hunk failed
+            #logger.debug('CONFLICT: ' + repr(process.returncode))
+            return None
+        else:
+            #Patch can be completely automated
+            return patched
+    return
+
+
+curation_ingest = curation_ingest_via_subprocess
 
 
 from zenlib import register_service
