@@ -115,14 +115,12 @@ MODS_MODEL_XML = '''<?xml version="1.0" encoding="UTF-8"?>
 
 MODS_MODEL = examplotron_model(MODS_MODEL_XML)
 
-
 def select(expr):
     #FIXME: pre-parse the pattern
     return lambda node: node.xml_select(expr, prefixes={u'm': MODS_NAMESPACE})
 
 
 def foreach(func):
-    #FIXME: pre-parse the pattern
     return lambda items: [ func(item) for item in items ]
 
 
@@ -178,19 +176,26 @@ def mods2json(source):
     ... </mods>
     ... </modsCollection>"""
     >>> mods2json(XML)
-    8
+    {u'subject-name-personal': [], u'subject-name-corporate': [], u'subject-topic': [u'fire news, news fire, fire photos, firefighter, firefighter news, firefighting news, fire brigade, truck company, iaff, national fire news, fire service, Calfire, Cal Fire, CDF, fire department, USFS, fire fighter, fire department, wildland, firefighting, firemen, fireman, forest', u'California Wildfires, 2007'], u'location-url-archived-site': u'http://wayback.archive-it.org/877/*/http://www.ucsd.edu/', u'label': u'', u'dateCaptured-end': u'20071030230234', u'dateCaptured-start': u'20071024230025', u'location-url-active-site': u'', u'id': u'ref1060-2004', u'subject-geographic': [], u'subject-temporal': []}
 
     '''
     items = []
-    @coroutine
-    def handle_nodes():
-        while True:
-            node = yield
-            print node
-            nodeinfo = ejsonize(node)
+#    @coroutine
+#    def handle_nodes():
+#        while True:
+#            node = yield
+#            import sys; print >> sys.stderr, node
+#            nodeinfo = ejsonize(node)
+#            items.append(nodeinfo)
+#        return
+
+#    callback = handle_nodes()
+
+    def callback(node):
+        nodeinfo = ejsonize(node)
+        items.append(nodeinfo)
         return
 
-    callback = handle_nodes()
     pushtree(source, u"m:mods", callback, namespaces={"m": MODS_NAMESPACE})
     return items
 
@@ -198,8 +203,17 @@ def mods2json(source):
 def ejsonize(node):
     nodeinfo = {}
     for key, func in DISPATCH_PATTERNS.items():
-        nodeinfo[key] = func(node)
-    print nodeinfo
+        val = func(node)
+        if val:
+            smart_map(nodeinfo, key, val)
+        #nodeinfo[key] = func(node)
+    #import sys; print >> sys.stderr, nodeinfo
+    #removelist = []
+    #for key, val in nodeinfo.items():
+    #    if not val:
+    #        removelist.append(key)
+    #for key in removelist:
+    #    del nodeinfo[key]
     return nodeinfo
 
 
