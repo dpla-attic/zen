@@ -20,10 +20,10 @@ from itertools import groupby
 from operator import itemgetter
 
 from amara.xpath import datatypes
-from amara import bindery
-from amara.bindery.model import generate_metadata
+from amara.pushtree import pushtree
+from amara.lib.util import coroutine, mcompose
+from amara.lib import U
 from amara.bindery.model.examplotron import examplotron_model
-from amara.bindery.util import dispatcher, node_handler
 
 MODS_NAMESPACE = 'http://www.loc.gov/mods/v3'
 
@@ -115,43 +115,92 @@ MODS_MODEL_XML = '''<?xml version="1.0" encoding="UTF-8"?>
 
 MODS_MODEL = examplotron_model(MODS_MODEL_XML)
 
-def mods2json(body):
-    #import sys; print >> sys.stderr, "ONE"
-    doc = bindery.parse(body, model=MODS_MODEL)
-    #print >> sys.stderr, "TWO"
-    items = []
-    for rid, triples in groupby(generate_metadata(doc), itemgetter(0)):
-        item = {'id': rid, 'label': rid}
-        for row in triples:
-            if isinstance(row[2], datatypes.nodeset) and len(row[2]) == 0:
-                continue
-            if isinstance(row[2], datatypes.nodeset) and len(row[2]) > 1:
-                value = map(datatypes.string, row[2])
-            else:
-                value = datatypes.string(row[2])
-            smart_map(item, row[1], value)
-            #item[row[1]] = datatypes.string(row[2])
-        items.append(item)
-        for tagkey in ['topic', 'geographic', 'topic_name']:
-            if tagkey not in item: continue
-            if isinstance(item[tagkey], basestring):
-                item[tagkey] = item[tagkey].split(', ')
-            else:
-                values = item[tagkey]
-                item[tagkey] = set()
-                for val in values:
-                    for subval in val.split(', '):
-                        item[tagkey].add(subval)
-                item[tagkey] = list(item[tagkey])
 
-        #if 'topic' in item: item['topic'] = 
-        #import sys; print >> sys.stderr, item.keys()
-    #print >> sys.stderr, "THREE"
+def select(expr):
+    #FIXME: pre-parse the pattern
+    return lambda node: node.xml_select(expr, prefixes={u'm': MODS_NAMESPACE})
+
+
+def foreach(func):
+    #FIXME: pre-parse the pattern
+    return lambda items: [ func(item) for item in items ]
+
+
+DISPATCH_PATTERNS = {
+    u'id': mcompose(select(u'@ID'), U),
+    #u'name': mcompose(select(u'@ID'), U),
+    u'label': mcompose(select(u'm:title'), U),
+    u'subject-geographic': mcompose(select(u'm:subject/m:geographic'), foreach(U)),
+    u'subject-topic': mcompose(select(u'm:subject/m:topic'), foreach(U)),
+    u'subject-name-corporate': mcompose(select(u'm:subject/m:name[@type="corporate"]/m:namePart'), foreach(U)),
+    u'subject-name-personal':  mcompose(select(u'm:subject/m:name[@type="personal"]/m:namePart'), foreach(U)),
+    u'subject-temporal': mcompose(select(u'm:subject/m:temporal'), foreach(U)),
+    u'dateCaptured-start': mcompose(select(u'm:originInfo/m:dateCaptured[@point="start"]'), U),
+    u'dateCaptured-end': mcompose(select(u'm:originInfo/m:dateCaptured[@point="end"]'), U),
+    u'location-url-active-site': mcompose(select(u'm:location/m:url[contains(@displayLabel, "Active")]'), U),
+    u'location-url-archived-site': mcompose(select(u'm:location/m:url[contains(@displayLabel, "Archived")]'), U),
+    #u'id': mcompose(select(u'@ID'), U),
+    #u'id': mcompose(select(u'@ID'), U),
+}
+
+
+def mods2json(source):
+    '''
+    Parse MODS XML input source and return a flattened structure suitable for Exhibit JSON
+
+    :param source: XML inpout source (string, file-like object (stream), file path, URI or
+                   `amara.inputsource` object)
+
+    :return: dictionary of extracted data
+    :rtype: `dict`
+
+    Examples:
+
+    >>> from zenlib.mods import mods2json
+    >>> XML = """<modsCollection xmlns="http://www.loc.gov/mods/v3">
+    ... <mods ID="ref1060-2004">
+    ...     <titleInfo>
+    ...         <title>Akara Open Source Community</title>
+    ...     </titleInfo>
+    ...     <location>
+    ...         <url displayLabel="Archived site">http://wayback.archive-it.org/877/*/http://www.ucsd.edu/</url>
+    ...     </location>
+    ...     <originInfo>
+    ...         <dateCaptured encoding="iso8601" point="start">20071024230025</dateCaptured>
+    ...         <dateCaptured encoding="iso8601" point="end">20071030230234</dateCaptured>
+    ...     </originInfo>
+    ...     <subject authority="keyword">
+    ...         <topic>fire news, news fire, fire photos, firefighter, firefighter news, firefighting news, fire brigade, truck company, iaff, national fire news, fire service, Calfire, Cal Fire, CDF, fire department, USFS, fire fighter, fire department, wildland, firefighting, firemen, fireman, forest</topic>
+    ...     </subject>
+    ...     <subject>
+    ...         <topic>California Wildfires, 2007</topic>
+    ...     </subject>
+    ... </mods>
+    ... </modsCollection>"""
+    >>> mods2json(XML)
+    8
+
+    '''
+    items = []
+    @coroutine
+    def handle_nodes():
+        while True:
+            node = yield
+            print node
+            nodeinfo = ejsonize(node)
+        return
+
+    callback = handle_nodes()
+    pushtree(source, u"m:mods", callback, namespaces={"m": MODS_NAMESPACE})
     return items
-    #mods_handler = mods_content_handlers(items)
-    #doc.modsCollection.xml_namespaces[u'm'] = MODS_NAMESPACE
-    #list(mods_handler.dispatch(doc.modsCollection))
-    return items
+
+
+def ejsonize(node):
+    nodeinfo = {}
+    for key, func in DISPATCH_PATTERNS.items():
+        nodeinfo[key] = func(node)
+    print nodeinfo
+    return nodeinfo
 
 
 def smart_map(mapping, key, value):
@@ -177,173 +226,4 @@ def smart_map(mapping, key, value):
         #Current value in mapping is a scalar (note: basestrings do not implement extend)
         mapping[key] = [mapping[key]] + value
     return
-
-
-#
-class mods_content_handlers(dispatcher):
-    def __init__(self, items):
-        dispatcher.__init__(self)
-        #We could also handle this with a pattern of "yield key, value" to be used by the caller to populate the items dict
-        self.items = items
-        return
-
-    @node_handler(u'm:mods')
-    def mods(self, node):
-        #print >> sys.stderr, "GRIPPO", node.xml_children
-        self.item = {}
-        #Use list to consume the iterator of child dispatch
-        try:
-            self.item[u'id'] = self.item[u'label'] = node.ID
-        #except AttributeError, KeyError:
-        except:
-            pass
-        for child in node.xml_children:
-            for chunk in self.dispatch(child):
-                yield None
-            #print >> sys.stderr, "GRIPPO", self.items[-1]
-        self.items.append(self.item)
-        #list(chain(*imap(self.dispatch, node.xml_children)))
-
-    @node_handler(u'm:titleInfo') #priority=10
-    #http://www.loc.gov/standards/mods/mods-outline.html#titleInfo
-    #Ignore: partNumber, partName, nonSor
-    def titleInfo(self, node):
-        self.item[u'title'] = unicode(node.title)
-        try:
-            self.item[u'subtitle'] = unicode(node.subtitle)
-        except AttributeError:
-            pass
-        yield None
-
-    @node_handler(u'm:name')
-    #http://www.loc.gov/standards/mods/mods-outline.html#name
-    #Ignore: partNumber, partName, nonSor
-    def name(self, node):
-        for namepart in node.namePart:
-            self.item['name_parts'] = [ unicode(np) for np in node.namePart ]
-        for roleterm in iter(node.role or []):
-            #self.item[roleterm.authority + u'_' + unicode(roleterm) + u'_' + unicode(namepart.type)] = unicode(namepart)
-            #self.item[unicode(roleterm) + u'_' + unicode(namepart.type)] = unicode(namepart)
-            self.item['role'] = unicode(roleterm.roleTerm)
-        yield None
-
-    @node_handler(u'm:role')
-    #http://www.loc.gov/standards/mods/mods-outline.html#name
-    def role(self, node):
-        for roleterm in node.roleTerm:
-            #self.item[roleterm.authority + u'_' + unicode(roleterm) + u'_' + unicode(namepart.type)] = unicode(namepart)
-            #self.item[unicode(roleterm) + u'_' + (roleterm.authority or u'')] = unicode(namepart)
-            self.item['role'] = unicode(roleterm)
-        yield None
-
-    @node_handler(u'm:identifier')
-    #http://www.loc.gov/standards/mods/mods-outline.html#identifier
-    #Ignore: partNumber, partName, nonSor
-    def identifier(self, node):
-        self.item[unicode(node.type)] = unicode(node)
-        yield None
-
-    @node_handler(u'm:originInfo')
-    def originInfo(self, node):
-        if node.issuance:
-            self.item[u'issuance'] = unicode(node.issuance)
-        if node.publisher:
-            self.item[u'publisher'] = unicode(node.publisher)
-        for dc in iter(node.dateCaptured or []):
-            try:
-                #FIXME: seems dc might not gave a @point
-                self.item[u'dateCaptured'+dc.point] = isobase(smart_parse_date(str(dc))) + UTC.name
-            except TypeError:
-                #If the augmented feedparser can't handle the date we'll get "argument must be 9-item sequence, not None"
-                pass
-        for dc in iter(node.dateIssued or []):
-            try:
-                self.item[u'dateIssued'] = isobase(smart_parse_date(str(dc))) + UTC.name
-            except TypeError:
-                #If the augmented feedparser can't handle the date we'll get "argument must be 9-item sequence, not None"
-                pass
-        yield None
-
-    @node_handler(u'm:genre')
-    def genre(self, node):
-        self.item[u'genre'] = unicode(node)
-        yield None
-
-    @node_handler(u'm:language')
-    def language(self, node):
-        #FIXME: multi-lang case?
-        self.item[u'language'] = unicode(node.languageTerm)
-        yield None
-
-    @node_handler(u'm:targetAudience')
-    def targetAudience(self, node):
-        self.item[u'targetAudience'] = unicode(node)
-        yield None
-
-    @node_handler(u'm:typeOfResource')
-    def typeOfResource(self, node):
-        self.item[u'typeOfResource'] = unicode(node)
-        yield None
-
-    @node_handler(u'm:abstract')
-    def abstract(self, node):
-        value = unicode(node).strip()
-        if value: self.item[u'abstract'] = value
-        yield None
-
-    @node_handler(u'm:note')
-    def note(self, node):
-        #FIXME: Undo when Amara bug is fixed
-        try:
-            if getattr(node, "type") == u'system details':
-                self.item[u'system_details'] = unicode(node)
-                (scheme, netloc, path, query, fragment) = urlparse.urlsplit(self.item[u'system_details'])
-                print >> sys.stderr, "Looking up:", netloc.encode('utf-8')
-                domain_location = iplookup(netloc)
-                if domain_location:
-                    self.item['domain_latlong'] = domain_location
-            else:
-                self.item[u'note'] = unicode(node)
-        except KeyError:
-            self.item[u'note'] = unicode(node)
-        yield None
-
-    @node_handler(u'm:subject')
-    def subject(self, node):
-        if hasattr(node, 'topic'):
-            self.item.setdefault(u'topics', []).extend([
-                t.strip()
-                for t in unicode(node.topic).split(u',')
-                    if t.strip()
-            ])
-        if hasattr(node, 'geographic'):
-            self.item.setdefault(u'places', []).extend([
-                t.strip()
-                for t in unicode(node.geographic).split(u',')
-                    if t.strip()
-            ])
-        try:
-            if hasattr(node, 'name'):
-                self.item.setdefault(u'people', []).extend([
-                    unicode(n).strip()
-                    for n in node.name
-                        if unicode(n).strip()
-                ])
-        except TypeError:
-            pass
-        yield None
-
-    @node_handler(u'm:location')
-    def location(self, node):
-        #Beware.  displayLabel could have spaces etc.
-        #self.item[unicode(node.displayLabel)] = unicode(node.url)
-        self.item[u'location_url'] = unicode(node.url)
-        if u'id' not in self.item:
-            self.item[u'id'] = self.item[u'label'] = self.item[u'location_url']
-        yield None
-
-    @node_handler(u'm:relatedItem')
-    def relatedItem(self, node):
-        self.item[u'relatedItem'] = unicode(node.titleInfo.title)
-        yield None
 
