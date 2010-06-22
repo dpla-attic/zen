@@ -166,16 +166,18 @@ class node(object):
         return instance
         #return node.ENDPOINTS and (rest_uri, akara_type, node.ENDPOINTS[akara_type], doc, metadata, original_wiki_base)
 
+    #FIXME: reconcile this with zen.py PUT handler
     @staticmethod
     def create(resource_type, body, ctype, opener=None, resolver=None):
         '''
         resource_type - type of the new resource to be created
         body - input information or document required to construct the resource page, according to the rule sheet
         '''
+        from akara import request
         if not resolver:
             resolver = moinrest_resolver(opener=opener)
         resource_type = node.lookup(resource_type, resolver=resolver)
-        handler = resource_type.run_rulesheet('POST', ctype)
+        handler = resource_type.run_rulesheet(request.environ, 'POST', ctype)
         url, wikified = handler(body)
 
         resp, content = self.H.request(url, "PUT", body=wikified, headers={'Content-Type' : 'text/plain'})
@@ -261,8 +263,8 @@ class node(object):
         '''
         return self.definition_list(u'.//gloss', contextnode=self.section(title), patterns=patterns)
 
-    def get_proxy(self, method, accept=None):
-        return self.resource_type.run_rulesheet(method, accept)
+    def get_proxy(self, environ, method, accept=None):
+        return self.resource_type.run_rulesheet(environ, method, accept)
 
     def absolute_wrap(self, link):
         link = '/' + link.lstrip('/')
