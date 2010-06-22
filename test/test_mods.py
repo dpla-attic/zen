@@ -1,5 +1,5 @@
 '''
-Tests MODS at low level, not through Akara
+Tests MODS processing methods at low level, not through Akara
 '''
 
 import re
