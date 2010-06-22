@@ -175,7 +175,7 @@ class node(object):
         if not resolver:
             resolver = moinrest_resolver(opener=opener)
         resource_type = node.lookup(resource_type, resolver=resolver)
-        handler = resource_type.run_rulesheet('POST', ctype)
+        handler = resource_type.run_rulesheet({},'POST', ctype)
         url, wikified = handler(body)
 
         resp, content = self.H.request(url, "PUT", body=wikified, headers={'Content-Type' : 'text/plain'})
@@ -262,7 +262,7 @@ class node(object):
         return self.definition_list(u'.//gloss', contextnode=self.section(title), patterns=patterns)
 
     def get_proxy(self, method, accept=None):
-        return self.resource_type.run_rulesheet(method, accept)
+        return self.resource_type.run_rulesheet({},method, accept)
 
     def absolute_wrap(self, link):
         link = '/' + link.lstrip('/')
