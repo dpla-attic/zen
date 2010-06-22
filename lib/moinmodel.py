@@ -339,7 +339,7 @@ class rulesheet(object):
         #env = {'write': write, 'resource': self, 'service': service, 'U': U1}
         resource_getter = partial(node.lookup, resolver=self.rtype.resolver)
         env = {'service': service_proxy, 'U': U1, 'handles': handles, 'R': resource_getter,
-                'use': use, 'environ': environ}
+                'use': use, 'environ': environ, 'logger': logger}
 
         #Execute the rule sheet
         exec self.body in env
