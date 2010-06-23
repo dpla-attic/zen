@@ -211,6 +211,8 @@ def mods2json(source):
     pushtree(source, u"m:mods", callback, namespaces={"m": MODS_NAMESPACE})
     for count, item in enumerate(items):
         item[u'id'] = '_%i'%(count+1)
+        if u'label' not in item:
+            item[u'label'] = '_%i'%(count+1)
     return items
 
 
