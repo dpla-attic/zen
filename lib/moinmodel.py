@@ -305,7 +305,9 @@ class rulesheet(object):
         #e.g. you can sign a rulesheet as follows:
         #python -c "import sys, hashlib; print hashlib.sha1('MYSECRET' + sys.stdin.read()).hexdigest()" < rsheet.py 
         #Make sure the rulesheet has not already been signed (i.e. does not have a hash on the first line)
-        if self.token != hashlib.sha1(node.SECRET + self.body).hexdigest():
+        rheet_sig = hashlib.sha1(node.SECRET + self.body).hexdigest()
+        if self.token != rheet_sig:
+            logger.debug("Computed signature: " + repr(rheet_sig))
             raise RuntimeError('Security token verification failed')
         #chunks = []
         #U1 is just a smarter variant of the "Unicode, dammit!"
@@ -361,8 +363,9 @@ class rulesheet(object):
         return matching_handler or default
 
 
-TYPE_PATTERN = u'//*[@title="akara:metadata"]/gloss/label[.="akara:type"]/following-sibling::item[1]//jump'
-RULESHEET_PATTERN = u'//*[@title="akara:metadata"]/gloss/label[.="akara:rulesheet"]/following-sibling::item[1]//jump'
+TYPE_PATTERN = u'//*[@title="akara:metadata"]/gloss/label[.="akara:type"]/following-sibling::item[1]//jump/@url'
+RULESHEET_LINK_PATTERN = u'//*[@title="akara:metadata"]/gloss/label[.="akara:rulesheet"]/following-sibling::item[1]//jump/@url'
+RULESHEET_ATT_PATTERN = u'//*[@title="akara:metadata"]/gloss/label[.="akara:rulesheet"]/following-sibling::item[1]//attachment/@href'
 
 
 class resource_type(node):
@@ -384,9 +387,18 @@ class resource_type(node):
             #isrc = inputsource(req, resolver=self.resolver)
             isrc, resp = parse_moin_xml(self.rest_uri, resolver=self.resolver)
             doc = bindery.parse(isrc)
-            rulesheet = U(doc.xml_select(RULESHEET_PATTERN))
-            self.rulesheet = rulesheet or UNSPECIFIED
-            if logger: logger.debug('resource_type.get_rulesheet rest_uri, rulesheet: ' + repr((self.rest_uri, rulesheet)))
+            rulesheet_link = U(doc.xml_select(RULESHEET_LINK_PATTERN))
+            if rulesheet_link:
+                wrapped, orig = wiki_uri(self.original_base, self.wrapped_base, type, self.rest_uri)
+                self.rulesheet = wrapped
+            else:
+                rulesheet_att = U(doc.xml_select(RULESHEET_ATT_PATTERN))
+                if rulesheet_att:
+                    self.rulesheet = self.rest_uri + u';attachment=' + rulesheet_att
+                else:
+                    self.rulesheet = UNSPECIFIED
+
+            if logger: logger.debug('resource_type.get_rulesheet rest_uri, rulesheet: ' + repr((self.rest_uri, self.rulesheet)))
         return self.rulesheet
     
     def run_rulesheet(self, environ, method='GET', accept='application/json'):

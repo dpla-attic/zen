@@ -1,0 +1,18 @@
+One of my favorite poets is Ezra Pound
+
+= About =
+
+He was an American expatriate poet, critic and intellectual who was a major figure of the [[http://en.wikipedia.org/wiki/Modernist_poetry|Modernist]] movement in the first half of the 20th century. He is generally considered the poet most responsible for defining and promoting a modernist aesthetic in poetry. The critic Hugh Kenner said of Pound upon meeting him: "I suddenly knew that I was in the presence of the center of modernism."
+
+= poet:bio =
+
+ poet:name:: Ezra Weston Loomis Pound
+ poet:born:: 1885-10-30
+ poet:died:: 1972-11-01
+ poet:birthplace:: Hailey, ID
+ poet:wikipedia:: http://en.wikipedia.org/wiki/Ezra_pound
+ poet:image:: {{http://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Ezra_Pound.jpg/240px-Ezra_Pound.jpg}}
+
+= akara:metadata =
+
+ akara:type:: [[foo/poetpaedia/poet]]

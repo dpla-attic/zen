@@ -1,0 +1,18 @@
+An iconic poet of the 20th century
+
+= About =
+
+Known primarily for her poetry, Plath also wrote a semi-autobiographical novel [[http://en.wikipedia.org/wiki/The_Bell_Jar|The Bell Jar]], under the pseudonym Victoria Lucas.
+
+= poet:bio =
+
+ poet:name:: Sylvia Plath
+ poet:born:: 1932-10-27
+ poet:died:: 1963-02-11
+ poet:birthplace:: Jamaica Plain, MA
+ poet:wikipedia:: http://en.wikipedia.org/wiki/Sylvia_Plath
+ poet:image:: {{http://upload.wikimedia.org/wikipedia/en/thumb/e/e4/Sylvia_plath.jpg/240px-Sylvia_plath.jpg}}
+
+= akara:metadata =
+
+ akara:type:: [[foo/poetpaedia/poet]]

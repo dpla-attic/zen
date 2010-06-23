@@ -14,7 +14,7 @@ def objectify(resource):
     #Output
     obj = {
       u'id': resource.rest_uri,
-      u'name': U(bio[u'poet:name'])strip(),
+      u'name': U(bio[u'poet:name']).strip(),
       u'born': U(parsedate(U(bio[u'poet:born']))),
       u'died': U(parsedate(U(bio[u'poet:died']))),
       u'images': obj_urls(bio[u'poet:image']),

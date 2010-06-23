@@ -44,7 +44,9 @@ def run(targetbase=None, root=None, out=None, secrets=None, zensecret=None):
     #headers = {'Content-Type': 'application/xml'}; headers.update(auth_headers)
     headers = auth_headers
     for xroot, dirs, files in os.walk(root):
-        wikipath = xroot[len(root):]
+        #Need the topmost dir from the path as the root of the created Wiki subsection
+        wikipath = '/'.join((os.path.split(root.rstrip('/'))[-1], xroot[len(root):]))
+        #print wikipath, root, (os.path.split(root.rstrip('/'))[-1], xroot[len(root):])
         if WIKITEXT_FNAME in files:
             content = open(os.path.join(xroot, WIKITEXT_FNAME)).read()
             moinid = '/'.join((targetbase, wikipath))
@@ -67,7 +69,6 @@ def run(targetbase=None, root=None, out=None, secrets=None, zensecret=None):
             files.remove(WIKITEXT_FNAME)
         for fname in files:
             content = open(os.path.join(xroot, fname)).read()
-            print (zensecret, fname.rsplit('.')[-1])
             if zensecret and fname.rsplit('.')[-1] == 'rsheet':
                 content = sign_rulesheet(zensecret, content)
             moinid = '%s/%s;attachment=%s'%(targetbase, wikipath, fname)

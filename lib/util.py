@@ -9,6 +9,8 @@ from akara.util.moin import wiki_normalize
 
 def sign_rulesheet(secret, rsheet):
     rsheet = wiki_normalize(rsheet)
+    #Strip all whitespace from *end* of file since moin seems to
+    rsheet = rsheet.rstrip()
     signed_parts = [
         '#', hashlib.sha1(secret + rsheet).hexdigest(), '\n', rsheet
         ]

@@ -7,7 +7,7 @@ from akara.util.moin import wiki_normalize
 
 #FIXME: use / from akara.thirdparty import argparse
 secret = sys.argv[1]
-rsheet = sys.argv[2]
+rsheet = open(sys.argv[2]).read()
 
 sys.stdout.write(sign_rulesheet(secret, rsheet))
 
