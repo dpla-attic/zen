@@ -15,5 +15,6 @@ Children: <<Navigation(children)>>
 = akara:metadata =
 
  akara:type:: http://purl.org/xml3k/akara/cms/resource-type
- akara:rulesheet:: http://gonzaga.akara.info/~uogbuji/etc/2010-04/poet_rules.py
+ akara:rulesheet:: [[attachment:poet.rsheet]]
+## akara:rulesheet:: http://gonzaga.akara.info/~uogbuji/etc/2010-04/poet_rules.py
 

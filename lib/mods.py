@@ -127,7 +127,8 @@ def foreach(func):
 DISPATCH_PATTERNS = {
     u'id': mcompose(select(u'@ID'), U),
     #u'name': mcompose(select(u'@ID'), U),
-    u'label': mcompose(select(u'm:title'), U),
+    u'label': mcompose(select(u'm:titleInfo/m:title'), U),
+    u'title': mcompose(select(u'm:titleInfo/m:title'), U),
     u'subject-geographic': mcompose(select(u'm:subject/m:geographic'), foreach(U)),
     u'subject-topic': mcompose(select(u'm:subject/m:topic'), foreach(U)),
     u'subject-name-corporate': mcompose(select(u'm:subject/m:name[@type="corporate"]/m:namePart'), foreach(U)),
@@ -137,7 +138,18 @@ DISPATCH_PATTERNS = {
     u'dateCaptured-end': mcompose(select(u'm:originInfo/m:dateCaptured[@point="end"]'), U),
     u'location-url-active-site': mcompose(select(u'm:location/m:url[contains(@displayLabel, "Active")]'), U),
     u'location-url-archived-site': mcompose(select(u'm:location/m:url[contains(@displayLabel, "Archived")]'), U),
-    #u'id': mcompose(select(u'@ID'), U),
+
+    u'language': mcompose(select(u'm:language/m:languageTerm'), U),
+    u'form': mcompose(select(u'm:physicalDescription/m:form'), U),
+    u'internetMediaType': mcompose(select(u'm:physicalDescription/m:internetMediaType'), U),
+    u'digitalOrigin': mcompose(select(u'm:physicalDescription/m:digitalOrigin'), U),
+    u'targetAudience': mcompose(select(u'm:targetAudience'), U),
+    u'typeOfResource': mcompose(select(u'm:typeOfResource'), U),
+    u'genre': mcompose(select(u'm:genre'), U),
+    u'note': mcompose(select(u'm:note'), U),
+    u'physicalLocation-marcorg': mcompose(select(u'm:location/m:physicalLocation[authority="marcorg"]'), U),
+    u'physicalLocation': mcompose(select(u'm:location/m:physicalLocation[not(authority="marcorg")]'), U),
+    u'accessCondition ': mcompose(select(u'm:accessCondition'), U),
     #u'id': mcompose(select(u'@ID'), U),
 }
 
@@ -197,6 +209,8 @@ def mods2json(source):
         return
 
     pushtree(source, u"m:mods", callback, namespaces={"m": MODS_NAMESPACE})
+    for count, item in enumerate(items):
+        item[u'id'] = '_%i'%(count+1)
     return items
 
 
