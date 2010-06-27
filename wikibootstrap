@@ -74,13 +74,13 @@ def run(targetbase=None, root=None, out=None, secrets=None, zensecret=None):
             moinid = '%s/%s;attachment=%s'%(targetbase, wikipath, fname)
             try:
                 resp, respbody = H.request(moinid, "POST", body=content, headers=headers)
-                if resp.get('status').startswith('20'):
+                if resp.get('status').startswith('2'):
                     output.send(
                         E(u'update-page', {u'moinid': moinid})
                     )
                 else:
                     output.send(
-                        E(u'page-failure', {u'moinid': moinid, u'status': resp.get('status')})
+                        E(u'page-failure', {u'moinid': moinid, u'status': resp.get('status'), u'reason':respbody})
                     )
                     #print >> sys.stderr, 'Failed to update page %s (%s).  See Akara logs.'%(moinid, resp.get('status'))
             except (KeyboardInterrupt, SystemExit):
