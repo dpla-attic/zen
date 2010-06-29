@@ -26,7 +26,7 @@ from amara.lib.irihelpers import resolver as baseresolver
 #from amara.writers.struct import *
 #from amara.bindery.html import parse as htmlparse
 from amara.lib import U
-from amara.lib.iri import split_uri_ref, split_fragment, relativize, absolutize, IriError, join
+from amara.lib.iri import split_uri_ref, split_fragment, relativize, absolutize, IriError, join, is_absolute
 #from amara.bindery.model import examplotron_model, generate_metadata, metadata_dict
 from amara.bindery.util import dispatcher, node_handler, property_sequence_getter
 from amara.thirdparty import json
@@ -377,7 +377,7 @@ class resource_type(node):
         type = U(doc.xml_select(TYPE_PATTERN))
         if logger: logger.debug('resource_type.construct_id type: ' + repr(type))
         if not type: return None
-        wrapped_type, orig_type = wiki_uri(original_base, wrapped_base, type, rest_uri)
+        wrapped_type, orig_type = wiki_uri(original_base, wrapped_base, type, rest_uri, raw=True)
         if logger: logger.debug('resource_type.construct_id wiki_uri trace: ' + repr((wrapped_type, orig_type, original_base, wrapped_base, rest_uri)))
         return wrapped_type or type
 
@@ -388,9 +388,11 @@ class resource_type(node):
             isrc, resp = parse_moin_xml(self.rest_uri, resolver=self.resolver)
             doc = bindery.parse(isrc)
             rulesheet_link = U(doc.xml_select(RULESHEET_LINK_PATTERN))
-            if rulesheet_link:
-                wrapped, orig = wiki_uri(self.original_base, self.wrapped_base, type, self.rest_uri)
+            if rulesheet_link and not is_absolute(rulesheet_link):
+                wrapped, orig = wiki_uri(self.original_base, self.wrapped_base, rulesheet_link, self.rest_uri)
                 self.rulesheet = wrapped
+            elif rulesheet_link:
+                self.rulesheet = rulesheet_link
             else:
                 rulesheet_att = U(doc.xml_select(RULESHEET_ATT_PATTERN))
                 if rulesheet_att:
