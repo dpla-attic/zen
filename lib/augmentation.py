@@ -1,20 +1,6 @@
 '''
 Data augmentation services supplied with Zen
 
->>> from zenlib import augmentation
->>> source = [{u"id": u"_1", u"label": u"_1", u"orig": u"text, text, text"}]
->>> propinfo = {u"delimiter": u",", u"extract": u"orig", u"property": u"shredded", u"enabled": True, u"label": "shredded result", u"tags": [u"property:type=text"]}
->>> result = {}
->>> augmentation.augment_shredded_list(source, propinfo, result)
->>> result
-{u'_1': {u'shredded': [u'text', u'text', u'text'], u'id': u'_1', u'label': u'_1'}}
-
->>> source = [{u"id": u"_1", u"label": u"_1", u"orig": u"text, text and text"}]
->>> propinfo = {u"pattern": u"(,)|(and)", u"extract": u"orig", u"property": u"shredded", u"enabled": True, u"label": "shredded result", u"tags": [u"property:type=text"]}
->>> result = {}
->>> augmentation.augment_shredded_list(source, propinfo, result)
->>> result
-{u'_1': {u'shredded': [u'text', u'text', u'text'], u'id': u'_1', u'label': u'_1'}}
 
 '''
 
@@ -79,11 +65,11 @@ def augment_location(source, propertyinfo, augmented, failed):
         else:
             failed.append({u'id': id, u'label': obj[u'label'],
                             pname: location, u'reason_': u'No geolocation possible for address'})
-    augment_wrapper(source, pname, failed, each_obj)
+    augment_wrapper(source, pname, failed, each_obj, 'augment_location')
     return
 
 
-def augment_wrapper(source, pname, failed, func):
+def augment_wrapper(source, pname, failed, func, opname):
     for obj in source:
         try:
             id = obj[u'id']
@@ -91,7 +77,7 @@ def augment_wrapper(source, pname, failed, func):
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception, e:
-            if logger: logger.info('Exception in augment_location: ' + repr(e))
+            if logger: logger.info('Exception in %s: '%opname + repr(e))
             failed.append({u'id': id, u'label': obj[u'label'], pname: repr(e)})
 
 
@@ -137,13 +123,13 @@ def augment_date(source, propertyinfo, augmented, failed):
         else:
             failed.append({u'id': id, u'label': obj[u'label'],
                             pname: date, u'reason_': u'Unable to parse date'})
-    augment_wrapper(source, pname, failed, each_obj)
+    augment_wrapper(source, pname, failed, each_obj, 'augment_date')
     #if logger: logger.info('Exception in augment_date: ' + repr(e))
     return
 
 
 @zservice(u'http://purl.org/com/zepheira/augmentation/luckygoogle')
-def augment_luckygoogle(source, propertyinfo, items_dict, failure_dict):
+def augment_luckygoogle(source, propertyinfo, augmented, failed):
     '''
     '''
     #logger.debug("Not found: " + place)
@@ -170,34 +156,49 @@ def augment_luckygoogle(source, propertyinfo, items_dict, failure_dict):
 
 
 @zservice(u'http://purl.org/com/zepheira/augmentation/shredded-list')
-def augment_shredded_list(source, propertyinfo, items_dict, failure_dict):
+def augment_shredded_list(source, propertyinfo, augmented, failed):
     '''
     See: http://community.zepheira.com/wiki/loc/ValidPatternsList
+
+    >>> from zenlib import augmentation
+    >>> source = [{u"id": u"_1", u"label": u"_1", u"orig": u"text, text, text"}]
+    >>> propinfo = {u"delimiter": u",", u"extract": u"orig", u"property": u"shredded", u"enabled": True, u"label": "shredded result", u"tags": [u"property:type=text"]}
+    >>> result = []
+    >>> failed = []
+    >>> augmentation.augment_shredded_list(source, propinfo, result, failed)
+    >>> result
+    [{u'shredded': [u'text', u'text', u'text'], u'id': u'_1', u'label': u'_1'}]
+
+    >>> source = [{u"id": u"_1", u"label": u"_1", u"orig": u"text, text and text"}]
+    >>> propinfo = {u"pattern": u"(,)|(and)", u"extract": u"orig", u"property": u"shredded", u"enabled": True, u"label": "shredded result", u"tags": [u"property:type=text"]}
+    >>> result = []
+    >>> failed = []
+    >>> augmentation.augment_shredded_list(source, propinfo, result, failed)
+    >>> result
+    [{u'shredded': [u'text', u'text', u'text'], u'id': u'_1', u'label': u'_1'}]
     '''
     extract = propertyinfo[u"extract"]
     pname = propertyinfo.get(u"property", u'shreddedlist')
     pattern = propertyinfo.get(u"pattern")
     if pattern: pattern = re.compile(pattern)
     delim = propertyinfo.get(u"delimiter", u',')
-    for obj in source:
-        try:
-            objid = obj[u'id']
-            if pattern:
-                #FIXME: Needs to be better spec'ed
-                result = pattern.split(obj[extract])
-            else:
-                result = [ item.strip() for item in obj[extract].split(delim) ]
-            if logger: logger.debug("augment_shredded_list: " + repr((obj[extract], pattern, delim)))
-            if logger: logger.debug("result: " + repr(result))
-            if result:
-                val = items_dict.setdefault(objid, {u'id': objid, u'label': obj[u'label']})
-                val[pname] = result
-        except (KeyboardInterrupt, SystemExit):
-            raise
-        except Exception, e:
-            if logger: logger.info('Exception in augment_shredded_list: ' + repr(e))
-            failureinfo = failure_dict.setdefault(objid, {u'id': objid, u'label': obj[u'label']})
-            failureinfo[pname] = repr(e)
+    def each_obj(obj, id):
+        if pattern:
+            text = obj[extract]
+            start = 0
+            result = []
+            #FIXME: Needs to be better spec'ed
+            for m in pattern.finditer(text):
+                result.append(text[start: m.start()].strip())
+                start = m.end() + 1
+            result.append(text[start:].strip())
+        else:
+            result = [ item.strip() for item in obj[extract].split(delim) ]
+        if logger: logger.debug("augment_shredded_list: " + repr((obj[extract], pattern, delim)))
+        if logger: logger.debug("result: " + repr(result))
+        if result:
+            augmented.append({u'id': id, u'label': obj[u'label'],
+                                pname: result})
+    augment_wrapper(source, pname, failed, each_obj, 'augment_shredded_list')
     return
-
 
