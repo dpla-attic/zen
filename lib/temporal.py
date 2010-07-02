@@ -6,6 +6,9 @@
 # http://wiki.python.org/moin/WorkingWithTime
 # http://seehuhn.de/pages/pdate
 
+#Other tools we can use:
+# http://code.google.com/p/parsedatetime/
+# 
 
 import feedparser
 import datetime
