@@ -597,6 +597,7 @@ structure_handlers = {
 
 @zservice(u'http://purl.org/com/zepheira/zen/util/simple-struct')
 def simple_struct(node):
+    if not node: return None
     if len(node.xml_children) == 1 and not isinstance(node.xml_first_child, tree.element):
         return node.xml_first_child.xml_value
     top = []
