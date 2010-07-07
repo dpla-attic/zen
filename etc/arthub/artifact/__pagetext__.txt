@@ -1,0 +1,13 @@
+= resource:name =
+
+artifact
+
+= resource:description =
+
+An artifact managed in ArtHub
+
+= akara:metadata =
+
+ akara:type:: http://purl.org/xml3k/akara/cms/resource-type
+ akara:rulesheet:: [[artifact.rsheet]]
+
