@@ -490,7 +490,7 @@ def curation_ingest_via_subprocess(rest_uri, mointext, user, H, auth_headers):
     if not rev or historydoc.history.rev.editor == user:
         #New record, or the most recent modification is also by the akara user
         logger.debug('Direct update (no conflict scenario)')
-        return mointext
+        return True, mointext
     else:
         #Potential conflict
         logger.debug('Potential conflict scenario')
@@ -542,11 +542,11 @@ def curation_ingest_via_subprocess(rest_uri, mointext, user, H, auth_headers):
         if conflict:
             #At least one patch hunk failed
             #logger.debug('CONFLICT: ' + repr(process.returncode))
-            return None
+            return False, patch
         else:
             #Patch can be completely automated
-            return patched
-    return
+            return True, patched
+    return False, none
 
 
 curation_ingest = curation_ingest_via_subprocess

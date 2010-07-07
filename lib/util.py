@@ -19,7 +19,7 @@ def sign_rulesheet(secret, rsheet):
 
 def find_peer_service(environ, peer_id):
     '''
-    Fing a peer service endpoint, by ID, mounted on this same Akara instance
+    Find a peer service endpoint, by ID, mounted on this same Akara instance
     
     Must be caled from a running akara service, and it is highly recommended to call
     at the top of service functions, or at least before the request environ has been manipulated
@@ -32,6 +32,7 @@ def find_peer_service(environ, peer_id):
         if s.ident == peer_id:
             return join(serverbase, '..', path)
     return None
+
 
 def guess_self_uri(environ):
     return absolutize(environ['SCRIPT_NAME'].rstrip('/'), request_uri(environ, include_query=False))
