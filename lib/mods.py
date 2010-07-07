@@ -124,6 +124,7 @@ def foreach(func):
     return lambda items: [ func(item) for item in items ]
 
 
+#Selects should return node set, to support the node coverage test
 DISPATCH_PATTERNS = {
     u'id': mcompose(select(u'@ID'), U),
     #u'name': mcompose(select(u'@ID'), U),
@@ -152,6 +153,21 @@ DISPATCH_PATTERNS = {
     u'accessCondition ': mcompose(select(u'm:accessCondition'), U),
     #u'id': mcompose(select(u'@ID'), U),
 }
+
+
+COVERAGE = [
+    u'm:titleInfo',
+    u'm:subject',
+    u'm:originInfo',
+    u'm:location',
+    u'm:language',
+    u'm:physicalDescription',
+    u'm:targetAudience',
+    u'm:typeOfResource',
+    u'm:genre',
+    u'm:note',
+    u'm:accessCondition',
+]
 
 
 def mods2json(source):
@@ -192,6 +208,7 @@ def mods2json(source):
 
     '''
     items = []
+    diagnostics = []
 #    @coroutine
 #    def handle_nodes():
 #        while True:
@@ -204,16 +221,17 @@ def mods2json(source):
 #    callback = handle_nodes()
 
     def callback(node):
-        nodeinfo = ejsonize(node)
+        nodeinfo, unknowns = ejsonize(node)
         items.append(nodeinfo)
+        diagnostics.append(unknowns)
         return
 
     pushtree(source, u"m:mods", callback, namespaces={"m": MODS_NAMESPACE})
-    for count, item in enumerate(items):
-        item[u'id'] = '_%i'%(count+1)
+    for count, (item, diag) in enumerate(zip(items, diagnostics)):
+        diag[u'id'] = item[u'id'] = '_%i'%(count+1)
         if u'label' not in item:
             item[u'label'] = '_%i'%(count+1)
-    return items
+    return items, diagnostics
 
 
 def ejsonize(node):
@@ -230,7 +248,17 @@ def ejsonize(node):
     #        removelist.append(key)
     #for key in removelist:
     #    del nodeinfo[key]
-    return nodeinfo
+    
+    covered = set()
+    for expr in COVERAGE:
+        result = node.xml_select(expr, prefixes={u'm': MODS_NAMESPACE})
+        for r in result:
+            covered.add(r)
+    unknowns = []
+    for child in node.xml_select(u'*'):
+        if child not in covered:
+            unknowns.append(child.xml_qname)
+    return nodeinfo, {u'unknown_top_level_elements': unknowns}
 
 
 def smart_map(mapping, key, value):
