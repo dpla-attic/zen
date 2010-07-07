@@ -231,6 +231,7 @@ def mods2json(source):
         diag[u'id'] = item[u'id'] = '_%i'%(count+1)
         if u'label' not in item:
             item[u'label'] = '_%i'%(count+1)
+
     return items, diagnostics
 
 
