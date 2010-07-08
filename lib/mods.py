@@ -115,16 +115,18 @@ MODS_MODEL_XML = '''<?xml version="1.0" encoding="UTF-8"?>
 
 MODS_MODEL = examplotron_model(MODS_MODEL_XML)
 
+#lclocal is an extension namespace used in LC American Memory
+PREFIXES = {u'm': MODS_NAMESPACE, u'lclocal': u'http://rs5.loc.gov:8081/ammem/lclocal_xml/document.xsd'}
+
 def select(expr):
     #FIXME: pre-parse the pattern
-    return lambda node: node.xml_select(expr, prefixes={u'm': MODS_NAMESPACE})
+    return lambda node: node.xml_select(expr, prefixes=PREFIXES)
 
 
 def foreach(func):
     return lambda items: [ func(item) for item in items ]
 
 
-#Selects should return node set, to support the node coverage test
 DISPATCH_PATTERNS = {
     u'id': mcompose(select(u'@ID'), U),
     #u'name': mcompose(select(u'@ID'), U),
@@ -148,9 +150,26 @@ DISPATCH_PATTERNS = {
     u'typeOfResource': mcompose(select(u'm:typeOfResource'), U),
     u'genre': mcompose(select(u'm:genre'), U),
     u'note': mcompose(select(u'm:note'), U),
-    u'physicalLocation-marcorg': mcompose(select(u'm:location/m:physicalLocation[authority="marcorg"]'), U),
-    u'physicalLocation': mcompose(select(u'm:location/m:physicalLocation[not(authority="marcorg")]'), U),
-    u'accessCondition ': mcompose(select(u'm:accessCondition'), U),
+    u'physicalLocation-marcorg': mcompose(select(u'm:location/m:physicalLocation[@authority="marcorg"]'), U),
+    u'physicalLocation': mcompose(select(u'm:location/m:physicalLocation[not(@authority="marcorg")]'), U),
+    u'accessCondition': mcompose(select(u'm:accessCondition'), U),
+
+    #American Memory conventions
+    u'name': mcompose(select(u'm:name/m:namePart'), U),
+    u'originInfo-dateCreated': mcompose(select(u'm:originInfo/m:dateCreated'), U),
+    u'physicalDescription-form': mcompose(select(u'm:physicalDescription/m:form'), U),
+    u'relatedItem-titleInfo-title': mcompose(select(u'm:relatedItem/m:titleInfo/m:title'), U),
+    u'location-url-electronic-resource': mcompose(select(u'm:location/m:url'), U),
+    u'location-physicalLocation-sponsoring-division': mcompose(select(u'm:location/m:url/m:physicalLocation[@displayLabel="sponsoring division"]'), U),
+    u'location-physicalLocation-other-repository': mcompose(select(u'm:location/m:url/m:physicalLocation[@displayLabel="other repository"]'), U),
+    u'location-physicalLocation': mcompose(select(u'm:location/m:url/m:physicalLocation[not(@displayLabel)]'), U),
+    u'extension-relatedItem-identifier': mcompose(select(u'm:extension/m:relatedItem/m:identifier'), U),
+    u'extension-lclocal.digObj-lclocal.aggregate': mcompose(select(u'm:extension/lclocal:digObj/lclocal:digObjRef/lclocal:aggregate'), U),
+    u'extension-lclocal.digObj-lclocal.difitalID': mcompose(select(u'm:extension/lclocal:digObj/lclocal:digObjRef/lclocal:difitalID'), U),
+    u'extension-lclocal.digObj-lclocal.displayType': mcompose(select(u'm:extension/lclocal:digObj/lclocal:displayType'), U),
+    u'extension-lclocal.digObj-lclocal.handleInformation': mcompose(select(u'm:extension/lclocal:digObj/lclocal:handleInformation'), U),
+    u'extension-lclocal.digitalOrigin': mcompose(select(u'm:extension/lclocal:digitalOrigin'), U),
+    u'extension-lclocal.indexingID': mcompose(select(u'm:extension/lclocal:indexingID'), U),
     #u'id': mcompose(select(u'@ID'), U),
 }
 
@@ -167,6 +186,10 @@ COVERAGE = [
     u'm:genre',
     u'm:note',
     u'm:accessCondition',
+
+    u'm:extension',
+    u'm:name',
+    u'm:relatedItem',
 ]
 
 
@@ -231,7 +254,6 @@ def mods2json(source):
         diag[u'id'] = item[u'id'] = '_%i'%(count+1)
         if u'label' not in item:
             item[u'label'] = '_%i'%(count+1)
-
     return items, diagnostics
 
 
@@ -252,7 +274,7 @@ def ejsonize(node):
     
     covered = set()
     for expr in COVERAGE:
-        result = node.xml_select(expr, prefixes={u'm': MODS_NAMESPACE})
+        result = node.xml_select(expr, prefixes=PREFIXES)
         for r in result:
             covered.add(r)
     unknowns = []
