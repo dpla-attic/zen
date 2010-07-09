@@ -152,9 +152,12 @@ class node(object):
             resolver = moinrest_resolver(opener=opener)
         if logger: logger.debug('node.lookup rest_uri: ' + rest_uri)
         isrc, resp = parse_moin_xml(rest_uri, resolver=resolver)
+        if isrc is None: # if error finding resource, return no node
+            return None
+
         doc = bindery.parse(isrc)
         #doc = bindery.parse(isrc, standalone=True, model=MOIN_DOCBOOK_MODEL)
-        original_base, wrapped_base, original_page = resp.info()[ORIG_BASE_HEADER].split()
+        original_base, wrapped_base, original_page = resp[ORIG_BASE_HEADER].split()
         atype = resource_type.construct_id(doc, original_base, wrapped_base, rest_uri)
         if logger: logger.debug('node.lookup akara type: ' + atype)
         #Older Moin CMS resource types are implemented by registration to the global node.NODES
@@ -279,9 +282,11 @@ node.NODES[node.AKARA_TYPE] = node
 def parse_moin_xml(uri, resolver=None):
     #Stupid Moin XML export uses bogus nbsps, so this function encapsulates the kludge
     if logger: logger.debug('parse_moin_xml: ' + repr((uri,)))
-    req = urllib2.Request(uri, headers={'Accept': XML_IMT})
-    resp = urllib2.urlopen(req)
-    body = resp.read()
+    h = httplib2.Http()
+    h.force_exception_to_status_code = True
+    resp,body = h.request(uri,"GET",headers={'Accept': XML_IMT})
+    if not str(resp.status).startswith('2'): return None, resp # fail gracefully if not found
+
     return inputsource(body, resolver=resolver), resp
     #return inputsource(body.replace('&nbsp;', '&#160;').replace('<p><p>', '<p></p>').replace('<p></s2>', '</s2>'), resolver=resolver), resp
 
