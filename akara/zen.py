@@ -139,12 +139,10 @@ def get_resource(environ, start_response):
     handler = copy_auth(environ, baseuri)
     opener = urllib2.build_opener(handler) if handler else urllib2.build_opener()
 
-    try:
-        resource = node.lookup(zenuri_to_moinrest(environ), opener=opener)
-    except urllib2.HTTPError as he:
-        import traceback; logger.debug(traceback.format_exc())
-        start_response(status_response(he.code),[('Content-Type','text/plain')])
-        return( "%(code)d %(msg)s\n" % {'code': he.code, 'msg': he.msg} )
+    resource = node.lookup(zenuri_to_moinrest(environ), opener=opener)
+    if not resource:
+        start_response(status_response(400),[('Content-Type','text/plain')])
+        return( "Unable to access resource\n" )
 
     resolver = resource.resolver
     
