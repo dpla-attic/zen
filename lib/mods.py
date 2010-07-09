@@ -159,10 +159,11 @@ DISPATCH_PATTERNS = {
     u'originInfo-dateCreated': mcompose(select(u'm:originInfo/m:dateCreated'), U),
     u'physicalDescription-form': mcompose(select(u'm:physicalDescription/m:form'), U),
     u'relatedItem-titleInfo-title': mcompose(select(u'm:relatedItem/m:titleInfo/m:title'), U),
-    u'location-url-electronic-resource': mcompose(select(u'm:location/m:url'), U),
-    u'location-physicalLocation-sponsoring-division': mcompose(select(u'm:location/m:url/m:physicalLocation[@displayLabel="sponsoring division"]'), U),
-    u'location-physicalLocation-other-repository': mcompose(select(u'm:location/m:url/m:physicalLocation[@displayLabel="other repository"]'), U),
-    u'location-physicalLocation': mcompose(select(u'm:location/m:url/m:physicalLocation[not(@displayLabel)]'), U),
+    u'location-url-electronic-resource': mcompose(select(u'm:location/m:url[contains(@displayLabel, "electronic resource")]'), U),
+    #u'location-url-electronic-resource': mcompose(select(u'm:location/m:url'), U),
+    u'location-physicalLocation-sponsoring-division': mcompose(select(u'm:location/m:physicalLocation[@displayLabel="sponsoring division"]'), U),
+    u'location-physicalLocation-other-repository': mcompose(select(u'm:location/m:physicalLocation[@displayLabel="other repository"]'), U),
+    u'location-physicalLocation': mcompose(select(u'm:location/m:physicalLocation[not(@displayLabel)]'), U),
     u'extension-relatedItem-identifier': mcompose(select(u'm:extension/m:relatedItem/m:identifier'), U),
     u'extension-lclocal.digObj-lclocal.aggregate': mcompose(select(u'm:extension/lclocal:digObj/lclocal:digObjRef/lclocal:aggregate'), U),
     u'extension-lclocal.digObj-lclocal.difitalID': mcompose(select(u'm:extension/lclocal:digObj/lclocal:digObjRef/lclocal:difitalID'), U),
@@ -171,6 +172,30 @@ DISPATCH_PATTERNS = {
     u'extension-lclocal.digitalOrigin': mcompose(select(u'm:extension/lclocal:digitalOrigin'), U),
     u'extension-lclocal.indexingID': mcompose(select(u'm:extension/lclocal:indexingID'), U),
     #u'id': mcompose(select(u'@ID'), U),
+    
+    #7/8/10 additions
+    u'originInfo-dateIssued': mcompose(select(u'm:originInfo/m:dateIssued'), U),
+    u'originInfo-issuance': mcompose(select(u'm:originInfo/m:issuance'), U),
+    u'originInfo-place-code': mcompose(select(u'm:originInfo/m:place[@type="code"]'), U),
+    u'originInfo-place-text': mcompose(select(u'm:originInfo/m:place[@type="text"]'), U),
+    u'originInfo-publisher': mcompose(select(u'm:originInfo/m:publisher'), U),
+    u'extent': mcompose(select(u'm:physicalDescription/m:extent'), U),
+    u'subject-geographic-country': mcompose(select(u'm:subject/m:hierarchicalGeographic/m:country'), foreach(U)),
+    u'subject-geographic-state': mcompose(select(u'm:subject/m:hierarchicalGeographic/m:state'), foreach(U)),
+    u'subject-geographic-county': mcompose(select(u'm:subject/m:hierarchicalGeographic/m:county'), foreach(U)),
+    u'descriptionStandard': mcompose(select(u'm:recordInfo/m:descriptionStandard'), U),
+    u'recordContentSource': mcompose(select(u'm:recordInfo/m:recordContentSource'), U),
+    u'recordCreationDate': mcompose(select(u'm:recordInfo/m:recordCreationDate'), U),
+    u'recordChangeDate': mcompose(select(u'm:recordInfo/m:recordChangeDate'), U),
+    u'recordIdentifier': mcompose(select(u'm:recordInfo/m:recordIdentifier'), U),
+    u'recordOrigin': mcompose(select(u'm:recordInfo/m:recordOrigin'), U),
+    u'abstract': mcompose(select(u'm:abstract'), U),
+    u'classification-lcc': mcompose(select(u'm:classification'), U),
+    u'abstract': mcompose(select(u'm:abstract'), U),
+    u'identifier-lccn': mcompose(select(u'm:identifier[@type="lccn"]'), U),
+    u'identifier-hdl': mcompose(select(u'm:identifier[@type="hdl"]'), U),
+    u'tableOfContents': mcompose(select(u'm:tableOfContents'), U),
+    u'titleInfo': mcompose(select(u'm:titleInfo/m:subTitle'), U),
 }
 
 
@@ -190,6 +215,12 @@ COVERAGE = [
     u'm:extension',
     u'm:name',
     u'm:relatedItem',
+
+    u'm:recordInfo',
+    u'm:abstract',
+    u'm:identifier',
+    u'm:tableOfContents',
+    u'm:classification',
 ]
 
 
