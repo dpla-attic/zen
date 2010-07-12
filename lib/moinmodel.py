@@ -455,10 +455,10 @@ def curation_ingest(rest_uri, mointext, user, H, auth_headers):
     else:
         #Potential conflict
         logger.debug('Potential conflict scenario')
-        resp, prior_akara_rev = H.request(rest_uri + '?rev=' + rev.id, "GET", headers=auth_headers)
-        prior_akara_rev = wiki_normalize(prior_akara_rev)
+        resp, curr_akara_rev = H.request(rest_uri + '?rev=' + rev.id, "GET", headers=auth_headers)
+        curr_akara_rev = wiki_normalize(curr_akara_rev)
         dmp = diff_match_patch.diff_match_patch()
-        patches = dmp.patch_make(prior_akara_rev, mointext)
+        patches = dmp.patch_make(curr_akara_rev, mointext)
         logger.debug('PATCHES: ' + dmp.patch_toText(patches))
         diff_match_patch.patch_fixup(patches) #Uche's hack-around for an apparent bug in diff_match_patch
         logger.debug('PATCHES: ' + dmp.patch_toText(patches))
@@ -480,7 +480,7 @@ def curation_ingest(rest_uri, mointext, user, H, auth_headers):
 DIFF_CMD = 'diff -u'
 PATCH_CMD = 'patch -p0'
 
-def curation_ingest_via_subprocess(rest_uri, mointext, user, H, auth_headers):
+def curation_ingest_via_subprocess(rest_uri, mointext, prior_ingested, user, H, auth_headers):
     '''
     Support function for freemix services.  Inital processing to guess media type of post body.
     '''
@@ -488,25 +488,21 @@ def curation_ingest_via_subprocess(rest_uri, mointext, user, H, auth_headers):
     import tempfile
     from subprocess import Popen, PIPE
 
-    from akara.util.moin import HISTORY_MODEL
     from akara.util.moin import wiki_normalize
 
-    resp, content = H.request(rest_uri + ';history', "GET", headers=auth_headers)
-    historydoc = bindery.parse(content, model=HISTORY_MODEL)
-    rev = first_item(dropwhile(lambda rev: unicode(rev.editor) != user, (historydoc.history.rev or [])))
-    if not rev or historydoc.history.rev.editor == user:
-        #New record, or the most recent modification is also by the akara user
+    prior_rev, zen_rev, curated_rev = curation_ingest_versions(rest_uri, user, H, auth_headers)
+    if not curated_rev:
+        #If there has never been a curated rev, we don't have to be on guard for conflicts
         logger.debug('Direct update (no conflict scenario)')
         return True, mointext
     else:
         #Potential conflict
         logger.debug('Potential conflict scenario')
-        resp, prior_akara_rev = H.request(rest_uri + '?rev=' + rev.id, "GET", headers=auth_headers)
-        prior_akara_rev = wiki_normalize(prior_akara_rev)
+        #We need to diff the latest ingest *candidate* (i.e. mointext) version against the prior ingest *candidate* version
 
         oldwiki = tempfile.mkstemp(suffix=".txt")
         newwiki = tempfile.mkstemp(suffix=".txt")
-        os.write(oldwiki[0], prior_akara_rev)
+        os.write(oldwiki[0], prior_ingested)
         os.write(newwiki[0], mointext)
         #os.fsync(oldwiki[0]) #is this needed with the close below?
         os.close(oldwiki[0])
@@ -557,6 +553,20 @@ def curation_ingest_via_subprocess(rest_uri, mointext, user, H, auth_headers):
 
 
 curation_ingest = curation_ingest_via_subprocess
+
+def curation_ingest_versions(rest_uri, user, H, auth_headers):
+    from akara.util.moin import HISTORY_MODEL
+    resp, content = H.request(rest_uri + ';history', "GET", headers=auth_headers)
+    historydoc = bindery.parse(content, model=HISTORY_MODEL)
+    try:
+        prior_rev = historydoc.history.rev[1]
+    except:
+        prior_rev = None
+    zen_rev = first_item(dropwhile(lambda rev: unicode(rev.editor) != user, (historydoc.history.rev or [])))
+    curated_rev = first_item(dropwhile(lambda rev: unicode(rev.editor) == user, (historydoc.history.rev or [])))
+    #if not rev or historydoc.history.rev.editor == user: #New record, or the most recent modification is also by the akara user
+    logger.debug('curr_rev, zen_rev, curated_rev: ' + repr((prior_rev.xml_encode() if prior_rev else None, zen_rev.xml_encode(), curated_rev.xml_encode())))
+    return prior_rev, zen_rev, curated_rev
 
 
 from zenlib import register_service
