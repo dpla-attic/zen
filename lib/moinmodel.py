@@ -443,7 +443,6 @@ def curation_ingest(rest_uri, mointext, user, H, auth_headers):
     '''
     import diff_match_patch
     from akara.util.moin import HISTORY_MODEL
-    from akara.util.moin import wiki_normalize
 
     resp, content = H.request(rest_uri + ';history', "GET", headers=auth_headers)
     historydoc = bindery.parse(content, model=HISTORY_MODEL)
@@ -456,7 +455,7 @@ def curation_ingest(rest_uri, mointext, user, H, auth_headers):
         #Potential conflict
         logger.debug('Potential conflict scenario')
         resp, curr_akara_rev = H.request(rest_uri + '?rev=' + rev.id, "GET", headers=auth_headers)
-        curr_akara_rev = wiki_normalize(curr_akara_rev)
+        curr_akara_rev = curation_ingest.wiki_normalize(curr_akara_rev)
         dmp = diff_match_patch.diff_match_patch()
         patches = dmp.patch_make(curr_akara_rev, mointext)
         logger.debug('PATCHES: ' + dmp.patch_toText(patches))
@@ -464,7 +463,7 @@ def curation_ingest(rest_uri, mointext, user, H, auth_headers):
         logger.debug('PATCHES: ' + dmp.patch_toText(patches))
         #XXX Possible race condition.  Should probably figure out a way to get all revs atomically
         resp, present_rev = H.request(rest_uri, "GET", headers=auth_headers)
-        present_rev = wiki_normalize(present_rev)
+        present_rev = curation_ingest.wiki_normalize(present_rev)
         patched, flags = dmp.patch_apply(patches, present_rev)
         logger.debug('PATCH RESULTS: ' + repr((flags)))
         if all(flags):
@@ -487,8 +486,6 @@ def curation_ingest_via_subprocess(rest_uri, mointext, prior_ingested, user, H, 
     import os
     import tempfile
     from subprocess import Popen, PIPE
-
-    from akara.util.moin import wiki_normalize
 
     prior_rev, zen_rev, curated_rev = curation_ingest_versions(rest_uri, user, H, auth_headers)
     if not curated_rev:
@@ -516,7 +513,7 @@ def curation_ingest_via_subprocess(rest_uri, mointext, prior_ingested, user, H, 
         logger.debug('PATCHES: \n' + patch)
         #XXX Possible race condition.  Should probably figure out a way to get all revs atomically
         resp, present_rev = H.request(rest_uri, "GET", headers=auth_headers)
-        present_rev = wiki_normalize(present_rev)
+        present_rev = curation_ingest.wiki_normalize(present_rev)
 
         currwiki = tempfile.mkstemp(suffix=".txt")
         os.write(currwiki[0], present_rev)
@@ -535,7 +532,7 @@ def curation_ingest_via_subprocess(rest_uri, mointext, prior_ingested, user, H, 
 
         logger.debug('PATCH COMMAND OUTPUT: ' + repr((cmdoutput)))
         patched = open(currwiki[1]).read()
-        patched = wiki_normalize(patched)
+        patched = curation_ingest.wiki_normalize(patched)
         
         logger.debug('PATCH RESULTS: ' + repr((patched)))
         
@@ -553,6 +550,8 @@ def curation_ingest_via_subprocess(rest_uri, mointext, prior_ingested, user, H, 
 
 
 curation_ingest = curation_ingest_via_subprocess
+#By default, normalize for curator ops using standard Akara wiki normalization
+curation_ingest.wiki_normalize = wiki_normalize
 
 def curation_ingest_versions(rest_uri, user, H, auth_headers):
     from akara.util.moin import HISTORY_MODEL
