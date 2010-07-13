@@ -1,6 +1,6 @@
 #freemixlib
 
-__version__ = '0.9.3.5'
+__version__ = '0.9.3.6'
 
 #Mapping from service ID URI too URL template and/or callable
 SERVICES = {}

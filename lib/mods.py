@@ -174,11 +174,11 @@ DISPATCH_PATTERNS = {
     #u'id': mcompose(select(u'@ID'), U),
     
     #7/8/10 additions
-    u'originInfo-dateIssued': mcompose(select(u'm:originInfo/m:dateIssued'), foreach(U)),
-    u'originInfo-issuance': mcompose(select(u'm:originInfo/m:issuance'), foreach(U)),
-    u'originInfo-place-code': mcompose(select(u'm:originInfo/m:place[@type="code"]'), foreach(U)),
-    u'originInfo-place-text': mcompose(select(u'm:originInfo/m:place[@type="text"]'), foreach(U)),
-    u'originInfo-publisher': mcompose(select(u'm:originInfo/m:publisher'), foreach(U)),
+    u'dateIssued': mcompose(select(u'm:originInfo/m:dateIssued'), foreach(U)),
+    u'issuance': mcompose(select(u'm:originInfo/m:issuance'), foreach(U)),
+    u'place-code': mcompose(select(u'm:originInfo/m:place[@type="code"]'), foreach(U)),
+    u'place-text': mcompose(select(u'm:originInfo/m:place[@type="text"]'), foreach(U)),
+    u'publisher': mcompose(select(u'm:originInfo/m:publisher'), foreach(U)),
     u'extent': mcompose(select(u'm:physicalDescription/m:extent'), foreach(U)),
     u'subject-geographic-country': mcompose(select(u'm:subject/m:hierarchicalGeographic/m:country'), foreach(U)),
     u'subject-geographic-state': mcompose(select(u'm:subject/m:hierarchicalGeographic/m:state'), foreach(U)),
