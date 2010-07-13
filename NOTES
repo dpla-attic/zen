@@ -7,9 +7,9 @@ svn export http://geopy.googlecode.com/svn/trunk/ geopy_export
 
 Then apply fixes:
 
-cd geopy_export
-patch -p0 < ../geopy.diff 
-cd ..
+cd thirdparty/geopy_export
+patch -p0< ../geopy.diff 
+cd ../..
 
 Check for latest version of diff_match_patch
 

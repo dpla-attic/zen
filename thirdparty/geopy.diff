@@ -1,52 +1,6 @@
-Index: geopy/geocoders_old.py
-===================================================================
---- geopy/geocoders_old.py	(revision 111)
-+++ geopy/geocoders_old.py	(working copy)
-@@ -30,7 +30,15 @@
- try:
-     import json as simplejson
- except ImportError:
--    import simplejson
-+    try:
-+        import simplejson
-+    except ImportError:
-+        try:
-+            from django.utils import simplejson
-+        except ImportError:
-+            import sys
-+            print >> sys.stderr, "simplejson was not found. " \
-+                  "Geocoders relying on JSON parsing will not work."
- 
- class Geocoder(object):
-     """Base class for all geocoders."""
-Index: geopy/geocoders/virtual_earth.py
-===================================================================
---- geopy/geocoders/virtual_earth.py	(revision 111)
-+++ geopy/geocoders/virtual_earth.py	(working copy)
-@@ -5,10 +5,19 @@
- from geopy.point import Point
- from geopy.location import Location
- from geopy import util
-+
- try:
-     import json as simplejson
- except ImportError:
--    import simplejson
-+    try:
-+        import simplejson
-+    except ImportError:
-+        try:
-+            from django.utils import simplejson
-+        except ImportError:
-+            import sys
-+            print >> sys.stderr, "simplejson was not found. " \
-+                  "Geocoders relying on JSON parsing will not work."
- 
- class VirtualEarth(Geocoder):
-     """Geocoder using Microsoft's Windows Live Local web service, powered by
 Index: geopy/geocoders/google.py
 ===================================================================
---- geopy/geocoders/google.py	(revision 111)
+--- geopy/geocoders/google.py	(revision 120)
 +++ geopy/geocoders/google.py	(working copy)
 @@ -3,7 +3,15 @@
  try:
@@ -65,7 +19,7 @@ Index: geopy/geocoders/google.py
  
  import xml
  from xml.parsers.expat import ExpatError
-@@ -203,3 +211,6 @@
+@@ -206,3 +214,6 @@
  
  class GTooManyQueriesError(GeocoderResultError):
      pass
@@ -74,9 +28,9 @@ Index: geopy/geocoders/google.py
 +register("google", Google)
 Index: geopy/geocoders/geonames.py
 ===================================================================
---- geopy/geocoders/geonames.py	(revision 111)
+--- geopy/geocoders/geonames.py	(revision 120)
 +++ geopy/geocoders/geonames.py	(working copy)
-@@ -0,0 +1,113 @@
+@@ -1,3 +1,124 @@
 +'''
 +Use GeoNames.org Web services for geolocation http://www.geonames.org/export/ws-overview.html
 +
@@ -93,6 +47,11 @@ Index: geopy/geocoders/geonames.py
 +
 +from geopy.geocoders.base import Geocoder
 +from geopy import Point, Location, util
++
++try:
++    from akara import logger
++except ImportError:
++    logger = None
 +
 +try:
 +    import json as simplejson
@@ -112,15 +71,18 @@ Index: geopy/geocoders/geonames.py
 +    def __init__(self, format_string='%s', output_format='xml', user=None):
 +        self.format_string = format_string
 +        self.output_format = output_format
-+        self.user = user
++        self.user = user or ''
 +
 +    @property
 +    def url(self):
 +        domain = "ws.geonames.org"
++        if self.user:
++            domain = "ba-ws.geonames.net"
++            user = 'username=%s&'%self.user
++            logger.debug('Using Commercial GeoNames service (ba-ws.geonames.org). Username: ' + self.user)
 +        output_format = self.output_format.lower()
 +        append_formats = {'json': 'JSON'}
 +        resource = "search" + append_formats.get(output_format, '')
-+        user = 'username=%s&'%self.user if self.user else ''
 +        return "http://%(domain)s/%(resource)s?%(user)s%%s" % locals()
 +
 +    def geocode(self, string, exactly_one=True):
@@ -190,9 +152,12 @@ Index: geopy/geocoders/geonames.py
 +from geopy.geocoders import register
 +register("geonames", GeoNames)
 +
+ import xml.dom.minidom
+ from urllib import urlencode
+ from urllib2 import urlopen
 Index: geopy/geocoders/yahoo.py
 ===================================================================
---- geopy/geocoders/yahoo.py	(revision 111)
+--- geopy/geocoders/yahoo.py	(revision 120)
 +++ geopy/geocoders/yahoo.py	(working copy)
 @@ -62,3 +62,8 @@
              })
@@ -205,10 +170,9 @@ Index: geopy/geocoders/yahoo.py
 +
 Index: geopy/geocoders/__init__.py
 ===================================================================
---- geopy/geocoders/__init__.py	(revision 111)
+--- geopy/geocoders/__init__.py	(revision 120)
 +++ geopy/geocoders/__init__.py	(working copy)
-@@ -1,3 +1,31 @@
--from geopy.geocoders_old import *
+@@ -1,3 +1,35 @@
 +#from geopy.geocoders_old import *
 +
 +GEOCODERS = {}
@@ -238,32 +202,43 @@ Index: geopy/geocoders/__init__.py
 +import yahoo
 +import wiki_semantic
 +
- from google import Google
- # TODO, switch geocoders to the new ones in this directory after testing
++#from google import Google
++# TODO, switch geocoders to the new ones in this directory after testing
++
+ from geopy.geocoders.bing import Bing
+ from geopy.geocoders.google import Google
+ from geopy.geocoders.dot_us import GeocoderDotUS
+@@ -5,3 +37,4 @@
+ from geopy.geocoders.wiki_gis import MediaWiki
+ from geopy.geocoders.wiki_semantic import SemanticMediaWiki
+ from geopy.geocoders.yahoo import Yahoo
++
 Index: geopy/geocoders/wiki_semantic.py
 ===================================================================
---- geopy/geocoders/wiki_semantic.py	(revision 111)
+--- geopy/geocoders/wiki_semantic.py	(revision 120)
 +++ geopy/geocoders/wiki_semantic.py	(working copy)
-@@ -1,11 +1,17 @@
- import xml.dom.minidom
--from BeautifulSoup import BeautifulSoup
+@@ -1,14 +1,14 @@
+-import xml.dom.minidom
++#import xml.dom.minidom
  from geopy.geocoders.base import Geocoder
  from geopy.point import Point
  from geopy.location import Location
  from geopy import util
  
+-try:
+-    from BeautifulSoup import BeautifulSoup
+-except ImportError:
+-    util.logger.warn("BeautifulSoup was not found. " \
+-          "The SemanticMediaWiki geocoder will not work.")
++#try:
++#    from BeautifulSoup import BeautifulSoup
++#except ImportError:
++#    util.logger.warn("BeautifulSoup was not found. " \
++#          "The SemanticMediaWiki geocoder will not work.")
+ 
  try:
-+    from BeautifulSoup import BeautifulSoup
-+except ImportError:
-+    import sys
-+    print >> sys.stderr, "BeautifulSoup was not found. " \
-+          "Geocoders assuming malformed markup will not work."
-+
-+try:
      set
- except NameError:
-     from sets import Set as set
-@@ -18,7 +24,7 @@
+@@ -23,7 +23,7 @@
          self.relations = relations
          self.prefer_semantic = prefer_semantic
          self.transform_string = transform_string
@@ -272,7 +247,7 @@ Index: geopy/geocoders/wiki_semantic.py
      def get_url(self, string):
          return self.format_url % self.transform_string(string)
  
-@@ -101,3 +107,7 @@
+@@ -106,3 +106,7 @@
                      break
  
          return (name, (latitude, longitude))
@@ -282,7 +257,7 @@ Index: geopy/geocoders/wiki_semantic.py
 +register("semantic_media_wiki", SemanticMediaWiki)
 Index: setup.py
 ===================================================================
---- setup.py	(revision 111)
+--- setup.py	(revision 120)
 +++ setup.py	(working copy)
 @@ -1,4 +1,4 @@
 -from setuptools import setup, find_packages
@@ -295,7 +270,7 @@ Index: setup.py
  
  setup(name='geopy',
 -    version='0.94',
-+    version='0.94dev.zen.1',
++    version='0.94dev.zen.2',
      description='Python Geocoding Toolbox',
      author='Brian Beck',
      author_email='exogen@gmail.com',

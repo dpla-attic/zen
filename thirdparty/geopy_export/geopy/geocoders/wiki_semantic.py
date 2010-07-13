@@ -1,15 +1,14 @@
-import xml.dom.minidom
+#import xml.dom.minidom
 from geopy.geocoders.base import Geocoder
 from geopy.point import Point
 from geopy.location import Location
 from geopy import util
 
-try:
-    from BeautifulSoup import BeautifulSoup
-except ImportError:
-    import sys
-    print >> sys.stderr, "BeautifulSoup was not found. " \
-          "Geocoders assuming malformed markup will not work."
+#try:
+#    from BeautifulSoup import BeautifulSoup
+#except ImportError:
+#    util.logger.warn("BeautifulSoup was not found. " \
+#          "The SemanticMediaWiki geocoder will not work.")
 
 try:
     set

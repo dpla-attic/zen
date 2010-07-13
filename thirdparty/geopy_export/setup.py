@@ -10,7 +10,7 @@ except ImportError:
     install_requires.append('simplejson')
 
 setup(name='geopy',
-    version='0.94dev.zen.1',
+    version='0.94dev.zen.2',
     description='Python Geocoding Toolbox',
     author='Brian Beck',
     author_email='exogen@gmail.com',

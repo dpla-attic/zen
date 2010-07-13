@@ -27,32 +27,34 @@ class Google(Geocoder):
         """Initialize a customized Google geocoder with location-specific
         address information and your Google Maps API key.
 
-        ``api_key`` should be a valid Google Maps API key. It is required for
-        the 'maps/geo' resource to work.
+        ``api_key`` should be a valid Google Maps API key. Required as per Google Geocoding API
+        V2 docs, but the API works without a key in practice.
 
-        ``domain`` should be a the Google Maps domain to connect to. The default
+        ``domain`` should be the localized Google Maps domain to connect to. The default
         is 'maps.google.com', but if you're geocoding address in the UK (for
-        example), you may want to set it to 'maps.google.co.uk'.
+        example), you may want to set it to 'maps.google.co.uk' to properly bias results.
 
-        ``resource`` is the HTTP resource to give the query parameter.
-        'maps/geo' is the HTTP geocoder and is a documented API resource.
-        'maps' is the actual Google Maps interface and its use for just
-        geocoding is undocumented. Anything else probably won't work.
+        ``resource`` (DEPRECATED) is ignored, but the parameter remains for compatibility
+        purposes.  The documented 'maps/geo' API is used regardless of this parameter.
 
         ``format_string`` is a string containing '%s' where the string to
         geocode should be interpolated before querying the geocoder.
         For example: '%s, Mountain View, CA'. The default is just '%s'.
         
-        ``output_format`` can be 'json', 'xml', 'kml', 'csv', or 'js' and will
+        ``output_format`` can be 'json', 'xml', 'kml', or 'csv' and will
         control the output format of Google's response. The default is 'kml'
-        since it is supported by both the 'maps' and 'maps/geo' resources. The
-        'js' format is the most likely to break since it parses Google's
-        JavaScript, which could change. However, it currently returns the best
-        results for restricted geocoder areas such as the UK.
+        since it is supported by both the 'maps' and 'maps/geo' resources.
         """
+        if resource != 'maps/geo':
+            from warnings import warn
+            warn('geopy.geocoders.google.GoogleGeocoder: The resource parameter is deprecated and now ignored. The documented "maps/geo" API will be used.',DeprecationWarning)
+        
+        if output_format not in ('json','xml','kml','csv'):
+            raise ValueError('output_format must be one of: "json","xml","kml","csv"')
+
         self.api_key = api_key
         self.domain = domain
-        self.resource = resource
+        self.resource = 'maps/geo'
         self.format_string = format_string
         self.output_format = output_format
 
@@ -89,10 +91,11 @@ class Google(Geocoder):
             doc = xml.dom.minidom.parseString(page)
         except ExpatError:
             places = []
+            doc = None
         else:
             places = doc.getElementsByTagName('Placemark')
 
-        if len(places) == 0:
+        if len(places) == 0 and doc is not None:
             # Got empty result. Parse out the status code and raise an error if necessary.
             status = doc.getElementsByTagName("Status")
             status_code = int(util.get_first_text(status[0], 'code'))
