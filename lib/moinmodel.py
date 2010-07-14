@@ -564,7 +564,8 @@ def curation_ingest_versions(rest_uri, user, H, auth_headers):
     zen_rev = first_item(dropwhile(lambda rev: unicode(rev.editor) != user, (historydoc.history.rev or [])))
     curated_rev = first_item(dropwhile(lambda rev: unicode(rev.editor) == user, (historydoc.history.rev or [])))
     #if not rev or historydoc.history.rev.editor == user: #New record, or the most recent modification is also by the akara user
-    logger.debug('curr_rev, zen_rev, curated_rev: ' + repr((prior_rev.xml_encode() if prior_rev else None, zen_rev.xml_encode(), curated_rev.xml_encode())))
+    logger.debug('curr_rev, zen_rev, curated_rev: ' +
+        repr((prior_rev.xml_encode() if prior_rev else None, zen_rev.xml_encode() if zen_rev else None, curated_rev.xml_encode() if curated_rev else None)))
     return prior_rev, zen_rev, curated_rev
 
 
