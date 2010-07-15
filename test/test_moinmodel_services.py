@@ -87,21 +87,27 @@ STRUCT1_XML = '''\
 </s1>
 '''
 
-EXPECTED1 = {u'xpage': {u'Locations':
-    [{u'Location': [{u'Country': u'United States ',
-       u'Location': u'Birmingham, Alabama ',
-       u'Name': u'UAB Comprehensive Cancer Center 1',
-       u'Status': u'Recruiting ',
-       u'Zip': u'35294 '},
-      {u'Contact': {u'Last Name': u'UAB Comprehensive Cancer Center ',
-            u'Phone': u'205-934-0309 '}}]},
-      {u'Location': [{u'Country': u'United States ',
-            u'Location': u'Phoenix, Arizona ',
-            u'Name': u"Phoenix Children's Hospital ",
-            u'Status': u'Recruiting ',
-            u'Zip': u'85016-7710 '},
-      {u'Contact': {u'Last Name': u'Jessica L. Boklan ',
-            u'Phone': u'602-546-0920 '}}]}]}}
+EXPECTED1 = [(u'xpage',
+  [(u'Locations',
+    [(u'Location',
+      [{u'Country': u'United States ',
+        u'Location': u'Birmingham, Alabama ',
+        u'Name': u'UAB Comprehensive Cancer Center 1',
+        u'Status': u'Recruiting ',
+        u'Zip': u'35294 '},
+       (u'Contact',
+        [{u'Last Name': u'UAB Comprehensive Cancer Center ',
+          u'Phone': u'205-934-0309 '}])]),
+     (u'Location',
+      [{u'Country': u'United States ',
+        u'Location': u'Phoenix, Arizona ',
+        u'Name': u"Phoenix Children's Hospital ",
+        u'Status': u'Recruiting ',
+        u'Zip': u'85016-7710 '},
+       (u'Contact',
+        [{u'Last Name': u'Jessica L. Boklan ',
+          u'Phone': u'602-546-0920 '}])])])])]
+
 
 def test_simple_struct1():
     doc = bindery.parse(STRUCT1_XML)
@@ -113,5 +119,6 @@ def test_simple_struct1():
     #assert iso_date is not None, reference_date  # could not be parsed
     #assert iso_date == reference_date, (iso_date, reference_date) # did not match
 
-#locations = [ l_inner[u'Location'] for loc_list in EXPECTED1.values()[0][u'Locations'] for l_inner in loc_list[u'Location'] if u'Location' in l_inner]
+#locations = [ loc[u'Location'] for loc in  EXPECTED1.values()[0][u'Locations'][0][u'Location'] if u'Location' in loc ]
+
 

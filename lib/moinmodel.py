@@ -597,7 +597,7 @@ def handle_gloss(node):
                        for l in node.label)
 
 def handle_subsection(node):
-    return {U(node.title): simple_struct(node)}
+    return (U(node.title), simple_struct(node))
 
 
 structure_handlers = {
@@ -614,6 +614,18 @@ structure_handlers = {
 
 @zservice(u'http://purl.org/com/zepheira/zen/util/simple-struct')
 def simple_struct(node):
+    '''
+    >>> from amara.bindery import parse
+    >>> from zenlib.moinmodel import simple_struct
+    >>> X = '<s2 id="XYZ" title="XYZ"><p/><s3 id="A" title="A"><p>Hello</p><s4 id="AB" title="AB"><p>World</p></s4></s3></s2>'
+    >>> doc = parse(X)
+    >>> simple_struct(doc)
+    [(u'XYZ', [(u'A', [u'Hello', (u'AB', [u'World'])])])]
+    >>> X = '<s2 id="XYZ" title="XYZ"><p/><s3 id="A" title="A"><p>Hello</p><s4 id="AB" title="AB"><gloss><label>spam</label><item>eggs</item></gloss></s4></s3></s2>'
+    >>> doc = parse(X)
+    >>> simple_struct(doc)
+    [(u'XYZ', [(u'A', [u'Hello', (u'AB', [{u'spam': u'eggs'}])])])]
+    '''
     if not node: return None
     if len(node.xml_children) == 1 and not isinstance(node.xml_first_child, tree.element):
         return node.xml_first_child.xml_value
@@ -624,7 +636,7 @@ def simple_struct(node):
         if not isinstance(result, basestring) or result.strip():
             top.append(result)
     #logger.debug("simple_struct: " + repr(top))
-    if len(top) == 1: top = top[0]
+    #if len(top) == 1: top = top[0]
     return top
 
 
