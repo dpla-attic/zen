@@ -561,11 +561,17 @@ def curation_ingest_versions(rest_uri, user, H, auth_headers):
         prior_rev = historydoc.history.rev[1]
     except:
         prior_rev = None
-    zen_rev = first_item(dropwhile(lambda rev: unicode(rev.editor) != user, (historydoc.history.rev or [])))
-    curated_rev = first_item(dropwhile(lambda rev: unicode(rev.editor) == user, (historydoc.history.rev or [])))
+    try:
+        zen_rev = first_item(dropwhile(lambda rev: unicode(rev.editor) != user, (historydoc.history.rev or [])))
+    except AttributeError: #'entity_base' object has no attribute 'history'
+        zen_rev = None
+    try:
+        curated_rev = first_item(dropwhile(lambda rev: unicode(rev.editor) == user, (historydoc.history.rev or [])))
+    except AttributeError: #'entity_base' object has no attribute 'history'
+        curated_rev = None
     #if not rev or historydoc.history.rev.editor == user: #New record, or the most recent modification is also by the akara user
-    logger.debug('curr_rev, zen_rev, curated_rev: ' +
-        repr((prior_rev.xml_encode() if prior_rev else None, zen_rev.xml_encode() if zen_rev else None, curated_rev.xml_encode() if curated_rev else None)))
+    logger.debug('curation_ingest_versions: rest_uri, curr_rev, zen_rev, curated_rev: ' +
+        repr(rest_uri, (prior_rev.xml_encode() if prior_rev else None, zen_rev.xml_encode() if zen_rev else None, curated_rev.xml_encode() if curated_rev else None)))
     return prior_rev, zen_rev, curated_rev
 
 
