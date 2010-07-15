@@ -43,6 +43,7 @@ class GeoNames(Geocoder):
     @property
     def url(self):
         domain = "ws.geonames.org"
+        user = ''
         if self.user:
             domain = "ba-ws.geonames.net"
             user = 'username=%s&'%self.user

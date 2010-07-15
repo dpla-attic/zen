@@ -112,3 +112,6 @@ def test_simple_struct1():
 
     #assert iso_date is not None, reference_date  # could not be parsed
     #assert iso_date == reference_date, (iso_date, reference_date) # did not match
+
+#locations = [ l_inner[u'Location'] for loc_list in EXPECTED1.values()[0][u'Locations'] for l_inner in loc_list[u'Location'] if u'Location' in l_inner]
+

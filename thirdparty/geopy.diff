@@ -30,7 +30,7 @@ Index: geopy/geocoders/geonames.py
 ===================================================================
 --- geopy/geocoders/geonames.py	(revision 120)
 +++ geopy/geocoders/geonames.py	(working copy)
-@@ -1,3 +1,124 @@
+@@ -1,3 +1,125 @@
 +'''
 +Use GeoNames.org Web services for geolocation http://www.geonames.org/export/ws-overview.html
 +
@@ -76,6 +76,7 @@ Index: geopy/geocoders/geonames.py
 +    @property
 +    def url(self):
 +        domain = "ws.geonames.org"
++        user = ''
 +        if self.user:
 +            domain = "ba-ws.geonames.net"
 +            user = 'username=%s&'%self.user
