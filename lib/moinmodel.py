@@ -571,7 +571,7 @@ def curation_ingest_versions(rest_uri, user, H, auth_headers):
         curated_rev = None
     #if not rev or historydoc.history.rev.editor == user: #New record, or the most recent modification is also by the akara user
     logger.debug('curation_ingest_versions: rest_uri, curr_rev, zen_rev, curated_rev: ' +
-        repr(rest_uri, (prior_rev.xml_encode() if prior_rev else None, zen_rev.xml_encode() if zen_rev else None, curated_rev.xml_encode() if curated_rev else None)))
+        repr((rest_uri, (prior_rev.xml_encode() if prior_rev else None, zen_rev.xml_encode() if zen_rev else None, curated_rev.xml_encode() if curated_rev else None))))
     return prior_rev, zen_rev, curated_rev
 
 
