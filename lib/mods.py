@@ -224,7 +224,7 @@ COVERAGE = [
 ]
 
 
-def mods2json(source):
+def mods2json(source, run_diagnostics=False):
     '''
     Parse MODS XML input source and return a flattened structure suitable for Exhibit JSON
 
@@ -275,20 +275,26 @@ def mods2json(source):
 #    callback = handle_nodes()
 
     def callback(node):
-        nodeinfo, unknowns = ejsonize(node)
+        nodeinfo, unknowns = ejsonize(node, run_diagnostics)
         items.append(nodeinfo)
-        diagnostics.append(unknowns)
+        if run_diagnostics:
+            diagnostics.append(unknowns)
         return
 
     pushtree(source, u"m:mods", callback, namespaces={"m": MODS_NAMESPACE})
-    for count, (item, diag) in enumerate(zip(items, diagnostics)):
-        diag[u'id'] = item[u'id'] = '_%i'%(count+1)
-        if u'label' not in item:
-            item[u'label'] = '_%i'%(count+1)
+    if run_diagnostics:
+        for count, (item, diag) in enumerate(zip(items, diagnostics)):
+            diag[u'id'] = item[u'id'] = '_%i'%(count+1)
+            if u'label' not in item:
+                item[u'label'] = '_%i'%(count+1)
+    else:
+        for count, item in enumerate(items):
+            if u'label' not in item:
+                item[u'label'] = '_%i'%(count+1)
     return items, diagnostics
 
 
-def ejsonize(node):
+def ejsonize(node, run_diagnostics):
     nodeinfo = {}
     for key, func in DISPATCH_PATTERNS.items():
         val = func(node)
@@ -309,9 +315,10 @@ def ejsonize(node):
         for r in result:
             covered.add(r)
     unknowns = []
-    for child in node.xml_select(u'*'):
-        if child not in covered:
-            unknowns.append(child.xml_qname)
+    if run_diagnostics:
+        for child in node.xml_select(u'*'):
+            if child not in covered:
+                unknowns.append(child.xml_qname)
     return nodeinfo, {u'unknown_top_level_elements': unknowns}
 
 
