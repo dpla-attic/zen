@@ -1,3 +1,13 @@
+# Adapted from Django-MoinMoin
+#
+# http://code.google.com/p/django-moinmoin/
+#
+# Visit that page for instructions on how to use ... but instead of copying your settings
+# into this file, add this to your moin/wsgi script;
+#
+#     os.environ['DJANGO_SETTINGS_MODULE'] = '<your_django_project>.settings'
+#
+
 from MoinMoin.auth import BaseAuth
 
 import traceback
