@@ -79,7 +79,7 @@ from amara.lib.util import first_item
 #from amara.lib.date import timezone, UTC
 
 from akara.registry import list_services, _current_registry
-from akara.util import copy_auth, extract_auth, read_http_body_to_temp
+from akara.util import copy_auth, extract_auth, read_http_body_to_temp, copy_headers_to_dict
 #from akara.util.moin import node, ORIG_BASE_HEADER, DOCBOOK_IMT, RDF_IMT, HTML_IMT
 from akara.util.moin import ORIG_BASE_HEADER, DOCBOOK_IMT, RDF_IMT, HTML_IMT, XML_IMT
 from akara.services import simple_service
@@ -175,6 +175,9 @@ def get_resource(environ, start_response):
 
 @dispatcher.method("PUT")
 def put_resource(environ, start_response):
+    # Keep inbound headers so we can forward to moinrest
+    req_headers = copy_headers_to_dict(environ)
+
     #Set up to use HTTP auth for all wiki requests
     baseuri = environ['SCRIPT_NAME'].rstrip('/') #$ServerPath/zen
     handler = copy_auth(environ, baseuri)
@@ -215,11 +218,14 @@ def put_resource(environ, start_response):
     # This httplib2 feature permits a single code path for proxying responses
     H.force_exception_to_status_code = True;
 
+    headers = req_headers
+    headers['Content-Type'] = 'text/plain'
+
     if creds:
         user, passwd = creds
         H.add_credentials(user, passwd)
     
-    resp, content = H.request(zenuri_to_moinrest(environ), "PUT", body=wikified.encode('UTF-8'), headers={'Content-Type' : 'text/plain'})
+    resp, content = H.request(zenuri_to_moinrest(environ), "PUT", body=wikified.encode('UTF-8'), headers=headers)
 
     start_response(status_response(resp.status), [("Content-Type", resp['content-type'])])
     return content
