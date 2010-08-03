@@ -294,7 +294,7 @@ def mods2json(source, run_diagnostics=False):
     return items, diagnostics
 
 
-def ejsonize(node, run_diagnostics):
+def ejsonize(node, run_diagnostics=False):
     nodeinfo = {}
     for key, func in DISPATCH_PATTERNS.items():
         val = func(node)
@@ -316,6 +316,7 @@ def ejsonize(node, run_diagnostics):
             covered.add(r)
     unknowns = []
     if run_diagnostics:
+        #from akara import logger; logger.info('ejsonize/run_diagnostics: ' + repr(run_diagnostics))
         for child in node.xml_select(u'*'):
             if child not in covered:
                 unknowns.append(child.xml_qname)

@@ -294,10 +294,10 @@ def parse_moin_xml(uri, resolver=None):
 
 
 class rulesheet(object):
-    def __init__(self, source, rtype):
+    def __init__(self, source, rtype, resolver=None):
         '''
         '''
-        rs = inputsource(source)
+        rs = inputsource(source, resolver=resolver)
         self.token = rs.stream.readline().strip().lstrip('#')
         #XXX In theory this is a microscopic security hole.  If someone could find a way
         #to open up an expliot by changing whitespace *in the middle of the line*
@@ -412,7 +412,7 @@ class resource_type(node):
     
     def run_rulesheet(self, environ, method='GET', accept='application/json'):
         #FIXME: Deprecate
-        return rulesheet(self.get_rulesheet(), self).run(environ, method, accept)
+        return rulesheet(self.get_rulesheet(), self, resolver=self.resolver).run(environ, method, accept)
 
 
 node.NODES[RESOURCE_TYPE_TYPE] = resource_type
