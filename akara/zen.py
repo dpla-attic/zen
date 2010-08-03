@@ -134,6 +134,7 @@ def dispatcher():
 
 @dispatcher.method("GET")
 def get_resource(environ, start_response):
+    #FIXME: Needs update to forward cookies, i.e. headers to moinrest (see put_resource)
     #Set up to use HTTP auth for all wiki requests
     baseuri = environ['SCRIPT_NAME'].rstrip('/') #$ServerPath/zen
     handler = copy_auth(environ, baseuri)
