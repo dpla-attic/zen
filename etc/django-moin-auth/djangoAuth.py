@@ -43,8 +43,8 @@ class DjangoAuth(BaseAuth):
     name = 'DjangoAuth'
     # +++ The next 2 lines may be useful if you are overriding the username method in your themes.
     # +++  If commented out, wiki pages will not have login or logout hyperlinks
-    #login_inputs = ['username', 'password'] # +++ required to get a login hyperlink in wiki navigation area
-    #logout_possible = True # +++ required to get a logout hyperlink in wiki navigation area
+    login_inputs = ['username', 'password'] # +++ required to get a login hyperlink in wiki navigation area
+    logout_possible = True # +++ required to get a logout hyperlink in wiki navigation area
     
     def __init__(self, autocreate=False):
         self.autocreate = autocreate
@@ -88,10 +88,6 @@ class DjangoAuth(BaseAuth):
         from django.conf import settings
         encoded_data = base64.decodestring(session_data)
         pickled, tamper_check = encoded_data[:-32], encoded_data[-32:]
-        #writeLog('   get_decoded: SECRET_KEY = '+repr(settings.SECRET_KEY))
-        #writeLog('   get_decoded: pickled = '+repr(pickled))
-        #writeLog('   get_decoded: tamper_check = '+repr(tamper_check))
-        #writeLog('   get_decoded: md5 = '+repr(md5_constructor(pickled + settings.SECRET_KEY).hexdigest()))
         if md5_constructor(pickled + settings.SECRET_KEY).hexdigest() != tamper_check:
             return {}
         try:
@@ -117,7 +113,12 @@ class DjangoAuth(BaseAuth):
             cookie = None # ignore invalid cookies        
 
         if cookie and otherAppCookie in cookie: # having this cookie means user auth has already been done in other application
-            result, session_raw = self.get_session(cookie[otherAppCookie].value)
+            # Work around SimpleCookie parsing bug in 2.6.4
+            if type(cookie[otherAppCookie]) == unicode:
+                result, session_raw = self.get_session(cookie[otherAppCookie])
+            else:
+                result, session_raw = self.get_session(cookie[otherAppCookie].value)
+
             if not result:
                 return user, try_next
             session_decoded = self.get_decoded(session_raw)
