@@ -53,7 +53,7 @@ def augment_location(source, propertyinfo, augmented, failed):
     def each_obj(obj, id):
         address_parts = [ UU(obj, k) for k in composite ]
         if not any(address_parts):
-            failed.setdefault(u'No address information found', []).append({u'id': id, u'label': obj[u'label'], pname: address_parts})
+            failed.setdefault(pname, []).append({u'id': id, u'label': obj[u'label'], 'input': address_parts, 'reason': u'No address information found'})
             return
         location = u', '.join(address_parts)
         if logger: logger.debug("location input: " + repr(location))
@@ -62,7 +62,7 @@ def augment_location(source, propertyinfo, augmented, failed):
             augmented.append({u'id': id, u'label': obj[u'label'],
                                 pname: location_latlong})
         else:
-            failed.setdefault(u'No geolocation possible for address', []).append({u'id': id, u'label': obj[u'label'], pname: address_parts})
+            failed.setdefault(pname, []).append({u'id': id, u'label': obj[u'label'], 'input': address_parts, 'reason': u'No geolocation possible for address'})
     augment_wrapper(source, pname, failed, each_obj, 'augment_location')
     return
 
@@ -76,7 +76,7 @@ def augment_wrapper(source, pname, failed, func, opname):
             raise
         except Exception, e:
             if logger: logger.info('Exception in %s: '%opname + repr(e))
-            failed.setdefault(repr(e), []).append({u'id': id, u'label': obj[u'label']})
+            failed.setdefault(pname, []).append({u'id': id, u'label': obj[u'label'], 'input': '(masked by exception)', 'reason': repr(e)})
 
 
 LEN_BASE_ISOFORMAT = 19
@@ -103,7 +103,7 @@ def augment_date(source, propertyinfo, augmented, failed):
         #FIXME: should fix in freemix.json endpoint and remove from here
         date_parts = [ unicode(obj[k]) for k in composite if unicode(obj.get(k, u'')).strip() ]
         if not any(date_parts):
-            failed.setdefault(u'No date information found', []).append({u'id': id, u'label': obj[u'label'], pname: date_parts})
+            failed.setdefault(pname, []).append({u'id': id, u'label': obj[u'label'], 'input': date_parts, 'reason': u'No date information found'})
             return
         date = u', '.join(date_parts)
         if logger: logger.debug("date input: " + repr(date))
@@ -118,7 +118,7 @@ def augment_date(source, propertyinfo, augmented, failed):
                 augmented.append({u'id': id, u'label': obj[u'label'],
                                     pname: clean_date.isoformat()[:LEN_BASE_ISOFORMAT] + UTC.name})
         else:
-            failed.setdefault(u'Unable to parse date', []).append({u'id': id, u'label': obj[u'label'], pname: date_parts})
+            failed.setdefault(pname, []).append({u'id': id, u'label': obj[u'label'], 'input': date_parts, 'reason': u'Unable to parse date'})
     augment_wrapper(source, pname, failed, each_obj, 'augment_date')
     #if logger: logger.info('Exception in augment_date: ' + repr(e))
     return
