@@ -46,6 +46,7 @@ from zenlib.util import find_peer_service
 
 MOINREST_SERVICE_ID = 'http://purl.org/xml3k/akara/services/demo/moinrest'
 
+H = httplib2.Http('.cache')
 
 def cleanup_text_blocks(text):
     return '\n'.join([line.strip() for line in text.splitlines() ])
@@ -137,7 +138,6 @@ class node(object):
     ENDPOINTS = None
 
     _instance_cache = {}
-    H = httplib2.Http('.cache')
 
     @staticmethod
     def lookup(rest_uri, opener=None, resolver=None):
@@ -151,15 +151,14 @@ class node(object):
         if not resolver:
             resolver = moinrest_resolver(opener=opener)
         if logger: logger.debug('node.lookup rest_uri: ' + rest_uri)
-        try:
-            isrc, resp = parse_moin_xml(rest_uri, resolver=resolver)
-        except urllib2.HTTPError as he:
-            logger.debug("Error looking up resource: %(code)d %(msg)s\n" % {'code': he.code, 'msg': he.msg})
+        isrc, resp = parse_moin_xml(rest_uri, H, resolver=resolver)
+        if isrc is None:
+            if logger: logger.debug("Error looking up resource: %d\n" % resp.status)
             return None
 
         doc = bindery.parse(isrc)
         #doc = bindery.parse(isrc, standalone=True, model=MOIN_DOCBOOK_MODEL)
-        original_base, wrapped_base, original_page = resp.info()[ORIG_BASE_HEADER].split()
+        original_base, wrapped_base, original_page = resp[ORIG_BASE_HEADER].split()
         atype = resource_type.construct_id(doc, original_base, wrapped_base, rest_uri)
         if logger: logger.debug('node.lookup akara type: ' + atype)
         #Older Moin CMS resource types are implemented by registration to the global node.NODES
@@ -185,7 +184,8 @@ class node(object):
         handler = resource_type.run_rulesheet(request.environ, 'POST', ctype)
         url, wikified = handler(body)
 
-        resp, content = self.H.request(url, "PUT", body=wikified, headers={'Content-Type' : 'text/plain'})
+        H.force_exception_to_status_code = False # set this explicitly since H is shared
+        resp, content = H.request(url, "PUT", body=wikified, headers={'Content-Type' : 'text/plain'})
 
         return
     
@@ -281,13 +281,18 @@ class node(object):
 
 node.NODES[node.AKARA_TYPE] = node
 
-def parse_moin_xml(uri, resolver=None):
+def parse_moin_xml(uri, H, resolver=None):
     #Stupid Moin XML export uses bogus nbsps, so this function encapsulates the kludge
-    if logger: logger.debug('parse_moin_xml: ' + repr((uri,)))
-    req = urllib2.Request(uri, headers={'Accept': XML_IMT})
-    resp = urllib2.urlopen(req)
-    body = resp.read()
-    if not str(resp.getcode()).startswith('2'): return None, resp # fail gracefully if not found
+
+    # Replaced urllib2 with httplib2 for the client cache, but we lose the custom
+    # opener.  Luckily this function just uses GET which shouldn't require
+    # Moin authentication most of the time.  FIXME
+    H.force_exception_to_status_code = True
+    resp,body = H.request(uri,"GET",headers={'Accept': XML_IMT})
+
+    if logger: logger.debug('parse_moin_xml (uri, fromcache): ' + repr((uri,resp.fromcache)))
+
+    if not str(resp.status).startswith('2'): return None, resp # fail gracefully if not found
 
     return inputsource(body, resolver=resolver), resp
     #return inputsource(body.replace('&nbsp;', '&#160;').replace('<p><p>', '<p></p>').replace('<p></s2>', '</s2>'), resolver=resolver), resp
@@ -392,7 +397,7 @@ class resource_type(node):
         if self.rulesheet is None:
             #req = urllib2.Request(self.akara_type(), headers={'Accept': XML_IMT})
             #isrc = inputsource(req, resolver=self.resolver)
-            isrc, resp = parse_moin_xml(self.rest_uri, resolver=self.resolver)
+            isrc, resp = parse_moin_xml(self.rest_uri, H, resolver=self.resolver)
             doc = bindery.parse(isrc)
             rulesheet_link = U(doc.xml_select(RULESHEET_LINK_PATTERN))
             if rulesheet_link and not is_absolute(rulesheet_link):
