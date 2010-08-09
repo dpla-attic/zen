@@ -208,7 +208,7 @@ def put_resource(environ, start_response):
     wikified = handler(resource_type, body)
     #logger.debug('put_resource wikified result: ' + repr((wikified,)))
 
-    H = httplib2.Http('.cache')
+    H = httplib2.Http()
 
     # This was originally always returning 200 even if moinrest failed, so an improvement
     # would be to return the moinrest response as the Zen response.  FIXME Even better would
@@ -217,7 +217,7 @@ def put_resource(environ, start_response):
     # entity headers are handled, etc..., plus general be-a-good-proxy behaviour
     #
     # This httplib2 feature permits a single code path for proxying responses
-    H.force_exception_to_status_code = True;
+    H.force_exception_to_status_code = True
 
     headers = req_headers
     headers['Content-Type'] = 'text/plain'
@@ -227,6 +227,24 @@ def put_resource(environ, start_response):
         H.add_credentials(user, passwd)
     
     resp, content = H.request(zenuri_to_moinrest(environ), "PUT", body=wikified.encode('UTF-8'), headers=headers)
+
+    start_response(status_response(resp.status), [("Content-Type", resp['content-type'])])
+    return content
+
+@dispatcher.method("DELETE")
+def delete_resource(environ, start_response):
+    # Keep inbound headers so we can forward to moinrest
+    req_headers = copy_headers_to_dict(environ)
+
+    H = httplib2.Http()
+    H.force_exception_to_status_code = True
+
+    creds = extract_auth(environ)
+    if creds:
+        user, passwd = creds
+        H.add_credentials(user, passwd)
+
+    resp, content = H.request(zenuri_to_moinrest(environ), "DELETE", headers=req_headers)
 
     start_response(status_response(resp.status), [("Content-Type", resp['content-type'])])
     return content
