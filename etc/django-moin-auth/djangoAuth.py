@@ -98,6 +98,10 @@ class DjangoAuth(BaseAuth):
             return {}
     
     def request(self, request, user_obj, **kw):
+        # if we're already authenticated, no need to do anything more
+        if user_obj and user_obj.valid:
+            return user_obj, False
+
         """Return (user-obj,False) if user is authenticated, else return (None,True). """
         # login = kw.get('login') # +++ example does not use this; login is expected in other application
         # user_obj = kw.get('user_obj')  # +++ example does not use this
