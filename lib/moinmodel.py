@@ -150,7 +150,7 @@ class node(object):
             return node._instance_cache[rest_uri]
         if not resolver:
             resolver = moinrest_resolver(opener=opener)
-        if logger: logger.debug('node.lookup rest_uri: ' + rest_uri)
+        if logger: logger.debug('node.lookup rest_uri: ' + repr(rest_uri))
         try:
             isrc, resp = parse_moin_xml(rest_uri, resolver=resolver)
         except urllib2.HTTPError as he:
@@ -161,7 +161,7 @@ class node(object):
         #doc = bindery.parse(isrc, standalone=True, model=MOIN_DOCBOOK_MODEL)
         original_base, wrapped_base, original_page = resp.info()[ORIG_BASE_HEADER].split()
         atype = resource_type.construct_id(doc, original_base, wrapped_base, rest_uri)
-        if logger: logger.debug('node.lookup akara type: ' + atype)
+        if logger: logger.debug('node.lookup akara type: ' + repr(atype))
         #Older Moin CMS resource types are implemented by registration to the global node.NODES
         #Newer Moin CMS resource types are implemented by discovery of a URL,
         #to which a POST request executes the desired action
@@ -215,7 +215,7 @@ class node(object):
                     raise
                 except Exception as e:
                     #If there is an error looking up the resource type, just leave off.  Some operations will then fail
-                    logger.debug('Exception looking up resource type %s: %s'%(akara_type, repr(e)))
+                    logger.debug('Exception looking up resource type %s: %s'%(repr(akara_type), repr(e)))
                     pass
         return
 
@@ -357,7 +357,7 @@ class rulesheet(object):
         default = None
         matching_handler = None
         for (match, func) in handlers.get(method, []):
-            if logger: logger.debug('(match, func), method : ' + repr((match, func)) + "," + method )
+            if logger: logger.debug('(match, func), method : ' + repr((match, func)) + "," + repr(method) )
             if isinstance(match, basestring):
                 if match == accept:
                     matching_handler = func
