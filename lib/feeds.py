@@ -1,3 +1,5 @@
+import datetime
+
 #See also: 
 
 
@@ -9,23 +11,25 @@ def webfeed(body):
     import feedparser
     #Abstracted from Akara demo/modules/atomtools.py
     feed = feedparser.parse(body)
+    from akara import logger; logger.info('%i entries: '%len(feed.entries))
     
     def process_entry(e):
-        from akara import logger; logger.info('webfeed entry: ' + repr(dict(e)))
-        data = {
-            u'id': e.link,
-            u'label': e.link,
-            u'title': e.title,
-            u'link': e.link,
-            u'updated': e.updated,
-        }
-        #Optional bits
-        if 'content' in e:
-            data[u'content'] = e.content
-        if 'description' in e:
-            data[u'description'] = e.description
-        if 'author_detail' in e:
+        #from pprint import pformat; from akara import logger; logger.info('webfeed entry: ' + repr(pformat(dict(e)))); logger.info('webfeed entry: ' + repr(pformat(e.__dict__)))
+        data = {}
+        if hasattr(e, 'link'):
+            data[u'id'] = e.link
+            data[u'link'] = e.link
+        if hasattr(e, 'summary'):
+            data[u'description'] = e.summary
+        if hasattr(e, 'title'):
+            data[u'title'] = e.title
+            data[u'label'] = e.title
+        if hasattr(e, 'author_detail'):
             data[u'author_name'] = e.author_detail.name
+        if hasattr(e, 'updated_parsed'):
+            data[u'updated'] = datetime.datetime(*e.updated_parsed[:7]).isoformat().split('.')[0]
+        if hasattr(e, 'tags'):
+            data[u'tags'] = [ t['term'] for t in e.tags ]
         return data
 
     return [ process_entry(e) for e in feed.entries ] if feed.entries else None
