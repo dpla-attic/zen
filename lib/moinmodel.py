@@ -46,7 +46,7 @@ from zenlib.util import find_peer_service
 
 MOINREST_SERVICE_ID = 'http://purl.org/xml3k/akara/services/demo/moinrest'
 
-H = httplib2.Http('.cache')
+H = httplib2.Http('/tmp/.cache')
 
 def cleanup_text_blocks(text):
     return '\n'.join([line.strip() for line in text.splitlines() ])
