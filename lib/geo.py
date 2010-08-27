@@ -21,7 +21,7 @@ def geolookup(place):
         latlong = simplejson.loads(result).itervalues().next()
         return latlong
     except (ValueError, StopIteration), e:
-        logger.debug("Not found: " + place)
+        logger.debug("Not found: " + repr(place))
         return None
 
 geolookup.serviceid = u'http://purl.org/com/zepheira/zen/geolookup'
