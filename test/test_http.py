@@ -2,6 +2,8 @@ import httplib2
 import sys
 import hashlib
 
+from amara.thirdparty import httplib2
+
 from testconfig import config
 
 """

@@ -43,7 +43,7 @@ To-do
 
 import sys
 import time
-import urllib, httplib2, urllib2
+import urllib, urllib2
 from itertools import islice
 
 from amara import bindery
@@ -51,6 +51,7 @@ from amara.lib.iri import absolutize
 from amara.tools import atomtools
 from amara.lib.util import first_item
 from amara.writers.struct import structencoder, E, NS, ROOT, RAW, E_CURSOR
+from amara.thirdparty import httplib2
 
 from akara.services import simple_service
 from akara import logger

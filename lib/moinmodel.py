@@ -29,9 +29,8 @@ from amara.lib import U
 from amara.lib.iri import split_uri_ref, split_fragment, relativize, absolutize, IriError, join, is_absolute
 #from amara.bindery.model import examplotron_model, generate_metadata, metadata_dict
 from amara.bindery.util import dispatcher, node_handler, property_sequence_getter
-from amara.thirdparty import json
+from amara.thirdparty import json, httplib2
 
-from akara import httplib2
 from akara.util import copy_auth, find_peer_service
 from akara.util.moin import wiki_uri, wiki_normalize, ORIG_BASE_HEADER, DOCBOOK_IMT, RDF_IMT, HTML_IMT, XML_IMT
 from akara.services import simple_service
