@@ -192,14 +192,13 @@ def put_resource(environ, start_response):
     if not rtype:
         status = httplib.BAD_REQUEST
         start_response(status_response(status), [("Content-Type", 'text/plain')])
-        return 'type URL parameter required'
+        return 'type URL parameter required\n'
 
     rtype = rtype[0]
     if not is_absolute(rtype):
         moinresttop = find_peer_service(environ, MOINREST_SERVICE_ID)
         rtype = join(moinresttop, environ['PATH_INFO'].lstrip('/').split('/')[0], rtype)
     resource_type = node.lookup(rtype, opener=opener)
-    resolver = resource_type.resource_type
     
     temp_fpath = read_http_body_to_temp(environ, start_response)
     body = open(temp_fpath, "r").read()
@@ -230,6 +229,66 @@ def put_resource(environ, start_response):
 
     start_response(status_response(resp.status), [("Content-Type", resp['content-type'])])
     return content
+
+
+@dispatcher.method("POST")
+def post_resource(environ, start_response):
+    '''
+    Create a new record with a resource type
+    '''
+    # Keep inbound headers so we can forward to moinrest
+    req_headers = copy_headers_to_dict(environ)
+
+    #Set up to use HTTP auth for all wiki requests
+    baseuri = environ['SCRIPT_NAME'].rstrip('/') #'/zen' ; note: does not include $ServerPath
+    logger.debug('STACEY: ' + repr((baseuri, )))
+    handler = copy_auth(environ, baseuri)
+    creds = extract_auth(environ)
+    opener = urllib2.build_opener(handler) if handler else urllib2.build_opener()
+
+    #import pprint; logger.debug('put_resource input environ: ' + repr(pprint.pformat(environ)))
+    imt = environ['CONTENT_TYPE']
+
+    resource_type = node.lookup(zenuri_to_moinrest(environ), opener=opener)
+    if not resource_type:
+        start_response(status_response(400),[('Content-Type','text/plain')])
+        return( "Unable to access resource\n" )
+
+    resolver = resource_type.resolver
+    
+    temp_fpath = read_http_body_to_temp(environ, start_response)
+    body = open(temp_fpath, "r").read()
+
+    handler = resource_type.run_rulesheet(environ, 'POST', imt)
+    new_uri, wikified = handler(resource_type, body)
+    #logger.debug('post_resource wikified result & uri: ' + repr((wikified, new_uri)))
+
+    H = httplib2.Http()
+
+    # This was originally always returning 200 even if moinrest failed, so an improvement
+    # would be to return the moinrest response as the Zen response.  FIXME Even better would
+    # be to decide exactly what this relationship should look like, e.g. how redirects
+    # or auth responses are managed, if any content needs URL-rewriting, how other response or
+    # entity headers are handled, etc..., plus general be-a-good-proxy behaviour
+    #
+    # This httplib2 feature permits a single code path for proxying responses
+    H.force_exception_to_status_code = True
+
+    headers = req_headers
+    headers['Content-Type'] = 'text/plain'
+
+    if creds:
+        user, passwd = creds
+        H.add_credentials(user, passwd)
+    
+    resp, content = H.request(new_uri, "PUT", body=wikified.encode('UTF-8'), headers=headers)
+    original_base, wrapped_base, original_page = resp[ORIG_BASE_HEADER].split()
+    rel_new_uri = relativize(new_uri, wrapped_base)
+
+    resp_headers = [("Content-Type", resp['content-type']), ('Location', new_uri), ('X-Wiki-Relative-Location', rel_new_uri)]
+    start_response(status_response(resp.status), resp_headers)
+    return content
+
 
 @dispatcher.method("DELETE")
 def delete_resource(environ, start_response):

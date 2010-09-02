@@ -21,15 +21,15 @@ from zenlib.util import sign_rulesheet
 
 WIKITEXT_FNAME = "__pagetext__.txt"
 
-def run(targetbase=None, root=None, out=None, secrets=None, zensecret=None):
+def run(targetbase=None, root=None, out=None, usersecret=None, zensecret=None):
     '''
     See the command line help
     '''
     #print >> sys.stderr, 'ARGS ', (search, filesource, limit, out)
     H = httplib2.Http('.cache')
     auth_headers = {}
-    if secrets:
-        user, passwd = secrets.read().split(':')
+    if usersecret:
+        user, passwd = usersecret.read().split(':')
         user, passwd = user.strip(), passwd.strip()
         auth_headers = header_credentials(user, passwd)
     if zensecret:
@@ -45,8 +45,8 @@ def run(targetbase=None, root=None, out=None, secrets=None, zensecret=None):
     headers = auth_headers
     for xroot, dirs, files in os.walk(root):
         #Need the topmost dir from the path as the root of the created Wiki subsection
-        wikipath = '/'.join((os.path.split(root.rstrip('/'))[-1], xroot[len(root):]))
-        #print wikipath, root, (os.path.split(root.rstrip('/'))[-1], xroot[len(root):])
+        wikipath = '/'.join((os.path.split(root.rstrip('/') + '/')[-1], xroot[len(root):]))
+        #print >> sys.stderr, wikipath, root, (os.path.split(root.rstrip('/')+'/')[-1], xroot[len(root):])
         if WIKITEXT_FNAME in files:
             content = open(os.path.join(xroot, WIKITEXT_FNAME)).read()
             moinid = '/'.join((targetbase, wikipath))
@@ -109,7 +109,7 @@ if __name__ == '__main__':
     parser.add_argument('--out', type=argparse.FileType('w'), default=sys.stdout,
         help='file where output should be written '
              '(default: write to stdout)')
-    parser.add_argument('--secrets', type=argparse.FileType('r'),
+    parser.add_argument('-u', '--usersecret', type=argparse.FileType('r'),
         help='file from which wiki login can be read, in the format username:passwd')
     parser.add_argument('--zensecret', type=argparse.FileType('r'),
         help='file from which Zen rulesheet signing secret can be read')
@@ -120,6 +120,6 @@ if __name__ == '__main__':
     #
     args = parser.parse_args()
 
-    run(targetbase=args.target, root=args.root[0], out=args.out, secrets=args.secrets, zensecret=args.zensecret)
+    run(targetbase=args.target, root=args.root[0], out=args.out, usersecret=args.usersecret, zensecret=args.zensecret)
     args.out.close()
 

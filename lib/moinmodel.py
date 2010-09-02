@@ -32,7 +32,7 @@ from amara.bindery.util import dispatcher, node_handler, property_sequence_gette
 from amara.thirdparty import json
 
 from akara import httplib2
-from akara.util import copy_auth
+from akara.util import copy_auth, find_peer_service
 from akara.util.moin import wiki_uri, wiki_normalize, ORIG_BASE_HEADER, DOCBOOK_IMT, RDF_IMT, HTML_IMT, XML_IMT
 from akara.services import simple_service
 
@@ -42,7 +42,6 @@ except ImportError:
     logger = None
 
 from zenlib import zservice, service_proxy
-from zenlib.util import find_peer_service
 
 MOINREST_SERVICE_ID = 'http://purl.org/xml3k/akara/services/demo/moinrest'
 
