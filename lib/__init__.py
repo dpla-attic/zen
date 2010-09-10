@@ -1,4 +1,5 @@
 #zenlib
+from version import __version__
 
 #Mapping from service ID URI too URL template and/or callable
 SERVICES = {}
@@ -17,7 +18,7 @@ def register_service(s):
 
 #Bootstrap in the built-in ("local") services
 if not SERVICES:
-    from zenlib import local
+    import local
     from httpmodel import *
 
 
