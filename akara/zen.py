@@ -27,20 +27,12 @@ http://labwiki.semioclinical.com/mywiki/resources/ct.gov/zen (ct.gov.zen.js) Han
 
 = Configuration =
 
-moinrestbase (required) - the base Moin/REST URI for the place where pages should
-                          be added/updated
-A closer look at moinrestbase.  In the example value: http://localhost:8880/moin/wikiid/
-
- * http://localhost:8880/... - the URL to the root of an Akara instance
- * ...moin... - the moint point of the Moin/REST wrapper module under Akara (moinrest.py)
- * ...wikiid... - the wiki ID for a specific, wrapped Moin wiki, as defined e.g.
-   in a target-xxx config var for moinrest.py e.g. "wikiid" above would correspond to
-   "target-wikiid" config var for moinrest
+rulesheet-secret (optional) - A secret hash used for signing rulesheets, only to be shared with rulesheet developers
 
 Sample config:
 
 [zen]
-moinrestbase = http://localhost:8880/moin/wikiid/
+rulesheet-secret = abcdef
 
 = Notes on security =
 
@@ -71,7 +63,6 @@ from amara import _
 #from amara.namespaces import *
 from amara.lib import inputsource
 from amara.bindery.model import examplotron_model, generate_metadata
-from amara.writers.struct import *
 from amara import bindery
 from amara.lib.iri import split_fragment, relativize, absolutize, is_absolute, join
 from amara.bindery.util import dispatcher, node_handler, property_sequence_getter

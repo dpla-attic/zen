@@ -1,6 +1,4 @@
-#freemixlib
-
-__version__ = '0.9.3.12'
+#zenlib
 
 #Mapping from service ID URI too URL template and/or callable
 SERVICES = {}
@@ -18,14 +16,9 @@ def register_service(s):
 
 
 #Bootstrap in the built-in ("local") services
-try:
+if not SERVICES:
     from zenlib import local
     from httpmodel import *
-except (KeyboardInterrupt, SystemExit):
-    raise
-except ImportError:
-    #There will be ImportError during install
-    pass
 
 
 #Convenience decorator for registering services

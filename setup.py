@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 
 from distutils.core import setup
-from lib import __version__
+
+execfile('lib/version.py')
 
 setup(name = "zenlib",
       version = __version__,
@@ -18,4 +19,5 @@ setup(name = "zenlib",
       #install_requires=["amara", "akara"],
       #package_data={'akara': ["akara.conf"]},
       )
+
 

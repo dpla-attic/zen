@@ -2,7 +2,8 @@
 # From geo.py
 
 import sys, urllib
-import simplejson
+
+from amara.thirdparty import httplib2, json
 
 from akara import logger
 from akara.caching import cache
@@ -18,7 +19,7 @@ def geolookup(place):
     resp = GEOLOOKUP_CACHE.get(place=place)
     result = resp.read()
     try:
-        latlong = simplejson.loads(result).itervalues().next()
+        latlong = json.loads(result).itervalues().next()
         return latlong
     except (ValueError, StopIteration), e:
         logger.debug("Not found: " + repr(place))
