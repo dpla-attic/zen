@@ -43,8 +43,12 @@ except ImportError:
 from zenlib import zservice, service_proxy
 
 MOINREST_SERVICE_ID = 'http://purl.org/xml3k/akara/services/demo/moinrest'
+FIRST_REQUEST_SEEN = False
 
-H = httplib2.Http('/tmp/.cache')
+#Following are initialized on first request:
+#H = None
+#MOINREST_TOP = None
+#ZEN_BASEURI = None
 
 def cleanup_text_blocks(text):
     return '\n'.join([line.strip() for line in text.splitlines() ])
@@ -67,17 +71,16 @@ def zenuri_to_moinrest(environ, uri=None):
     #self_end_point = guess_self_uri(environ)
     #absolutize(environ['SCRIPT_NAME'].rstrip('/'), request_uri(environ, include_query=False))
     #logger.debug('moinrest_uri: ' + repr((self_end_point, MOINREST_SERVICE_ID)))
-    moinresttop = find_peer_service(environ, MOINREST_SERVICE_ID)
     #logger.debug('zenuri_to_moinrest: ' + repr((moinresttop, environ['PATH_INFO'], environ['SCRIPT_NAME'])))
     if uri:
-        if uri.startswith(moinresttop):
+        if uri.startswith(MOINREST_TOP):
         #if moinresttop.split('/')[-1] == environ['SCRIPT_NAME'].strip('/'):
             #It is already a moin URL
             return uri or request_uri(environ)
         else:
             raise NotImplementedError('For now a Zen uri is required')
     else:
-        moinrest_uri = join(moinresttop, environ['PATH_INFO'].lstrip('/'))
+        moinrest_uri = join(MOINREST_TOP, environ['PATH_INFO'].lstrip('/'))
     logger.debug('moinrest_uri: ' + repr(moinrest_uri))
     return moinrest_uri
 
@@ -353,7 +356,7 @@ class rulesheet(object):
         #env = {'write': write, 'resource': self, 'service': service, 'U': U1}
         resource_getter = partial(node.lookup, resolver=self.rtype.resolver)
         env = {'service': service_proxy, 'U': U1, 'handles': handles, 'R': resource_getter,
-                'use': use, 'environ': environ, 'logger': logger}
+                'use': use, 'environ': environ, 'logger': logger, 'H': H}
 
         #Execute the rule sheet
         exec self.body in env

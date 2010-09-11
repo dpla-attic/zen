@@ -203,3 +203,10 @@ def test_ranges():
 
 def test_docstring():
     doctest.testmod(dateparser, verbose=True, raise_on_error=True)
+
+
+from zenlib.temporal import smart_parse_date
+def test_rubbish_dates():
+    smart_parse_date("1941504 ") #Should return None, but at one time would hang
+    return
+

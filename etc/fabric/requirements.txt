@@ -1,0 +1,10 @@
+python-dateutil
+#odict #for ordered dictionaries in Python, which helps in organizing Zen JSON output
+feedparser
+
+http://files.akara.info/00-amara-latest.tar.bz2
+http://files.akara.info/00-akara-latest.tar.bz2
+
+hg+http://foundry.zepheira.com/hg/zen/#egg=zen
+
+#--find-links http://foundry.zepheira.com/projects/zen/files

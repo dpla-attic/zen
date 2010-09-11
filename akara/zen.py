@@ -81,6 +81,7 @@ from akara import request
 
 from akara.util.moin import wiki_uri
 
+import zenlib.moinmodel
 from zenlib.moinmodel import node, rulesheet, moinrest_resolver, parse_moin_xml, zenuri_to_moinrest, MOINREST_SERVICE_ID
 from zenlib.util import find_peer_service
 
@@ -100,11 +101,23 @@ UNSUPPORTED_IN_FILENAME = re.compile('\W')
 #SOURCE = AKARA_MODULE_CONFIG['source-wiki-root']
 #POST_TO = AKARA_MODULE_CONFIG['post-to']
 
-SELF_END_POINT = None
-
 
 DEFAULT_MOUNT = 'zen'
 SERVICE_ID = 'http://purl.org/com/zepheira/zen/main'
+H = httplib2.Http('/tmp/.cache')
+
+def first_request(environ):
+    '''
+    Constants to be set up upon the first request (i.e. need to be run from an Akara worker)
+    '''
+    if not zenlib.moinmodel.FIRST_REQUEST_SEEN:
+        zenlib.moinmodel.FIRST_REQUEST_SEEN = True
+        zenlib.moinmodel.MOINREST_TOP = find_peer_service(environ, MOINREST_SERVICE_ID)
+        zenlib.moinmodel.H = H
+        zenlib.moinmodel.ZEN_BASEURI = find_peer_service(environ, SERVICE_ID)
+        #environ['SCRIPT_NAME'].rstrip('/') #$ServerPath/zen
+    return
+
 
 # ----------------------------------------------------------------------
 #                       HTTP Method Handlers
@@ -127,9 +140,11 @@ def dispatcher():
 def get_resource(environ, start_response):
     #FIXME: Needs update to forward cookies, i.e. headers to moinrest (see put_resource)
     #Set up to use HTTP auth for all wiki requests
+    first_request(environ)
     baseuri = environ['SCRIPT_NAME'].rstrip('/') #$ServerPath/zen
     handler = copy_auth(environ, baseuri)
     opener = urllib2.build_opener(handler) if handler else urllib2.build_opener()
+    environ['zen.BASEURI'] = join(zenlib.moinmodel.ZEN_BASEURI, environ['PATH_INFO'].lstrip('/').split('/')[0])
 
     resource = node.lookup(zenuri_to_moinrest(environ), opener=opener)
     if not resource:
@@ -167,6 +182,7 @@ def get_resource(environ, start_response):
 
 @dispatcher.method("PUT")
 def put_resource(environ, start_response):
+    first_request(environ)
     # Keep inbound headers so we can forward to moinrest
     req_headers = copy_headers_to_dict(environ)
 
@@ -198,7 +214,7 @@ def put_resource(environ, start_response):
     wikified = handler(resource_type, body)
     #logger.debug('put_resource wikified result: ' + repr((wikified,)))
 
-    H = httplib2.Http()
+    #H = httplib2.Http()
 
     # This was originally always returning 200 even if moinrest failed, so an improvement
     # would be to return the moinrest response as the Zen response.  FIXME Even better would
@@ -227,12 +243,13 @@ def post_resource(environ, start_response):
     '''
     Create a new record with a resource type
     '''
+    first_request(environ)
     # Keep inbound headers so we can forward to moinrest
     req_headers = copy_headers_to_dict(environ)
 
     #Set up to use HTTP auth for all wiki requests
     baseuri = environ['SCRIPT_NAME'].rstrip('/') #'/zen' ; note: does not include $ServerPath
-    logger.debug('STACEY: ' + repr((baseuri, )))
+    #logger.debug('STACEY: ' + repr((baseuri, )))
     handler = copy_auth(environ, baseuri)
     creds = extract_auth(environ)
     opener = urllib2.build_opener(handler) if handler else urllib2.build_opener()
@@ -254,7 +271,7 @@ def post_resource(environ, start_response):
     new_uri, wikified = handler(resource_type, body)
     #logger.debug('post_resource wikified result & uri: ' + repr((wikified, new_uri)))
 
-    H = httplib2.Http()
+    #H = httplib2.Http()
 
     # This was originally always returning 200 even if moinrest failed, so an improvement
     # would be to return the moinrest response as the Zen response.  FIXME Even better would
@@ -283,10 +300,11 @@ def post_resource(environ, start_response):
 
 @dispatcher.method("DELETE")
 def delete_resource(environ, start_response):
+    first_request(environ)
     # Keep inbound headers so we can forward to moinrest
     req_headers = copy_headers_to_dict(environ)
 
-    H = httplib2.Http()
+    #H = httplib2.Http()
     H.force_exception_to_status_code = True
 
     creds = extract_auth(environ)
