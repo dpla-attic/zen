@@ -343,10 +343,7 @@ class rulesheet(object):
                 func.ttl = ttl
                 # Set appropriate default media type when no match is specified in @handles
                 if match is None :
-                    if method == 'collect' :
-                        func.imt = 'raw/pydict'
-                    else :
-                        func.imt = 'application/json'
+                    func.imt = 'application/json'
                 else :
                     func.imt = match
                 handlers.setdefault(method, []).append((match, func))
