@@ -592,11 +592,14 @@ def get_obj_urls(node):
     links = [ attr.xml_value for attr in node.xml_select(u'.//@src') ]
     return links
 
-
 @zservice(u'http://purl.org/com/zepheira/zen/exhibit/jsonize')
 def jsonize(obj):
     return json.dumps(obj)
 
+# Remove null(aka None) valued properties from a dictionary
+@zservice(u'http://purl.org/com/zepheira/zen/exhibit/strip-null')
+def strip_null(obj):
+    return dict( (n,v) for (n,v) in obj.iteritems() if v)
 
 def handle_list(node):
     return [ simple_struct(li) for li in node.li ]
