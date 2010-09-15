@@ -241,7 +241,7 @@ class node(object):
         Helper to extract content from a specific section within the page
         '''
         #FIXME: rethink this "caching" business
-        logger.debug("section_titled: " + repr(title))
+        #logger.debug("section_titled: " + repr(title))
         return first_item(self.doc.xml_select(u'//*[@title = "%s"]'%title))
 
     def definition_list(self, list_path, contextnode=None, patterns=None):
@@ -260,7 +260,7 @@ class node(object):
         #Unit transform function from the patterns dict
         result = dict((U(l), patterns.get(U(l), patterns[None])(first_item(l.xml_select(u'following-sibling::item'))))
                       for l in top[0].label)
-        logger.debug("definition_list: " + repr(result))
+        #logger.debug("definition_list: " + repr(result))
         return result
 
     def definition_section(self, title, patterns=None):
@@ -702,7 +702,7 @@ def get_child_pages(node, limit=None):
     hrefs = node.doc.xml_select(u'//*[@class="navigation"]//@href')
     if limit:
         hrefs = islice(hrefs, 0, int(limit))
-    hrefs = list(hrefs); logger.debug('get_child_pages HREFS1: ' + repr(hrefs))
+    hrefs = list(hrefs); #logger.debug('get_child_pages HREFS1: ' + repr(hrefs))
     hrefs = [ wiki_uri(node.original_base, node.wrapped_base, navchild.xml_value, node.rest_uri, raw=True)[0] for navchild in hrefs ]
     return hrefs
 
