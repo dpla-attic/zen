@@ -623,6 +623,13 @@ structure_handlers = {
     u's5': handle_subsection,
 }
 
+def handle_lone_para(node):
+    #See: http://foundry.zepheira.com/issues/788
+    pstringval = node.xml_select(u'string(p[1])')
+    if node.xml_select(u'string(.)').strip() == pstringval.strip():
+        return U(pstringval)
+    return None
+
 
 @zservice(u'http://purl.org/com/zepheira/zen/util/simple-struct')
 def simple_struct(node):
@@ -633,14 +640,25 @@ def simple_struct(node):
     >>> doc = parse(X)
     >>> simple_struct(doc)
     [(u'XYZ', [(u'A', [u'Hello', (u'AB', [u'World'])])])]
+
     >>> X = '<s2 id="XYZ" title="XYZ"><p/><s3 id="A" title="A"><p>Hello</p><s4 id="AB" title="AB"><gloss><label>spam</label><item>eggs</item></gloss></s4></s3></s2>'
     >>> doc = parse(X)
     >>> simple_struct(doc)
     [(u'XYZ', [(u'A', [u'Hello', (u'AB', [{u'spam': u'eggs'}])])])]
+
+    >>> X = '<s1 id="XYZ" title="XYZ"><s2 id="1" title="1"><ul><li><p>WikiLink </p></li></ul><p/></s2><s2 id="1" title="1"><ul><li>Wikilink </li></ul><p/></s2></s1>'
+    >>> doc = parse(X)
+    >>> simple_struct(doc)
+    [(u'XYZ', [(u'1', [[u'WikiLink ']]), (u'1', [[u'Wikilink ']])])]
     '''
+    #To test the above: python -m doctest lib/moinmodel.py
+    #FIXME: integrate into test/test_moinmodel_services.py
+    
     if not node: return None
     if len(node.xml_children) == 1 and not isinstance(node.xml_first_child, tree.element):
         return node.xml_first_child.xml_value
+    simple_pstringval = handle_lone_para(node)
+    if simple_pstringval is not None: return simple_pstringval
     top = []
     for child in node.xml_elements:
         handler = structure_handlers.get(child.xml_local, U)
