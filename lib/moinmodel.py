@@ -138,17 +138,12 @@ class node(object):
     NODES = {}
     ENDPOINTS = None
 
-    _instance_cache = {}
-
     @staticmethod
     def lookup(rest_uri, opener=None, resolver=None):
         '''
         rest_uri - URI of the moinrest-wrapped version of the page
         opener - for specializing the HTTP request (e.g. to use auth)
         '''
-        if rest_uri in node._instance_cache:
-            #FIXME: Check for cache invalidation first. Right now this cache will last as long as the akara process
-            return node._instance_cache[rest_uri]
         if not resolver:
             resolver = moinrest_resolver(opener=opener)
         if logger: logger.debug('node.lookup rest_uri: ' + rest_uri)
@@ -167,7 +162,6 @@ class node(object):
         #to which a POST request executes the desired action
         cls = node.NODES.get(atype, node)
         instance = cls(doc, rest_uri, original_base, wrapped_base, akara_type=atype, resolver=resolver)
-        node._instance_cache[rest_uri] = instance
         return instance
         #return node.ENDPOINTS and (rest_uri, akara_type, node.ENDPOINTS[akara_type], doc, metadata, original_wiki_base)
 
@@ -293,6 +287,7 @@ def parse_moin_xml(uri, H, resolver=None):
 
     if logger: logger.debug('parse_moin_xml (uri, fromcache): ' + repr((uri,resp.fromcache)))
 
+    logger.debug("parse_moin_xml: (resp,body) = " + repr((resp,body[:500])))
     if not str(resp.status).startswith('2'): return None, resp # fail gracefully if not found
 
     return inputsource(body, resolver=resolver), resp
@@ -303,13 +298,16 @@ class rulesheet(object):
     def __init__(self, source, rtype, resolver=None):
         '''
         '''
-        rs = inputsource(source, resolver=resolver)
-        self.token = rs.stream.readline().strip().lstrip('#')
+        #rs = inputsource(source, resolver=resolver)
+        import cStringIO
+        resp,body = H.request(source)
+        stream = cStringIO.StringIO(body)
+        self.token = stream.readline().strip().lstrip('#')
         #XXX In theory this is a microscopic security hole.  If someone could find a way
         #to open up an expliot by changing whitespace *in the middle of the line*
         #(wiki_normalize does not touch WS at the beginning of a line)
         #In practice, we accept this small risk
-        self.body = wiki_normalize(rs.stream.read())
+        self.body = wiki_normalize(stream.read())
         self.rtype = rtype
         return
 
