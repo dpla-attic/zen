@@ -214,6 +214,17 @@ class node(object):
                     pass
         return
 
+    # We need this now, but not sure how it relates to the intent behind load() and up_to_date() -
+    # will resolve later
+    def update(self):
+        isrc, resp = parse_moin_xml(self.rest_uri, H, resolver=resolver)
+        if isrc is None:
+            if logger: logger.debug("update(): Error looking up resource: %d\n" % resp.status)
+            return
+
+        self.doc = bindery.parse(isrc)
+        return
+
     def load(self):
         raise NotImplementedError
 
