@@ -217,7 +217,7 @@ class node(object):
     # We need this now, but not sure how it relates to the intent behind load() and up_to_date() -
     # will resolve later
     def update(self):
-        isrc, resp = parse_moin_xml(self.rest_uri, H, resolver=resolver)
+        isrc, resp = parse_moin_xml(self.rest_uri, H, resolver=None)
         if isrc is None:
             if logger: logger.debug("update(): Error looking up resource: %d\n" % resp.status)
             return
@@ -708,6 +708,8 @@ def get_child_pages(node, limit=None):
     #For some reason some use XHTML NS and some don't
     #if not hrefs:
     #    hrefs = node.doc.xml_select(u'//table[@class="navigation"]//@href')
+
+    node.update() # Need to refresh since child pages can change frequently
     hrefs = node.doc.xml_select(u'//*[@class="navigation"]//@href')
     if limit:
         hrefs = islice(hrefs, 0, int(limit))
