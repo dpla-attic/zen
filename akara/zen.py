@@ -175,7 +175,11 @@ def get_resource(environ, start_response):
         handler = resource.resource_type.run_rulesheet(environ, 'GET', imt)
     rendered = handler(resource)
 
-    start_response(status_response(httplib.OK), [("Content-Type", str(handler.imt)), ("Cache-Control", "max-age="+str(handler.ttl))])
+    headers = [("Content-Type", str(handler.imt))]
+    if handler.ttl:
+        headers.append(("Cache-Control", "max-age="+str(handler.ttl)))
+
+    start_response(status_response(httplib.OK), headers)
     #start_response(status_response(status), [("Content-Type", ctype), (moin.ORIG_BASE_HEADER, moin_base_info)])
     return rendered
 
