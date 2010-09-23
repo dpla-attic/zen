@@ -175,7 +175,8 @@ def get_resource(environ, start_response):
         handler = resource.resource_type.run_rulesheet(environ, 'GET', imt)
     rendered = handler(resource)
 
-    headers = [("Content-Type", str(handler.imt))]
+    headers = [("Content-Type", str(handler.imt)),
+               ("Vary", "Accept")]
     if handler.ttl:
         headers.append(("Cache-Control", "max-age="+str(handler.ttl)))
 
