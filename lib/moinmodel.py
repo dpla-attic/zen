@@ -47,7 +47,7 @@ FIRST_REQUEST_SEEN = False
 
 #Following are initialized on first request:
 #H = None
-#MOINREST_TOP = None
+#MOINREST_BASEURI = None
 #ZEN_BASEURI = None
 
 def cleanup_text_blocks(text):
@@ -73,14 +73,14 @@ def zenuri_to_moinrest(environ, uri=None):
     #logger.debug('moinrest_uri: ' + repr((self_end_point, MOINREST_SERVICE_ID)))
     #logger.debug('zenuri_to_moinrest: ' + repr((moinresttop, environ['PATH_INFO'], environ['SCRIPT_NAME'])))
     if uri:
-        if uri.startswith(MOINREST_TOP):
+        if uri.startswith(MOINREST_BASEURI):
         #if moinresttop.split('/')[-1] == environ['SCRIPT_NAME'].strip('/'):
             #It is already a moin URL
             return uri or request_uri(environ)
         else:
             raise NotImplementedError('For now a Zen uri is required')
     else:
-        moinrest_uri = join(MOINREST_TOP, environ['PATH_INFO'].lstrip('/'))
+        moinrest_uri = join(MOINREST_BASEURI, environ['PATH_INFO'].lstrip('/'))
     logger.debug('moinrest_uri: ' + repr(moinrest_uri))
     return moinrest_uri
 
@@ -645,6 +645,11 @@ def simple_struct(node):
     '''
     >>> from amara.bindery import parse
     >>> from zenlib.moinmodel import simple_struct
+    >>> X = '<s2 id="XYZ" title="XYZ"><p>Hello</p></s2>'
+    >>> doc = parse(X)
+    >>> simple_struct(doc)
+    [(u'XYZ', [(u'A', [u'Hello', (u'AB', [u'World'])])])]
+
     >>> X = '<s2 id="XYZ" title="XYZ"><p/><s3 id="A" title="A"><p>Hello</p><s4 id="AB" title="AB"><p>World</p></s4></s3></s2>'
     >>> doc = parse(X)
     >>> simple_struct(doc)

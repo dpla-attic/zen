@@ -112,9 +112,11 @@ def first_request(environ):
     '''
     if not zenlib.moinmodel.FIRST_REQUEST_SEEN:
         zenlib.moinmodel.FIRST_REQUEST_SEEN = True
-        zenlib.moinmodel.MOINREST_TOP = find_peer_service(environ, MOINREST_SERVICE_ID)
-        zenlib.moinmodel.H = H
+        #Use akara discovery, via find_peer_service, to get the full base URI for this very
+        #zen endpoint, and its moinrest peer
+        zenlib.moinmodel.MOINREST_BASEURI = find_peer_service(environ, MOINREST_SERVICE_ID)
         zenlib.moinmodel.ZEN_BASEURI = find_peer_service(environ, SERVICE_ID)
+        zenlib.moinmodel.H = H
         #environ['SCRIPT_NAME'].rstrip('/') #$ServerPath/zen
     return
 
@@ -144,7 +146,9 @@ def get_resource(environ, start_response):
     baseuri = environ['SCRIPT_NAME'].rstrip('/') #$ServerPath/zen
     handler = copy_auth(environ, baseuri)
     opener = urllib2.build_opener(handler) if handler else urllib2.build_opener()
+    #Pass on the full moinrest and zen base URIs for the resources accessed on this request
     environ['zen.BASEURI'] = join(zenlib.moinmodel.ZEN_BASEURI, environ['PATH_INFO'].lstrip('/').split('/')[0])
+    environ['moinrest.BASEURI'] = join(zenlib.moinmodel.MOINREST_BASEURI, environ['PATH_INFO'].lstrip('/').split('/')[0])
 
     resource = node.lookup(zenuri_to_moinrest(environ), opener=opener)
     if not resource:
@@ -196,6 +200,9 @@ def put_resource(environ, start_response):
     handler = copy_auth(environ, baseuri)
     creds = extract_auth(environ)
     opener = urllib2.build_opener(handler) if handler else urllib2.build_opener()
+    #Pass on the full moinrest and zen base URIs for the resources accessed on this request
+    environ['zen.BASEURI'] = join(zenlib.moinmodel.ZEN_BASEURI, environ['PATH_INFO'].lstrip('/').split('/')[0])
+    environ['moinrest.BASEURI'] = join(zenlib.moinmodel.MOINREST_BASEURI, environ['PATH_INFO'].lstrip('/').split('/')[0])
 
     #import pprint; logger.debug('put_resource input environ: ' + repr(pprint.pformat(environ)))
     imt = environ['CONTENT_TYPE']
@@ -258,6 +265,9 @@ def post_resource(environ, start_response):
     handler = copy_auth(environ, baseuri)
     creds = extract_auth(environ)
     opener = urllib2.build_opener(handler) if handler else urllib2.build_opener()
+    #Pass on the full moinrest and zen base URIs for the resources accessed on this request
+    environ['zen.BASEURI'] = join(zenlib.moinmodel.ZEN_BASEURI, environ['PATH_INFO'].lstrip('/').split('/')[0])
+    environ['moinrest.BASEURI'] = join(zenlib.moinmodel.MOINREST_BASEURI, environ['PATH_INFO'].lstrip('/').split('/')[0])
 
     #import pprint; logger.debug('put_resource input environ: ' + repr(pprint.pformat(environ)))
     imt = environ['CONTENT_TYPE']
