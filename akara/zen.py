@@ -116,7 +116,6 @@ def first_request(environ):
         #zen endpoint, and its moinrest peer
         zenlib.moinmodel.MOINREST_BASEURI = find_peer_service(environ, MOINREST_SERVICE_ID)
         zenlib.moinmodel.ZEN_BASEURI = find_peer_service(environ, SERVICE_ID)
-        zenlib.moinmodel.H = H
         #environ['SCRIPT_NAME'].rstrip('/') #$ServerPath/zen
     return
 
@@ -147,8 +146,11 @@ def get_resource(environ, start_response):
     handler = copy_auth(environ, baseuri)
     opener = urllib2.build_opener(handler) if handler else urllib2.build_opener()
     #Pass on the full moinrest and zen base URIs for the resources accessed on this request
-    environ['zen.BASEURI'] = join(zenlib.moinmodel.ZEN_BASEURI, environ['PATH_INFO'].lstrip('/').split('/')[0])
-    environ['moinrest.BASEURI'] = join(zenlib.moinmodel.MOINREST_BASEURI, environ['PATH_INFO'].lstrip('/').split('/')[0])
+    environ['zen.RESOURCE_URI'] = join(zenlib.moinmodel.ZEN_BASEURI, environ['PATH_INFO'].lstrip('/').split('/')[0])
+    environ['moinrest.RESOURCE_URI'] = join(zenlib.moinmodel.MOINREST_BASEURI, environ['PATH_INFO'].lstrip('/').split('/')[0])
+
+    H = httplib2.Http('/tmp/.cache')
+    zenlib.moinmodel.H = H
 
     resource = node.lookup(zenuri_to_moinrest(environ), opener=opener)
     if not resource:
@@ -201,8 +203,11 @@ def put_resource(environ, start_response):
     creds = extract_auth(environ)
     opener = urllib2.build_opener(handler) if handler else urllib2.build_opener()
     #Pass on the full moinrest and zen base URIs for the resources accessed on this request
-    environ['zen.BASEURI'] = join(zenlib.moinmodel.ZEN_BASEURI, environ['PATH_INFO'].lstrip('/').split('/')[0])
-    environ['moinrest.BASEURI'] = join(zenlib.moinmodel.MOINREST_BASEURI, environ['PATH_INFO'].lstrip('/').split('/')[0])
+    environ['zen.RESOURCE_URI'] = join(zenlib.moinmodel.ZEN_BASEURI, environ['PATH_INFO'].lstrip('/').split('/')[0])
+    environ['moinrest.RESOURCE_URI'] = join(zenlib.moinmodel.MOINREST_BASEURI, environ['PATH_INFO'].lstrip('/').split('/')[0])
+
+    H = httplib2.Http('/tmp/.cache')
+    zenlib.moinmodel.H = H
 
     #import pprint; logger.debug('put_resource input environ: ' + repr(pprint.pformat(environ)))
     imt = environ['CONTENT_TYPE']
@@ -225,8 +230,6 @@ def put_resource(environ, start_response):
     handler = resource_type.run_rulesheet(environ, 'PUT', imt)
     wikified = handler(resource_type, body)
     #logger.debug('put_resource wikified result: ' + repr((wikified,)))
-
-    #H = httplib2.Http()
 
     # This was originally always returning 200 even if moinrest failed, so an improvement
     # would be to return the moinrest response as the Zen response.  FIXME Even better would
@@ -266,8 +269,11 @@ def post_resource(environ, start_response):
     creds = extract_auth(environ)
     opener = urllib2.build_opener(handler) if handler else urllib2.build_opener()
     #Pass on the full moinrest and zen base URIs for the resources accessed on this request
-    environ['zen.BASEURI'] = join(zenlib.moinmodel.ZEN_BASEURI, environ['PATH_INFO'].lstrip('/').split('/')[0])
-    environ['moinrest.BASEURI'] = join(zenlib.moinmodel.MOINREST_BASEURI, environ['PATH_INFO'].lstrip('/').split('/')[0])
+    environ['zen.RESOURCE_URI'] = join(zenlib.moinmodel.ZEN_BASEURI, environ['PATH_INFO'].lstrip('/').split('/')[0])
+    environ['moinrest.RESOURCE_URI'] = join(zenlib.moinmodel.MOINREST_BASEURI, environ['PATH_INFO'].lstrip('/').split('/')[0])
+
+    H = httplib2.Http('/tmp/.cache')
+    zenlib.moinmodel.H = H
 
     #import pprint; logger.debug('put_resource input environ: ' + repr(pprint.pformat(environ)))
     imt = environ['CONTENT_TYPE']
@@ -285,8 +291,6 @@ def post_resource(environ, start_response):
     handler = resource_type.run_rulesheet(environ, 'POST', imt)
     new_uri, wikified = handler(resource_type, body)
     #logger.debug('post_resource wikified result & uri: ' + repr((wikified, new_uri)))
-
-    #H = httplib2.Http()
 
     # This was originally always returning 200 even if moinrest failed, so an improvement
     # would be to return the moinrest response as the Zen response.  FIXME Even better would
@@ -319,7 +323,9 @@ def delete_resource(environ, start_response):
     # Keep inbound headers so we can forward to moinrest
     req_headers = copy_headers_to_dict(environ)
 
-    #H = httplib2.Http()
+    H = httplib2.Http('/tmp/.cache')
+    zenlib.moinmodel.H = H
+
     H.force_exception_to_status_code = True
 
     creds = extract_auth(environ)

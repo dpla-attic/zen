@@ -45,10 +45,11 @@ from zenlib import zservice, service_proxy
 MOINREST_SERVICE_ID = 'http://purl.org/xml3k/akara/services/demo/moinrest'
 FIRST_REQUEST_SEEN = False
 
-#Following are initialized on first request:
-#H = None
-#MOINREST_BASEURI = None
-#ZEN_BASEURI = None
+#Following to be updated upon first request through Zen.  Used in zenuri_to_moinrest
+MOINREST_BASEURI = None
+
+#Following is updated on each request, to avoid possible reentrancy problems:
+H = httplib2.Http('/tmp/.cache')
 
 def cleanup_text_blocks(text):
     return '\n'.join([line.strip() for line in text.splitlines() ])
@@ -82,6 +83,7 @@ def zenuri_to_moinrest(environ, uri=None):
     else:
         moinrest_uri = join(MOINREST_BASEURI, environ['PATH_INFO'].lstrip('/'))
     logger.debug('moinrest_uri: ' + repr(moinrest_uri))
+    logger.debug('moinrest_uri: ' + repr(MOINREST_BASEURI))
     return moinrest_uri
 
 
