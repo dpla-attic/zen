@@ -156,7 +156,7 @@ class node(object):
         #doc = bindery.parse(isrc, standalone=True, model=MOIN_DOCBOOK_MODEL)
         original_base, wrapped_base, original_page = resp[ORIG_BASE_HEADER].split()
         atype = resource_type.construct_id(doc, original_base, wrapped_base, rest_uri)
-        if logger: logger.debug('node.lookup akara type: ' + atype)
+        if logger: logger.debug('node.lookup akara type: ' + repr(atype))
         #Older Moin CMS resource types are implemented by registration to the global node.NODES
         #Newer Moin CMS resource types are implemented by discovery of a URL,
         #to which a POST request executes the desired action
@@ -298,7 +298,7 @@ def parse_moin_xml(uri, H, resolver=None):
 
     if logger: logger.debug('parse_moin_xml (uri, fromcache): ' + repr((uri,resp.fromcache)))
 
-    logger.debug("parse_moin_xml: (resp,body) = " + repr((resp,body[:500])))
+    #logger.debug("parse_moin_xml: (resp,body) = " + repr((resp,body[:500])))
     if not str(resp.status).startswith('2'): return None, resp # fail gracefully if not found
 
     return inputsource(body, resolver=resolver), resp
