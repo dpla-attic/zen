@@ -42,7 +42,7 @@ def s(place):
 
     if not GEOLOOKUP_URI: setup()
     logger.debug('geolookup' + repr((place, GEOLOOKUP_URI)))
-    resp, body = H.request(GEOLOOKUP_URI + '?place=' + place)
+    resp, body = H.request(GEOLOOKUP_URI + '?place=' + urllib.quote(place))
     try:
         latlong = json.loads(body).itervalues().next()
         return latlong
