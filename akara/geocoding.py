@@ -12,8 +12,6 @@ authoring and metadata aextraction
 
 Based on Moin/CMS (see http://wiki.xml3k.org/Akara/Services/MoinCMS )
 
-@ 2009 by Zepheira LLC
-
 This file is part of the open source Zen project,
 provided under the Apache 2.0 license.
 See the files LICENSE and NOTICE for details.
@@ -78,10 +76,19 @@ from akara.util import status_response
 from akara import response
 from akara import logger
 
+from zenlib.latlong import latlong
+
 GEOCODER = AKARA.module_config.get('geocoder', "geocoders.get_geocoder('geonames')")
 #GEOCODER = AKARA.module_config.get('geocoder', "geocoders.get_geocoder('google', resource='maps')")
 GEOCODER = eval(GEOCODER)
 DBFILE = AKARA.module_config.get('dbfile')
+
+#See NOTES for info about setting
+GEONAMES_PLUS_DBFILE = AKARA.module_config.get('geonames-dbfile')
+
+# Specifies the default max-age of across-the-board lookups
+CACHE_MAX_AGE = AKARA.module_config.get('cache-max-age')
+
 
 def state_lookup(s):
     result = US_STATES_GEO.xml_select(u'provinces/*[@abbr="%s"]'%s)
@@ -89,6 +96,18 @@ def state_lookup(s):
 
 
 geocache = {}
+
+
+def check_local_ll():
+    ll = None
+    if GEONAMES_PLUS_DBFILE:
+        logger.debug('DBFILE: ' + repr(GEONAMES_PLUS_DBFILE))
+        try:
+            ll = latlong(GEONAMES_PLUS_DBFILE)
+        except Exception as e:
+            raise
+    return ll
+
 
 SERVICE_ID = 'http://purl.org/com/zepheira/services/geolookup.json'
 @simple_service('GET', SERVICE_ID, 'geolookup.json', 'application/json')
@@ -104,29 +123,45 @@ def geolookup_json(place=None):
     geoquery = place.decode('utf-8')
     #geoquery = "%s in %s, %s"%(address_line, city, state_name)
     if geoquery in geocache:
-        latlong = geocache[geoquery]
-    else:
-        #geonames.org all of a sudden doesn't seem to like spaces after commas
-        q = ','.join([ comp.strip() for comp in geoquery.encode('utf-8').split(',')])
-        try:
-            place, (lat, long_) = GEOCODER.geocode(q, exactly_one=False).next()
-            latlong = "%0.03f,%0.03f"%(lat, long_)
-        except (ValueError, urllib2.URLError, StopIteration), e:
-            #import traceback; traceback.print_exc()
-            logger.debug("geolookup error: " + repr((geoquery, e)))
-            geoquery = geoquery.replace(u'"', u'')
-            state = US_STATES_GEO.xml_select(u'provinces/*[@abbr="%s"]'%geoquery)
+        ll = geocache[geoquery]
+        return json.dumps({geoquery: ll}) if ll else "{}"
+
+    components = [ comp.strip() for comp in geoquery.encode('utf-8').split(',')]
+    ll = None
+    llquery = check_local_ll()
+    if llquery:
+        result = llquery.using_city_and_state_then_country(components[0], components[-1])
+        if result:
+            (lat, long_) = result
+            logger.debug("local geolookup: " + repr((place, lat, long_)))
+            ll = "%s,%s"%(lat, long_)
+            if CACHE_MAX_AGE: response.add_header("Cache-Control", "max-age="+CACHE_MAX_AGE)
+            return json.dumps({geoquery: ll}) if ll else "{}"
+        #Note: we're not updating geocache if the answer was found locally
+
+
+    #Note: geonames.org doesn't like spaces after commas
+    q = ','.join(components)
+    try:
+        place, (lat, long_) = GEOCODER.geocode(q, exactly_one=False).next()
+        ll = "%0.03f,%0.03f"%(lat, long_)
+    except (ValueError, urllib2.URLError, StopIteration), e:
+        #FIXME: Consider using different cache control on lookup failures
+        #import traceback; traceback.print_exc()
+        logger.debug("geolookup error: " + repr((geoquery, e)))
+        geoquery = geoquery.replace(u'"', u'')
+        state = US_STATES_GEO.xml_select(u'provinces/*[@abbr="%s"]'%geoquery)
+        if state:
+            ll = "%s,%s"%(unicode(state[0].lat), unicode(state[0].long))
+        else:
+            state = US_STATES_GEO.xml_select(u'provinces/*[.="%s"]'%geoquery)
             if state:
-                latlong = "%s,%s"%(unicode(state[0].lat), unicode(state[0].long))
+                ll = "%s,%s"%(unicode(state[0].lat), unicode(state[0].long))
             else:
-                state = US_STATES_GEO.xml_select(u'provinces/*[.="%s"]'%geoquery)
-                if state:
-                    latlong = "%s,%s"%(unicode(state[0].lat), unicode(state[0].long))
-                else:
-                    latlong = None
-                    response.status = status_response(httplib.NOT_FOUND)
-        geocache[geoquery] = latlong
-    return json.dumps({geoquery: latlong}) if latlong else "{}"
+                ll = None
+                response.status = status_response(httplib.NOT_FOUND)
+    geocache[geoquery] = ll
+    return json.dumps({geoquery: ll}) if ll else "{}"
 
 
 geohashcache = {}

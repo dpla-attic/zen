@@ -82,8 +82,8 @@ def zenuri_to_moinrest(environ, uri=None):
             raise NotImplementedError('For now a Zen uri is required')
     else:
         moinrest_uri = join(MOINREST_BASEURI, environ['PATH_INFO'].lstrip('/'))
-    logger.debug('moinrest_uri: ' + repr(moinrest_uri))
-    logger.debug('moinrest_uri: ' + repr(MOINREST_BASEURI))
+    #logger.debug('moinrest_uri: ' + repr(moinrest_uri))
+    #logger.debug('moinrest_uri: ' + repr(MOINREST_BASEURI))
     return moinrest_uri
 
 
@@ -313,7 +313,7 @@ class rulesheet(object):
         '''
         #rs = inputsource(source, resolver=resolver)
         import cStringIO
-        resp,body = H.request(source)
+        resp, body = H.request(source)
         stream = cStringIO.StringIO(body)
         self.token = stream.readline().strip().lstrip('#')
         #XXX In theory this is a microscopic security hole.  If someone could find a way

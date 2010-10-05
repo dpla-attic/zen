@@ -1,10 +1,12 @@
+#!/usr/bin/env python
+# -*- mode: Python;-*-
 """load_geonames - build a SQLite database based on data from geonames.org
 
 This is a command-line program with several different interfaces. See
 'usage' for details.
 
 """
-# Copyright (c) 2009 by Zepheira, LLC
+# Copyright 2009-2010 by Zepheira, LLC
 # This module written by Andrew Dalke <dalke@dalkescientific.com>
 
 import os
@@ -19,6 +21,8 @@ import sqlite3
 import unicodedata
 import zipfile
 from cStringIO import StringIO
+
+AVERAGE_LATITUDE_LONGITUDE_COUNTRIES_FNAME = "etc/geonames/average-latitude-longitude-countries.csv"
 
 ######## Mirroring
 
@@ -46,6 +50,7 @@ def fetch(remote_url, local_filename):
     
 
 def mirror():
+    #Note: we can put this as geonames-support.tar.gz at: http://foundry.zepheira.com/projects/zen/files
     if not os.path.isdir("mirror"):
         os.mkdir("mirror")
     fetch("http://download.geonames.org/export/dump/countryInfo.txt", "mirror/countryInfo.txt")
@@ -338,7 +343,7 @@ class CountryLatLong(object):
         self.latitude = latitude
         self.longitude = longitude
 
-# open("average-latitude-longitude-countries.csv")
+# open(AVERAGE_LATITUDE_LONGITUDE_COUNTRIES_FNAME)
 def read_country_lat_long(infile):
     reader = csv.reader(infile)
     reader.next()
@@ -435,22 +440,27 @@ def _add_state_aliases(cursor, state_fields):
 def _add_city_aliases(cursor, city_fields):
     cursor.executemany("insert into city_alias values (?, ?)", city_fields)
 
+
 def add_country_info(cursor):
     # Get the country lat/long info
     country_lat_long = {}
-    for country in read_country_lat_long(open("average-latitude-longitude-countries.csv")):
+    for country in read_country_lat_long(open(AVERAGE_LATITUDE_LONGITUDE_COUNTRIES_FNAME)):
         country_lat_long[country.iso] = (country.latitude, country.longitude)
 
     # Get and populate the country info
     geoname_fields = []
     country_aliases = []
     for ci in read_country_info(open("mirror/countryInfo.txt")):
-        lat_long = country_lat_long[ci.iso]
-        geoname_fields.append( 
-            (ci.geonameid, None, None, None, ci.iso, ci.population, lat_long[0], lat_long[1]) )
-        country_aliases.append( (ci.geonameid, ci.iso) )
-        country_aliases.append( (ci.geonameid, ci.iso3) )
-        country_aliases.append( (ci.geonameid, normalize_name(ci.country)) )
+        if ci.iso in country_lat_long:
+            lat_long = country_lat_long[ci.iso]
+            geoname_fields.append( 
+                (ci.geonameid, None, None, None, ci.iso, ci.population, lat_long[0], lat_long[1]) )
+            country_aliases.append( (ci.geonameid, ci.iso) )
+            country_aliases.append( (ci.geonameid, ci.iso3) )
+            country_aliases.append( (ci.geonameid, normalize_name(ci.country)) )
+        else:
+            #Use logger
+            print >> sys.stderr, "Warning: Unable to find lat/long info for country code", ci.iso
 
     _add_geonames(cursor, geoname_fields)
     _add_country_aliases(cursor, country_aliases)
@@ -563,7 +573,7 @@ def report_stats(cursor):
 
 
 def usage(f):
-    """load_geonames.py [mirror|create|stats|delete]
+    """load_geonames [mirror|create|stats|delete]
 
 Populate the SQLite database 'geonames.sqlite3' using data from geonames.org
 Possible commands are:
@@ -576,6 +586,7 @@ Possible commands are:
   delete - delete the SQLite database file
 """
     f.write(usage.__doc__)
+
 
 if __name__ == "__main__":
     FILENAME = "geonames.sqlite3"

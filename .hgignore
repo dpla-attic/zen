@@ -3,4 +3,6 @@
 \.pyc$
 ^dist
 ^scratch
+^mirror
 MANIFEST
+geonames.sqlite3

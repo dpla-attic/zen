@@ -169,7 +169,7 @@ def get_resource(environ, start_response):
     if accept_header :
         accepted_imts = [ type.split(';')[0] for type in accept_header.split(',') ]
     accepted_imts.append('application/json')
-    if logger: logger.debug('accepted_imts: ' + repr(accepted_imts))
+    logger.debug('accepted_imts: ' + repr(accepted_imts))
     imt = first_item(dropwhile(lambda x: '*' in x, accepted_imts))
 
     qparams = cgi.parse_qs(environ['QUERY_STRING'])

@@ -25,3 +25,37 @@ python setup.py sdist --formats=bztar,gztar,zip
 
 If needed, update version info in lib/__init__.py
 
+
+
+= Setting up local GeoNames mirror =
+
+Once you have downloaded the data set, rerun the "create" step to
+rebuild the database.  Remember to commit the modified files to
+version control.
+
+
+If you are curious, you can see the data set size with:
+
+  geonames_loader stats
+
+Currently this reports
+
+86441 geoname records: 246 countries, 64 'states', 86131 cities
+Aliases: 738 countries, 144 'states', 151155 cities
+
+
+The LatLong.py module contains functionality to help simplify the
+different types of searches. Here's a bit to get you started:
+
+>>> from zenlib import latlong
+>>> ll = latlong.latlong("geonames.sqlite3")
+>>> ll.using_city("Paris")
+(u'48.85341', u'2.3488')
+>>> ll.using_city_country("Paris", "US")
+(u'33.6609389', u'-95.555513')
+>>> ll.using_city_state("Paris", "TX")
+(u'33.6609389', u'-95.555513')
+>>> ll.using_city_state("Paris", "CA")
+>>> ll.using_city_and_state_then_country("Paris", "CA")
+(u'43.2', u'-80.383333')
+>>>
