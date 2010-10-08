@@ -149,6 +149,16 @@ def get_resource(environ, start_response):
     environ['zen.RESOURCE_URI'] = join(zenlib.moinmodel.ZEN_BASEURI, environ['PATH_INFO'].lstrip('/').split('/')[0])
     environ['moinrest.RESOURCE_URI'] = join(zenlib.moinmodel.MOINREST_BASEURI, environ['PATH_INFO'].lstrip('/').split('/')[0])
 
+    # Check if this is a request to validate cache (CC max-age=0) due to,
+    # e.g. a Firefox page reload, and send back 304.  In the future this should
+    # ideally inspect the cached Zen representation and regenerate if stale. FIXME
+    if 'HTTP_CACHE_CONTROL' in environ:
+        for cc_decl in [s.strip().split('=')
+                        for s in environ['HTTP_CACHE_CONTROL'].split(',')]:
+            if 'max-age' in cc_decl and len(cc_decl)>1 and int(cc_decl[1])==0:
+                start_response(status_response(304))
+                return None
+
     H = httplib2.Http('/tmp/.cache')
     zenlib.moinmodel.H = H
 
@@ -167,7 +177,7 @@ def get_resource(environ, start_response):
     accepted_imts = []
     accept_header = environ.get('HTTP_ACCEPT')
     if accept_header :
-        accepted_imts = [ type.split(';')[0] for type in accept_header.split(',') ]
+        accepted_imts = [ type.split(';')[0].strip() for type in accept_header.split(',') ]
     accepted_imts.append('application/json')
     logger.debug('accepted_imts: ' + repr(accepted_imts))
     imt = first_item(dropwhile(lambda x: '*' in x, accepted_imts))
