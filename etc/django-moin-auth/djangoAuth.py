@@ -98,6 +98,10 @@ class DjangoAuth(BaseAuth):
             return {}
     
     def request(self, request, user_obj, **kw):
+
+        if user_obj and user_obj.auth_method == self.name:
+            user_obj = None
+
         # if we're already authenticated, no need to do anything more
         if user_obj and user_obj.valid:
             return user_obj, False
