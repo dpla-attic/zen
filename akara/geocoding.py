@@ -126,14 +126,16 @@ def geolookup_json(place=None):
         ll = geocache[geoquery]
         return json.dumps({geoquery: ll}) if ll else "{}"
 
-    components = [ comp.strip() for comp in geoquery.encode('utf-8').split(',')]
+    logger.debug("geolookup_json: " + repr((geoquery, )))
+    components = [ comp.strip() for comp in geoquery.split(u',')]
+    #components = [ comp.strip() for comp in geoquery.encode('utf-8').split(',')]
     ll = None
     llquery = check_local_ll()
     if llquery:
         result = llquery.using_city_and_state_then_country(components[0], components[-1])
         if result:
             (lat, long_) = result
-            logger.debug("local geolookup: " + repr((place, lat, long_)))
+            logger.debug(u"local geolookup: " + repr((geoquery, lat, long_)))
             ll = "%s,%s"%(lat, long_)
             if CACHE_MAX_AGE: response.add_header("Cache-Control", "max-age="+CACHE_MAX_AGE)
             return json.dumps({geoquery: ll}) if ll else "{}"
@@ -148,7 +150,7 @@ def geolookup_json(place=None):
     except (ValueError, urllib2.URLError, StopIteration), e:
         #FIXME: Consider using different cache control on lookup failures
         #import traceback; traceback.print_exc()
-        logger.debug("geolookup error: " + repr((geoquery, e)))
+        logger.debug(u"geolookup error: " + repr((geoquery, e)))
         geoquery = geoquery.replace(u'"', u'')
         state = US_STATES_GEO.xml_select(u'provinces/*[@abbr="%s"]'%geoquery)
         if state:
