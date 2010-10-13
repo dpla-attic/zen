@@ -149,20 +149,10 @@ def get_resource(environ, start_response):
     environ['zen.RESOURCE_URI'] = join(zenlib.moinmodel.ZEN_BASEURI, environ['PATH_INFO'].lstrip('/').split('/')[0])
     environ['moinrest.RESOURCE_URI'] = join(zenlib.moinmodel.MOINREST_BASEURI, environ['PATH_INFO'].lstrip('/').split('/')[0])
 
-    # Check if this is a request to validate cache (CC max-age=0) due to,
-    # e.g. a Firefox page reload, and send back 304.  In the future this should
-    # ideally inspect the cached Zen representation and regenerate if stale. FIXME
-    if 'HTTP_CACHE_CONTROL' in environ:
-        for cc_decl in [s.strip().split('=')
-                        for s in environ['HTTP_CACHE_CONTROL'].split(',')]:
-            if 'max-age' in cc_decl and len(cc_decl)>1 and int(cc_decl[1])==0:
-                start_response(status_response(304))
-                return None
-
     H = httplib2.Http('/tmp/.cache')
     zenlib.moinmodel.H = H
 
-    resource = node.lookup(zenuri_to_moinrest(environ), opener=opener)
+    resource = node.lookup(zenuri_to_moinrest(environ), opener=opener, environ=environ)
     if not resource:
         start_response(status_response(400),[('Content-Type','text/plain')])
         return( "Unable to access resource\n" )
@@ -232,7 +222,7 @@ def put_resource(environ, start_response):
     if not is_absolute(rtype):
         moinresttop = find_peer_service(environ, MOINREST_SERVICE_ID)
         rtype = join(moinresttop, environ['PATH_INFO'].lstrip('/').split('/')[0], rtype)
-    resource_type = node.lookup(rtype, opener=opener)
+    resource_type = node.lookup(rtype, opener=opener, environ=environ)
     
     temp_fpath = read_http_body_to_temp(environ, start_response)
     body = open(temp_fpath, "r").read()
@@ -288,7 +278,7 @@ def post_resource(environ, start_response):
     #import pprint; logger.debug('put_resource input environ: ' + repr(pprint.pformat(environ)))
     imt = environ['CONTENT_TYPE']
 
-    resource_type = node.lookup(zenuri_to_moinrest(environ), opener=opener)
+    resource_type = node.lookup(zenuri_to_moinrest(environ), opener=opener, environ=environ)
     if not resource_type:
         start_response(status_response(400),[('Content-Type','text/plain')])
         return( "Unable to access resource\n" )

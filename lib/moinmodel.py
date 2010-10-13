@@ -141,7 +141,7 @@ class node(object):
     ENDPOINTS = None
 
     @staticmethod
-    def lookup(rest_uri, opener=None, resolver=None):
+    def lookup(rest_uri, opener=None, environ={}, resolver=None):
         '''
         rest_uri - URI of the moinrest-wrapped version of the page
         opener - for specializing the HTTP request (e.g. to use auth)
@@ -149,7 +149,7 @@ class node(object):
         if not resolver:
             resolver = moinrest_resolver(opener=opener)
         if logger: logger.debug('node.lookup rest_uri: ' + rest_uri)
-        isrc, resp = parse_moin_xml(rest_uri, H, resolver=resolver)
+        isrc, resp = parse_moin_xml(rest_uri, H, resolver=resolver, environ=environ)
         if isrc is None:
             if logger: logger.debug("Error looking up resource: %d\n" % resp.status)
             return None
@@ -278,14 +278,19 @@ class node(object):
 
 node.NODES[node.AKARA_TYPE] = node
 
-def parse_moin_xml(uri, H, resolver=None):
+def parse_moin_xml(uri, H, resolver=None, environ={}):
     #Stupid Moin XML export uses bogus nbsps, so this function encapsulates the kludge
 
     # Replaced urllib2 with httplib2 for the client cache, but we lose the custom
     # opener.  Luckily this function just uses GET which shouldn't require
     # Moin authentication most of the time.  FIXME
     H.force_exception_to_status_code = True
-    resp,body = H.request(uri,"GET",headers={'Accept': XML_IMT})
+    headers={'Accept': XML_IMT}
+    if 'HTTP_CACHE_CONTROL' in environ:
+        # Propagate any cache-control request header received by Zen
+        headers['cache-control'] = environ['HTTP_CACHE_CONTROL']
+
+    resp,body = H.request(uri,"GET",headers=headers)
 
     if logger: logger.debug('parse_moin_xml (uri, fromcache): ' + repr((uri,resp.fromcache)))
 
