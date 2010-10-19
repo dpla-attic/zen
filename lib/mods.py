@@ -12,7 +12,7 @@ MODS examples:
 
 See also:
 
-For handling MARC (via conversion to SKOS): ttp://dcpapers.dublincore.org/ojs/pubs/article/view/916/912
+For handling MARC (via conversion to SKOS): http://dcpapers.dublincore.org/ojs/pubs/article/view/916/912
 
 '''
 
@@ -212,7 +212,7 @@ COVERAGE = [
     u'm:note',
     u'm:accessCondition',
 
-    u'm:extension',
+#    u'm:extension',
     u'm:name',
     u'm:relatedItem',
 
@@ -291,6 +291,7 @@ def mods2json(source, run_diagnostics=False):
         for count, item in enumerate(items):
             if u'label' not in item:
                 item[u'label'] = '_%i'%(count+1)
+    #from akara import logger; logger.info('diagnostics: ' + repr((run_diagnostics, diagnostics)))
     return items, diagnostics
 
 

@@ -126,9 +126,8 @@ def geolookup_json(place=None):
         ll = geocache[geoquery]
         return json.dumps({geoquery: ll}) if ll else "{}"
 
-    logger.debug("geolookup_json: " + repr((geoquery, )))
+    #logger.debug("geolookup_json: " + repr((geoquery, )))
     components = [ comp.strip() for comp in geoquery.split(u',')]
-    #components = [ comp.strip() for comp in geoquery.encode('utf-8').split(',')]
     ll = None
     llquery = check_local_ll()
     if llquery:
