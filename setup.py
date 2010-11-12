@@ -14,10 +14,9 @@ setup(name = "zenlib",
                      '': 'thirdparty',
                     },
       packages=['zenlib', 'geopy', 'geopy.geocoders', 'geopy.parsers'],
-      py_modules = ['diff_match_patch'],
+      py_modules = ['diff_match_patch', 'y_serial_v060'],
       scripts=['sign_rulesheet', 'load_geonames', 'wikibootstrap'],
       #install_requires=["amara", "akara"],
       #package_data={'akara': ["akara.conf"]},
       )
-
 

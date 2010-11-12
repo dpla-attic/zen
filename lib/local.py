@@ -2,7 +2,7 @@
 The catalog of local services supplied with Zen
 '''
 
-from zenlib import register_service
+from zenlib.services import register_service
 
 #Local services
 from zenlib.geo import geolookup

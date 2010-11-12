@@ -27,95 +27,101 @@ http://labwiki.semioclinical.com/mywiki/resources/ct.gov/zen (ct.gov.zen.js) Han
 
 = Configuration =
 
-rulesheet-secret (optional) - A secret hash used for signing rulesheets, only to be shared with rulesheet developers
+RULESHEET_SECRET (optional) - A secret hash used for signing rulesheets, only to be shared with rulesheet developers
+SPACES - a dictionary of "spaces" over which Zen operates.  An example of a space is a wiki, or an AtomPub endpoint
+         the key of the dict is used as a URI component, e.g. the query would be /zen/mywiki
+         to access the space configured with key 'mywiki'.  The value of each space config is
+         either an Akara service ID, for the slave service, or a tuple of
+         (Akara service ID, slave env transform)
+         In the latter case the transform is a function that operates on the inbound WSGI
+         environment to Zen and returns the appropriate equivalent environ for calling the slave service
 
 Sample config:
 
-[zen]
-rulesheet-secret = abcdef
+class zen:
+    RULESHEET_SECRET = 'abcdef'
+    SPACES = {
+        'mywiki': 'zen.moin.slaveinfo',
+    }
 
 = Notes on security =
 
 To-do
 
 """
-#Sample config
-#{"http://purl.org/xml3k/akara/cms/resource-type"}
-#endpoints = {"http://purl.org/xml3k/akara/cms/spam": "http://localhost:8880/spam.zen"}
+#SPACES = {'mywiki': ('http://purl.org/xml3k/akara/services/demo/moinrest', {'wikiid': 'mywiki'})}
+#the latter case is used with spaces where the back end service URL uses a query template
 
-import os
-import sys
 import re
 import cgi
 import pprint
 import httplib
 import urllib, urllib2
-import datetime
-from itertools import islice
-from wsgiref.util import request_uri
+from wsgiref.util import shift_path_info, request_uri
 from itertools import dropwhile
 
-from amara.thirdparty import httplib2
-from dateutil.parser import parse as dateparse
-
 import amara
-from amara import _
-#from amara.namespaces import *
-from amara.lib import inputsource
-from amara.bindery.model import examplotron_model, generate_metadata
-from amara import bindery
+from amara.thirdparty import httplib2
 from amara.lib.iri import split_fragment, relativize, absolutize, is_absolute, join
-from amara.bindery.util import dispatcher, node_handler, property_sequence_getter
 from amara.lib.util import first_item
 #from amara.lib.date import timezone, UTC
+#from amara import _
+#from amara.namespaces import *
 
 from akara.registry import list_services, _current_registry
 from akara.util import copy_auth, extract_auth, read_http_body_to_temp, copy_headers_to_dict
-#from akara.util.moin import node, ORIG_BASE_HEADER, DOCBOOK_IMT, RDF_IMT, HTML_IMT
-from akara.util.moin import ORIG_BASE_HEADER, DOCBOOK_IMT, RDF_IMT, HTML_IMT, XML_IMT
-from akara.services import simple_service
-from akara.services import method_dispatcher
 from akara.util import status_response
-from akara import logger
-from akara import request
+from akara.util.moin import ORIG_BASE_HEADER, DOCBOOK_IMT, RDF_IMT, HTML_IMT, XML_IMT
+#from akara.services import simple_service
+from akara.services import method_dispatcher
+from akara import request, logger, module_config
+from akara.registry import get_a_service_by_id
+from akara.opensearch import apply_template
 
-from akara.util.moin import wiki_uri
+#import zenlib.moinmodel
+#from zenlib.moinmodel import node, rulesheet, moinrest_resolver, parse_moin_xml, zenuri_to_moinrest, MOINREST_SERVICE_ID
+#from zenlib.util import find_peer_service
 
-import zenlib.moinmodel
-from zenlib.moinmodel import node, rulesheet, moinrest_resolver, parse_moin_xml, zenuri_to_moinrest, MOINREST_SERVICE_ID
-from zenlib.util import find_peer_service
-
-#endpoints = AKARA.module_config.get('endpoints')
-#node.ENDPOINTS = endpoints and eval(endpoints)
-#logger.debug('GRIPPO: ' + repr((endpoints, eval(endpoints))))
-#logger.debug('GRIPPO: ' + repr((endpoints, )))
-
-node.SECRET = AKARA.module_config.get('rulesheet-secret', '')
-
-
-#aname = partial(property_sequence_getter, u"name")
-#aemail = partial(property_sequence_getter, u"email")
-#auri = partial(property_sequence_getter, u"uri")
+SECRET = module_config().get('RULESHEET_SECRET', '')
+SPACES = module_config()['SPACES']
 
 UNSUPPORTED_IN_FILENAME = re.compile('\W')
-#SOURCE = AKARA_MODULE_CONFIG['source-wiki-root']
-#POST_TO = AKARA_MODULE_CONFIG['post-to']
-
 
 DEFAULT_MOUNT = 'zen'
 SERVICE_ID = 'http://purl.org/com/zepheira/zen/main'
 H = httplib2.Http('/tmp/.cache')
 
-def first_request(environ):
+FIRST_REQUEST_FLAG = False
+#def module_load():
+
+def setup_request(environ):
     '''
     Constants to be set up upon the first request (i.e. need to be run from an Akara worker)
     '''
-    if not zenlib.moinmodel.FIRST_REQUEST_SEEN:
-        zenlib.moinmodel.FIRST_REQUEST_SEEN = True
+    global SPACES, FIRST_REQUEST_FLAG
+    if not FIRST_REQUEST_FLAG:
+        FIRST_REQUEST_FLAG = True
+
+        #Set up spaces
+        for space, slaveclass in SPACES.items():
+            head, tail = slaveclass.rsplit('.', 1)
+            module = __import__(head, {}, {}, [tail])
+            slaveinstance = getattr(module, tail)()
+            logger.debug('module: ' + repr(module))
+            s = get_a_service_by_id(slaveinstance.SERVICEID)
+            slaveinstance.service = s
+            #if isinstance(sinfo, tuple):
+            #    sid, sparams = sinfo
+            #else:
+            #    sid, sparams = sinfo, None
+    #
+    #logger.debug('SPACES: ' + repr((SPACES)))
+    #baseurl = apply_template(s.template, **sparams)
+
         #Use akara discovery, via find_peer_service, to get the full base URI for this very
         #zen endpoint, and its moinrest peer
-        zenlib.moinmodel.MOINREST_BASEURI = find_peer_service(environ, MOINREST_SERVICE_ID)
-        zenlib.moinmodel.ZEN_BASEURI = find_peer_service(environ, SERVICE_ID)
+        #zenlib.moinmodel.MOINREST_BASEURI = find_peer_service(environ, MOINREST_SERVICE_ID)
+        #zenlib.moinmodel.ZEN_BASEURI = find_peer_service(environ, SERVICE_ID)
         #environ['SCRIPT_NAME'].rstrip('/') #$ServerPath/zen
     return
 
@@ -141,7 +147,33 @@ def dispatcher():
 def get_resource(environ, start_response):
     #FIXME: Needs update to forward cookies, i.e. headers to moinrest (see put_resource)
     #Set up to use HTTP auth for all wiki requests
-    first_request(environ)
+    setup_request(environ)
+    space_tag = shift_path_info(environ)
+
+    slaveinfo = SPACES[space_tag]
+    new_env = slaveinfo.transformenv(environ)
+    
+    slave_status = None
+    slave_response_headers = None
+    slave_exc_info = None
+    def start_response_wrapper(status, response_headers, exc_info=None):
+        slave_status = status
+        slave_response_headers = response_headers
+        slave_exc_info = exc_info
+        def dummy_write(data):
+            raise RuntimeError('Does not support the deprectated write() callable in WSGI clients')
+        return dummy_write
+
+    response = slaveinfo.service(new_env, start_response_wrapper)
+    #logger.debug('After moin call: ' + repr(response)[:100] + repr())
+    logger.debug('After moin call: ' + repr(response)[:100] + repr(new_env['PATH_INFO']))
+
+    start_response(status_response(httplib.OK), headers)
+    #start_response(status_response(status), [("Content-Type", ctype), (moin.ORIG_BASE_HEADER, moin_base_info)])
+    return rendered
+
+    #environ['PATH_INFO'].lstrip('/')
+
     baseuri = environ['SCRIPT_NAME'].rstrip('/') #$ServerPath/zen
     handler = copy_auth(environ, baseuri)
     opener = urllib2.build_opener(handler) if handler else urllib2.build_opener()

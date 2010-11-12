@@ -4,6 +4,16 @@
 
 """
 
+class slaveinfo(object):
+    SERVICEID = 'http://purl.org/xml3k/akara/services/demo/moinrest'
+    def transformenv(environ):
+        newenv = environ.copy()
+        return newenv
+
+
+
+
+
 import hashlib
 import datetime
 import urllib, urllib2
@@ -40,7 +50,7 @@ try:
 except ImportError:
     logger = None
 
-from zenlib import zservice, service_proxy
+from zenlib.services import zservice, service_proxy
 
 MOINREST_SERVICE_ID = 'http://purl.org/xml3k/akara/services/demo/moinrest'
 FIRST_REQUEST_SEEN = False
@@ -426,7 +436,7 @@ class resource_type(node):
 node.NODES[RESOURCE_TYPE_TYPE] = resource_type
 
 
-from zenlib import SERVICES
+from zenlib.services import SERVICES
 
 def use(pymodule):
     '''
@@ -583,7 +593,7 @@ def curation_ingest_versions(rest_uri, user, H, auth_headers):
     return prior_rev, zen_rev, curated_rev
 
 
-from zenlib import register_service
+from zenlib.services import register_service
 
 #Services for processing Moin pages
 @zservice(u'http://purl.org/com/zepheira/zen/moinmodel/get-link-urls')
