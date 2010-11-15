@@ -83,7 +83,8 @@ from akara.opensearch import apply_template
 #from zenlib.util import find_peer_service
 
 SECRET = module_config().get('RULESHEET_SECRET', '')
-SPACES = module_config()['SPACES']
+SPACESDEF = module_config()['SPACES']()
+SPACES = {}
 
 UNSUPPORTED_IN_FILENAME = re.compile('\W')
 
@@ -103,17 +104,24 @@ def setup_request(environ):
         FIRST_REQUEST_FLAG = True
 
         #Set up spaces
-        for space, slaveclass in SPACES.items():
-            head, tail = slaveclass.rsplit('.', 1)
-            module = __import__(head, {}, {}, [tail])
-            slaveinstance = getattr(module, tail)()
-            logger.debug('module: ' + repr(module))
-            s = get_a_service_by_id(slaveinstance.SERVICEID)
-            slaveinstance.service = s
-            #if isinstance(sinfo, tuple):
-            #    sid, sparams = sinfo
-            #else:
-            #    sid, sparams = sinfo, None
+        for space in dir(SPACESDEF):
+        #for space, slaveclass in SPACES.items():
+            if not space.startswith('__'):
+                logger.debug('spaces: ' + repr(space))
+                sinfo = getattr(SPACESDEF, space)()
+                if isinstance(sinfo, tuple):
+                    sclass, sparams = sinfo
+                else:
+                    sclass, sparams = sinfo, None
+                head, tail = sclass.rsplit('.', 1)
+                module = __import__(head, {}, {}, [tail])
+                slaveinstance = getattr(module, tail)()
+                s = get_a_service_by_id(slaveinstance.SERVICEID)
+                slaveinstance.service = s
+                SPACES[space] = s
+            #logger.debug('module: ' + repr(module))
+            #s = get_a_service_by_id(slaveinstance.SERVICEID)
+            #slaveinstance.service = s
     #
     #logger.debug('SPACES: ' + repr((SPACES)))
     #baseurl = apply_template(s.template, **sparams)
@@ -225,7 +233,7 @@ def get_resource(environ, start_response):
 
 @dispatcher.method("PUT")
 def put_resource(environ, start_response):
-    first_request(environ)
+    setup_request(environ)
     # Keep inbound headers so we can forward to moinrest
     req_headers = copy_headers_to_dict(environ)
 
@@ -290,7 +298,7 @@ def post_resource(environ, start_response):
     '''
     Create a new record with a resource type
     '''
-    first_request(environ)
+    setup_request(environ)
     # Keep inbound headers so we can forward to moinrest
     req_headers = copy_headers_to_dict(environ)
 
@@ -351,7 +359,7 @@ def post_resource(environ, start_response):
 
 @dispatcher.method("DELETE")
 def delete_resource(environ, start_response):
-    first_request(environ)
+    setup_request(environ)
     # Keep inbound headers so we can forward to moinrest
     req_headers = copy_headers_to_dict(environ)
 
