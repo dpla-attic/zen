@@ -4,243 +4,207 @@
 
 """
 
-class slaveinfo(object):
-    SERVICEID = 'http://purl.org/xml3k/akara/services/demo/moinrest'
-    def transformenv(environ):
-        newenv = environ.copy()
-        return newenv
-
-
-
-
-
 import hashlib
 import datetime
-import urllib, urllib2
 from gettext import gettext as _
-
-from dateutil.parser import parse as dateparse
 
 from functools import partial
 from itertools import islice, dropwhile
 
-import amara
-from amara import tree, bindery
-from amara.bindery import html
-from amara.lib.util import first_item
-from amara.lib import inputsource
-#from amara import inputsource as baseinputsource
-from amara.lib.irihelpers import resolver as baseresolver
-#from amara.namespaces import *
-#from amara.xslt import transform
-#from amara.writers.struct import *
-#from amara.bindery.html import parse as htmlparse
-from amara.lib import U
-from amara.lib.iri import split_uri_ref, split_fragment, relativize, absolutize, IriError, join, is_absolute
-#from amara.bindery.model import examplotron_model, generate_metadata, metadata_dict
-from amara.bindery.util import dispatcher, node_handler, property_sequence_getter
 from amara.thirdparty import json, httplib2
 
-from akara.util import copy_auth, find_peer_service
-from akara.util.moin import wiki_uri, wiki_normalize, ORIG_BASE_HEADER, DOCBOOK_IMT, RDF_IMT, HTML_IMT, XML_IMT
-from akara.services import simple_service
+from akara.util import status_response, requested_imt, header_credentials, extract_auth
+#from akara.util.moin import wiki_uri, wiki_normalize, WSGI_ORIG_BASE_HEADER, XML_IMT
+from akara.util.moin import wiki_uri, wiki_normalize, ORIG_BASE_HEADER, XML_IMT
+from akara.services import convert_body, service_method_dispatcher
 
 try:
     from akara import logger
 except ImportError:
     logger = None
 
-from zenlib.services import zservice, service_proxy
+from zen import ZEN_SERVICE_ID
 
 MOINREST_SERVICE_ID = 'http://purl.org/xml3k/akara/services/demo/moinrest'
-FIRST_REQUEST_SEEN = False
-
-#Following to be updated upon first request through Zen.  Used in zenuri_to_moinrest
-MOINREST_BASEURI = None
-
-#Following is updated on each request, to avoid possible reentrancy problems:
-H = httplib2.Http('/tmp/.cache')
-
-def cleanup_text_blocks(text):
-    return '\n'.join([line.strip() for line in text.splitlines() ])
-
-
-def linkify(link, wikibase):
-    '''
-    Try to construct Moin-style link markup from a given link
-    '''
-    rel = relativize(link, wikibase)
-    if rel:
-        return u'[[%s]]'%rel
-    else:
-        return u'[[%s]]'%link
-
-
-def zenuri_to_moinrest(environ, uri=None):
-    #self_end_point = environ['SCRIPT_NAME'].rstrip('/') #$ServerPath/zen
-    #self_end_point = request_uri(environ, include_query=False).rstrip('/')
-    #self_end_point = guess_self_uri(environ)
-    #absolutize(environ['SCRIPT_NAME'].rstrip('/'), request_uri(environ, include_query=False))
-    #logger.debug('moinrest_uri: ' + repr((self_end_point, MOINREST_SERVICE_ID)))
-    #logger.debug('zenuri_to_moinrest: ' + repr((moinresttop, environ['PATH_INFO'], environ['SCRIPT_NAME'])))
-    if uri:
-        if uri.startswith(MOINREST_BASEURI):
-        #if moinresttop.split('/')[-1] == environ['SCRIPT_NAME'].strip('/'):
-            #It is already a moin URL
-            return uri or request_uri(environ)
-        else:
-            raise NotImplementedError('For now a Zen uri is required')
-    else:
-        moinrest_uri = join(MOINREST_BASEURI, environ['PATH_INFO'].lstrip('/'))
-    #logger.debug('moinrest_uri: ' + repr(moinrest_uri))
-    #logger.debug('moinrest_uri: ' + repr(MOINREST_BASEURI))
-    return moinrest_uri
-
-
-class moinrest_resolver(baseresolver):
-    """
-    Resolver that uses a specialized URL opener
-    """
-    def __init__(self, authorizations=None, lenient=True, opener=None):
-        """
-        """
-        self.opener = opener or urllib2.build_opener()
-        self.last_lookup_headers = None
-        baseresolver.__init__(self, authorizations, lenient)
-
-    def resolve(self, uri, base=None):
-        if not isinstance(uri, urllib2.Request):
-            if base is not None:
-                uri = self.absolutize(uri, base)
-            req = urllib2.Request(uri)
-        else:
-            req, uri = uri, uri.get_full_url()
-        try:
-            #stream = self.opener(uri)
-            resp = self.opener.open(req)
-            stream = resp
-            self.last_lookup_headers = resp.info()
-        except IOError, e:
-            raise IriError(IriError.RESOURCE_ERROR,
-                               uri=uri, loc=uri, msg=str(e))
-        return stream
-
-
-#FIXME: consolidate URIs, opener, etc. into an InputSource derivative
-#class inputsource(baseinputsource):
-#    def __new__(cls, arg, uri=None, encoding=None, resolver=None, sourcetype=0, opener=None):
-#       isrc = baseinputsource.__new__(cls, arg, uri, encoding, resolver, sourcetype)
-#        isrc.opener = opener
-#        return isrc
-
-#    def __init__(self, arg, uri=None, encoding=None, resolver=None, sourcetype=0, opener=None):
-#        baseinputsource.__init__(cls, arg, uri, encoding, resolver, sourcetype)
+#WSGI_ORIG_BASE_HEADER = 'HTTP_X_AKARA_WRAPPED_MOIN'
+FIND_PEER_SERVICE_KEY = 'akara.FIND_PEER_SERVICE'
 
 RESOURCE_TYPE_TYPE = u'http://purl.org/xml3k/akara/cms/resource-type'
 
 
-UNSPECIFIED = object()
+class space(object):
+    SERVICEID = 'http://purl.org/xml3k/akara/services/demo/moinrest'
+    def __init__(self, initial_environ=None, **kwargs):
+        #Use akara discovery, via find_peer_service, to get the full base URI for this very
+        #zen endpoint, and its moinrest peer
+        #self.space_tag = kwargs['space_tag']
+        if initial_environ:
+            find_peer_service = initial_environ[FIND_PEER_SERVICE_KEY]
+            self.MOINREST_BASEURI = find_peer_service(initial_environ, MOINREST_SERVICE_ID)
+            self.ZEN_BASEURI = find_peer_service(initial_environ, ZEN_SERVICE_ID)
+        return
 
-class node(object):
+    def setupenv(self, environ):
+        self.environ = environ.copy()
+        self.environ['SCRIPT_NAME'] = environ['SCRIPT_NAME'].rsplit('/', 2)[0] + '/moin'
+        self.environ['zen.RESOURCE_URI'] = join(self.ZEN_BASEURI, environ['PATH_INFO'].lstrip('/').split('/')[0])
+        self.environ['moinrest.RESOURCE_URI'] = join(self.MOINREST_BASEURI, environ['PATH_INFO'].lstrip('/').split('/')[0])
+        self.environ['HTTP_ACCEPT'] = XML_IMT
+        return
+
+    def forward(self, environ, start_response):
+        self.slave_status = None
+        self.slave_response_headers = None
+        self.slave_exc_info = None
+        self.setupenv(environ)
+
+        resource = self.resource_factory()
+        #if logger: logger.debug('After moin call: ' + repr((response[:100], new_env['SCRIPT_NAME'], new_env['PATH_INFO'])))
+        if not self.slave_status.startswith('20'):
+            start_response(status_response(400), [('Content-Type','text/plain')])
+            return ["Unable to access resource\n"]
+        #handler = resource.resource_type.run_rulesheet(environ, 'GET', imt)
+
+        imt = requested_imt(environ)
+
+        handler = resource.type.run_rulesheet(environ, 'GET', imt)
+        rendered = handler(resource)
+
+        headers = [("Content-Type", str(handler.imt)),
+                   ("Vary", "Accept")]
+        if handler.ttl:
+            headers.append(("Cache-Control", "max-age="+str(handler.ttl)))
+
+        start_response(status_response(httplib.OK), self.slave_response_headers)
+        return response
+
+    def start_response_wrapper(self, status, response_headers, exc_info=None):
+        self.slave_status = status
+        self.slave_response_headers = response_headers
+        self.slave_exc_info = exc_info
+        def dummy_write(data):
+            raise RuntimeError('Does not support the deprectated write() callable in WSGI clients')
+        return dummy_write
+
+    def resource_factory(self, path=None):
+        '''Look up and retrieve a new resource based on a uri path'''
+        '''
+        rest_uri - URI of the moinrest-wrapped version of the page
+        opener - for specializing the HTTP request (e.g. to use auth)
+        '''
+        environ = self.environ.copy()
+        if path:
+            #Then assume relative path to top of wiki, and add the moinrest wiki ID bit
+            environ['PATH_INFO'] = '/' + self.space_tag + '/' + path.lstrip('/')
+        if logger: logger.debug('resource_factory ' + repr((environ['SCRIPT_NAME'], environ['PATH_INFO'])))
+        response = self.service.handler(environ, self.start_response_wrapper)
+        slave_wrapper = get_slave_wrapper(self.service.handler, environ)
+        response, ctype, clength = convert_body(response, slave_wrapper.content_type, slave_wrapper.encoding, slave_wrapper.writer)
+        response = response[0]
+        #if logger: logger.debug('resp ' + repr((response[:100],)))
+        if not self.slave_status.startswith('20'):
+            if logger: logger.debug("Error looking up resource: %s\n" % self.slave_status)
+            return None
+
+        doc = bindery.parse(inputsource.text(response)) #, model=MOIN_XML_MODEL
+        moinrest_header = None
+        for k, v in self.slave_response_headers:
+            if k == ORIG_BASE_HEADER:
+                moinrest_header = v
+        #if logger: logger.debug('moinrest_header: ' + repr((moinrest_header,self.slave_response_headers)))
+        original_base, wrapped_base, original_page = moinrest_header.split()
+        rest_uri = join(wrapped_base, environ['PATH_INFO'].lstrip('/'))
+
+        return resource.factory(self, rest_uri, doc, original_base, wrapped_base, original_page)
+
+    #def parse_moin(new_env):
+    #    '''Look up and retrieve a new resource based on '''
+        #H.force_exception_to_status_code = True
+        #headers={'Accept': XML_IMT}
+        #if 'HTTP_CACHE_CONTROL' in environ:
+        #    # Propagate any cache-control request header received by Zen
+        #    headers['cache-control'] = environ['HTTP_CACHE_CONTROL']
+
+
+def get_slave_wrapper(handler, environ):
+    if isinstance(handler, service_method_dispatcher):
+        return handler.method_table.get(environ.get("REQUEST_METHOD"))
+    else:
+        return handler
+
+
+class resource(object):
     '''
     Akara Moin/CMS node, a Moin wiki page that follows a template to direct workflow
     activity, including metadata extraction
     '''
     AKARA_TYPE = u'http://purl.org/xml3k/akara/cms/resource-type'
-    NODES = {}
-    ENDPOINTS = None
+    #NODES = {}
+    #ENDPOINTS = None
 
     @staticmethod
-    def lookup(rest_uri, opener=None, environ={}, resolver=None):
+    def factory(space, rest_uri, doc, original_base, wrapped_base, original_page, rtype=None):
         '''
-        rest_uri - URI of the moinrest-wrapped version of the page
-        opener - for specializing the HTTP request (e.g. to use auth)
+        rest_uri - the full URI to the Moin/REST wrapper for this page
+        relative - the URI of this page relative to the Wiki base
+        
+        it's a fatal error if this can't figure out the resource type
         '''
-        if not resolver:
-            resolver = moinrest_resolver(opener=opener)
-        if logger: logger.debug('node.lookup rest_uri: ' + rest_uri)
-        isrc, resp = parse_moin_xml(rest_uri, H, resolver=resolver, environ=environ)
-        if isrc is None:
-            if logger: logger.debug("Error looking up resource: %d\n" % resp.status)
-            return None
+        #Primarily to decide whether to create a resource or a resource_type object
+        if not rtype:
+            rtype = resource.zen_type_path(rest_uri, doc)
+        if rtype == RESOURCE_TYPE_TYPE:
+            return resource_type(space, rest_uri, doc, original_base, wrapped_base, original_page, rtype=rtype)
+        return resource(space, rest_uri, doc, original_base, wrapped_base, original_page, rtype=rtype)
 
-        doc = bindery.parse(isrc)
-        #doc = bindery.parse(isrc, standalone=True, model=MOIN_DOCBOOK_MODEL)
-        original_base, wrapped_base, original_page = resp[ORIG_BASE_HEADER].split()
-        atype = resource_type.construct_id(doc, original_base, wrapped_base, rest_uri)
-        if logger: logger.debug('node.lookup akara type: ' + repr(atype))
-        #Older Moin CMS resource types are implemented by registration to the global node.NODES
-        #Newer Moin CMS resource types are implemented by discovery of a URL,
-        #to which a POST request executes the desired action
-        cls = node.NODES.get(atype, node)
-        instance = cls(doc, rest_uri, original_base, wrapped_base, akara_type=atype, resolver=resolver)
-        return instance
-        #return node.ENDPOINTS and (rest_uri, akara_type, node.ENDPOINTS[akara_type], doc, metadata, original_wiki_base)
+        #
+        #try:
+        #    self.type = self.space.resource(rtype)
+        #except (KeyboardInterrupt, SystemExit):
+        #    raise
+        #except Exception as e:
+            #If there is an error looking up the resource type, just leave off.  Some operations will then fail
+        #    if self.slave.logger: self.slave.logger.debug('Exception looking up resource type %s: %s'%(akara_type, repr(e)))
+        #    pass
+        #return
 
-    #FIXME: reconcile this with zen.py PUT handler
-    @staticmethod
-    def create(resource_type, body, ctype, opener=None, resolver=None):
-        '''
-        resource_type - type of the new resource to be created
-        body - input information or document required to construct the resource page, according to the rule sheet
-        '''
-        from akara import request
-        if not resolver:
-            resolver = moinrest_resolver(opener=opener)
-        resource_type = node.lookup(resource_type, resolver=resolver)
-        handler = resource_type.run_rulesheet(request.environ, 'POST', ctype)
-        url, wikified = handler(body)
-
-        H.force_exception_to_status_code = False # set this explicitly since H is shared
-        resp, content = H.request(url, "PUT", body=wikified, headers={'Content-Type' : 'text/plain'})
-
-        return
-    
-    def __init__(self, doc, rest_uri, original_base, wrapped_base, akara_type=None, resolver=None):
+    def __init__(self, space, rest_uri, doc, original_base, wrapped_base, original_page, rtype=None):
         '''
         rest_uri - the full URI to the Moin/REST wrapper for this page
         relative - the URI of this page relative to the Wiki base
         '''
         self.doc = doc
+        self.space = space
         self.rest_uri = rest_uri
         self.original_base = original_base
         self.wrapped_base = wrapped_base
-        self.resolver = resolver
         self.rulesheet = None
-        self.resource_type = None
-        if node.ENDPOINTS and akara_type in node.ENDPOINTS:
-            #Uses old-style Akara services registered to endpoints
-            self.endpoint = node.ENDPOINTS[akara_type]
+        
+        if isinstance(rtype, basestring) and rtype != RESOURCE_TYPE_TYPE:
+            self.type = space.resource_factory(rtype)
         else:
-            #Uses rulesheets
-            self.endpoint = None
-            #FIXME: Inelegant not to use polymorphism for the RESOURCE_TYPE_TYPE test
-            if akara_type and isinstance(akara_type, basestring) and akara_type != RESOURCE_TYPE_TYPE:
-                try:
-                    self.resource_type = node.lookup(akara_type, resolver=self.resolver)
-                except (KeyboardInterrupt, SystemExit):
-                    raise
-                except Exception as e:
-                    #If there is an error looking up the resource type, just leave off.  Some operations will then fail
-                    logger.debug('Exception looking up resource type %s: %s'%(akara_type, repr(e)))
-                    pass
+            self.type = rtype
         return
-
-    def load(self):
-        raise NotImplementedError
 
     #def render(self):
     #    raise NotImplementedError
 
-    def up_to_date(self, force_update=False):
-        '''
-        Checks whether there needs to be an update of the output
-        '''
-        #By default just always update
-        return False
+    @staticmethod
+    def zen_type_path(rest_uri, doc):
+        #TYPE_PATTERN = u'//*[@title="akara:metadata"]/gloss/label[.="akara:type"]/following-sibling::item[1]//@href'
+        #TYPE_PATTERN = u'//*[@title="akara:metadata"]/following-sibling::gloss/label[.="akara:type"]/following-sibling::item[1]//jump'
+        #type = U(doc.xml_select(u'//definition_list/item[term = "akara:type"]/defn'))
+        rtype = U(doc.xml_select(TYPE_PATTERN))
+        if logger: logger.debug('zen_type: ' + repr(rtype))
+        return rtype or None
 
-    def akara_type(self):
-        return resource_type.construct_id(self.doc, self.original_base, self.wrapped_base, self.rest_uri)
+    @staticmethod
+    def zen_type_id(rest_uri, doc, original_base, wrapped_base, original_page):
+        rtype = resource.zen_type_path(rest_uri, doc)
+        if not rtype: return None
+        wrapped_type, orig_type = wiki_uri(original_base, wrapped_base, rtype, rest_uri, raw=True)
+        if logger: logger.debug('resource_type.construct_id wiki_uri trace: ' + repr((wrapped_type, original_base, wrapped_base, rest_uri)))
+        return wrapped_type or rtype
 
     def section(self, title):
         '''
@@ -286,56 +250,70 @@ class node(object):
         return wrapped_link
 
 
-node.NODES[node.AKARA_TYPE] = node
+UNSPECIFIED = object()
 
-def parse_moin_xml(uri, H, resolver=None, environ={}):
-    #Stupid Moin XML export uses bogus nbsps, so this function encapsulates the kludge
+TYPE_PATTERN = u'//*[@title="akara:metadata"]/gloss/label[.="akara:type"]/following-sibling::item[1]//jump/@url'
+RULESHEET_LINK_PATTERN = u'//*[@title="akara:metadata"]/gloss/label[.="akara:rulesheet"]/following-sibling::item[1]//jump/@url'
+RULESHEET_ATT_PATTERN = u'//*[@title="akara:metadata"]/gloss/label[.="akara:rulesheet"]/following-sibling::item[1]//attachment/@href'
 
-    # Replaced urllib2 with httplib2 for the client cache, but we lose the custom
-    # opener.  Luckily this function just uses GET which shouldn't require
-    # Moin authentication most of the time.  FIXME
-    H.force_exception_to_status_code = True
-    headers={'Accept': XML_IMT}
-    if 'HTTP_CACHE_CONTROL' in environ:
-        # Propagate any cache-control request header received by Zen
-        headers['cache-control'] = environ['HTTP_CACHE_CONTROL']
+class resource_type(resource):
+    def get_rulesheet(self):
+        if self.rulesheet is None:
+            #req = urllib2.Request(self.akara_type(), headers={'Accept': XML_IMT})
+            #isrc = inputsource(req, resolver=self.resolver)
+            rulesheet_link = U(self.doc.xml_select(RULESHEET_LINK_PATTERN))
+            if rulesheet_link and not is_absolute(rulesheet_link):
+                wrapped, orig = wiki_uri(self.original_base, self.wrapped_base, rulesheet_link, self.rest_uri)
+                self.rulesheet = wrapped
+            elif rulesheet_link:
+                self.rulesheet = rulesheet_link
+            else:
+                rulesheet_att = U(self.doc.xml_select(RULESHEET_ATT_PATTERN))
+                if rulesheet_att:
+                    self.rulesheet = self.rest_uri + u';attachment=' + rulesheet_att
+                else:
+                    if logger: logger.debug("GRIPPO: " + repr((self.doc.xml_encode(),)))
+                    self.rulesheet = UNSPECIFIED
 
-    resp,body = H.request(uri,"GET",headers=headers)
-
-    if logger: logger.debug('parse_moin_xml (uri, fromcache): ' + repr((uri,resp.fromcache)))
-
-    #logger.debug("parse_moin_xml: (resp,body) = " + repr((resp,body[:500])))
-    if not str(resp.status).startswith('2'): return None, resp # fail gracefully if not found
-
-    return inputsource(body, resolver=resolver), resp
-    #return inputsource(body.replace('&nbsp;', '&#160;').replace('<p><p>', '<p></p>').replace('<p></s2>', '</s2>'), resolver=resolver), resp
+            if self.space: self.space.logger.debug('resource_type.get_rulesheet rest_uri, rulesheet: ' + repr((self.rest_uri, self.rulesheet)))
+        return self.rulesheet
+    
+    def run_rulesheet(self, environ, method='GET', accept='application/json'):
+        #FIXME: Deprecate
+        auth = extract_auth(environ)
+        return rulesheet(self.get_rulesheet(), self.space, auth).run(environ, method, accept)
 
 
 class rulesheet(object):
-    def __init__(self, source, rtype, resolver=None):
+    def __init__(self, source, space, auth):
         '''
         '''
         #rs = inputsource(source, resolver=resolver)
+        #self.token = rs.stream.readline().strip().lstrip('#')
         import cStringIO
-        resp, body = H.request(source)
+        h = httplib2.Http('/tmp/.cache')
+        if auth:
+            user, passwd = auth
+            h.add_credentials(user, passwd)
+        resp, body = h.request(source)
         stream = cStringIO.StringIO(body)
         self.token = stream.readline().strip().lstrip('#')
+
         #XXX In theory this is a microscopic security hole.  If someone could find a way
         #to open up an expliot by changing whitespace *in the middle of the line*
         #(wiki_normalize does not touch WS at the beginning of a line)
         #In practice, we accept this small risk
         self.body = wiki_normalize(stream.read())
-        self.rtype = rtype
+        self.space = space
         return
 
-    #
     def run(self, environ, method='GET', accept='application/json'):
         #e.g. you can sign a rulesheet as follows:
         #python -c "import sys, hashlib; print hashlib.sha1('MYSECRET' + sys.stdin.read()).hexdigest()" < rsheet.py 
         #Make sure the rulesheet has not already been signed (i.e. does not have a hash on the first line)
-        rheet_sig = hashlib.sha1(node.SECRET + self.body).hexdigest()
+        rheet_sig = hashlib.sha1(self.space.SECRET + self.body).hexdigest()
         if self.token != rheet_sig:
-            logger.debug("Computed signature: " + repr(rheet_sig))
+            if logger: logger.debug("Computed signature: " + repr(rheet_sig))
             raise RuntimeError('Security token verification failed')
         #chunks = []
         #U1 is just a smarter variant of the "Unicode, dammit!"
@@ -366,6 +344,9 @@ class rulesheet(object):
             return deco
 
         #env = {'write': write, 'resource': self, 'service': service, 'U': U1}
+        
+        #FIXME!
+        
         resource_getter = partial(node.lookup, resolver=self.rtype.resolver)
         env = {'service': service_proxy, 'U': U1, 'handles': handles, 'R': resource_getter,
                 'use': use, 'environ': environ, 'logger': logger, 'H': H}
@@ -388,52 +369,40 @@ class rulesheet(object):
         return matching_handler or default
 
 
-TYPE_PATTERN = u'//*[@title="akara:metadata"]/gloss/label[.="akara:type"]/following-sibling::item[1]//jump/@url'
-RULESHEET_LINK_PATTERN = u'//*[@title="akara:metadata"]/gloss/label[.="akara:rulesheet"]/following-sibling::item[1]//jump/@url'
-RULESHEET_ATT_PATTERN = u'//*[@title="akara:metadata"]/gloss/label[.="akara:rulesheet"]/following-sibling::item[1]//attachment/@href'
+import amara
+from amara import tree, bindery
+from amara.bindery import html
+from amara.lib.util import first_item
+from amara.lib import inputsource
+#from amara import inputsource as baseinputsource
+from amara.lib.irihelpers import resolver as baseresolver
+#from amara.namespaces import *
+#from amara.xslt import transform
+#from amara.writers.struct import *
+#from amara.bindery.html import parse as htmlparse
+from amara.lib import U
+from amara.lib.iri import split_uri_ref, split_fragment, relativize, absolutize, IriError, join, is_absolute
+#from amara.bindery.model import examplotron_model, generate_metadata, metadata_dict
+from amara.bindery.util import dispatcher, node_handler, property_sequence_getter
+
+from zenlib.services import zservice, service_proxy
+
+#Following is updated on each request, to avoid possible reentrancy problems:
+#H = httplib2.Http('/tmp/.cache')
+
+def cleanup_text_blocks(text):
+    return '\n'.join([line.strip() for line in text.splitlines() ])
 
 
-class resource_type(node):
-    @staticmethod
-    def construct_id(doc, original_base, wrapped_base, rest_uri):
-        #TYPE_PATTERN = u'//*[@title="akara:metadata"]/gloss/label[.="akara:type"]/following-sibling::item[1]//@href'
-        #TYPE_PATTERN = u'//*[@title="akara:metadata"]/following-sibling::gloss/label[.="akara:type"]/following-sibling::item[1]//jump'
-        #type = U(doc.xml_select(u'//definition_list/item[term = "akara:type"]/defn'))
-        type = U(doc.xml_select(TYPE_PATTERN))
-        if logger: logger.debug('resource_type.construct_id type: ' + repr(type))
-        if not type: return None
-        wrapped_type, orig_type = wiki_uri(original_base, wrapped_base, type, rest_uri, raw=True)
-        if logger: logger.debug('resource_type.construct_id wiki_uri trace: ' + repr((wrapped_type, orig_type, original_base, wrapped_base, rest_uri)))
-        return wrapped_type or type
-
-    def get_rulesheet(self):
-        if self.rulesheet is None:
-            #req = urllib2.Request(self.akara_type(), headers={'Accept': XML_IMT})
-            #isrc = inputsource(req, resolver=self.resolver)
-            isrc, resp = parse_moin_xml(self.rest_uri, H, resolver=self.resolver)
-            doc = bindery.parse(isrc)
-            rulesheet_link = U(doc.xml_select(RULESHEET_LINK_PATTERN))
-            if rulesheet_link and not is_absolute(rulesheet_link):
-                wrapped, orig = wiki_uri(self.original_base, self.wrapped_base, rulesheet_link, self.rest_uri)
-                self.rulesheet = wrapped
-            elif rulesheet_link:
-                self.rulesheet = rulesheet_link
-            else:
-                rulesheet_att = U(doc.xml_select(RULESHEET_ATT_PATTERN))
-                if rulesheet_att:
-                    self.rulesheet = self.rest_uri + u';attachment=' + rulesheet_att
-                else:
-                    self.rulesheet = UNSPECIFIED
-
-            if logger: logger.debug('resource_type.get_rulesheet rest_uri, rulesheet: ' + repr((self.rest_uri, self.rulesheet)))
-        return self.rulesheet
-    
-    def run_rulesheet(self, environ, method='GET', accept='application/json'):
-        #FIXME: Deprecate
-        return rulesheet(self.get_rulesheet(), self, resolver=self.resolver).run(environ, method, accept)
-
-
-node.NODES[RESOURCE_TYPE_TYPE] = resource_type
+def linkify(link, wikibase):
+    '''
+    Try to construct Moin-style link markup from a given link
+    '''
+    rel = relativize(link, wikibase)
+    if rel:
+        return u'[[%s]]'%rel
+    else:
+        return u'[[%s]]'%link
 
 
 from zenlib.services import SERVICES
@@ -726,4 +695,67 @@ def get_child_pages(node, limit=None):
     hrefs = list(hrefs); #logger.debug('get_child_pages HREFS1: ' + repr(hrefs))
     hrefs = [ wiki_uri(node.original_base, node.wrapped_base, navchild.xml_value, node.rest_uri, raw=True)[0] for navchild in hrefs ]
     return hrefs
+
+
+# -------------------------
+
+def zenuri_to_moinrest(environ, uri=None):
+    #self_end_point = environ['SCRIPT_NAME'].rstrip('/') #$ServerPath/zen
+    #self_end_point = request_uri(environ, include_query=False).rstrip('/')
+    #self_end_point = guess_self_uri(environ)
+    #absolutize(environ['SCRIPT_NAME'].rstrip('/'), request_uri(environ, include_query=False))
+    #logger.debug('moinrest_uri: ' + repr((self_end_point, MOINREST_SERVICE_ID)))
+    #logger.debug('zenuri_to_moinrest: ' + repr((moinresttop, environ['PATH_INFO'], environ['SCRIPT_NAME'])))
+    if uri:
+        if uri.startswith(MOINREST_BASEURI):
+        #if moinresttop.split('/')[-1] == environ['SCRIPT_NAME'].strip('/'):
+            #It is already a moin URL
+            return uri or request_uri(environ)
+        else:
+            raise NotImplementedError('For now a Zen uri is required')
+    else:
+        moinrest_uri = join(MOINREST_BASEURI, environ['PATH_INFO'].lstrip('/'))
+    #logger.debug('moinrest_uri: ' + repr(moinrest_uri))
+    #logger.debug('moinrest_uri: ' + repr(MOINREST_BASEURI))
+    return moinrest_uri
+
+
+class moinrest_resolver(baseresolver):
+    """
+    Resolver that uses a specialized URL opener
+    """
+    def __init__(self, authorizations=None, lenient=True, opener=None):
+        """
+        """
+        self.opener = opener or urllib2.build_opener()
+        self.last_lookup_headers = None
+        baseresolver.__init__(self, authorizations, lenient)
+
+    def resolve(self, uri, base=None):
+        if not isinstance(uri, urllib2.Request):
+            if base is not None:
+                uri = self.absolutize(uri, base)
+            req = urllib2.Request(uri)
+        else:
+            req, uri = uri, uri.get_full_url()
+        try:
+            #stream = self.opener(uri)
+            resp = self.opener.open(req)
+            stream = resp
+            self.last_lookup_headers = resp.info()
+        except IOError, e:
+            raise IriError(IriError.RESOURCE_ERROR,
+                               uri=uri, loc=uri, msg=str(e))
+        return stream
+
+
+#FIXME: consolidate URIs, opener, etc. into an InputSource derivative
+#class inputsource(baseinputsource):
+#    def __new__(cls, arg, uri=None, encoding=None, resolver=None, sourcetype=0, opener=None):
+#       isrc = baseinputsource.__new__(cls, arg, uri, encoding, resolver, sourcetype)
+#        isrc.opener = opener
+#        return isrc
+
+#    def __init__(self, arg, uri=None, encoding=None, resolver=None, sourcetype=0, opener=None):
+#        baseinputsource.__init__(cls, arg, uri, encoding, resolver, sourcetype)
 

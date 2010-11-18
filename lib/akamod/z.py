@@ -69,7 +69,7 @@ from amara.lib.util import first_item
 #from amara.namespaces import *
 
 from akara.registry import list_services, _current_registry
-from akara.util import copy_auth, extract_auth, read_http_body_to_temp, copy_headers_to_dict
+from akara.util import find_peer_service, extract_auth, read_http_body_to_temp, copy_headers_to_dict
 from akara.util import status_response
 from akara.util.moin import ORIG_BASE_HEADER, DOCBOOK_IMT, RDF_IMT, HTML_IMT, XML_IMT
 #from akara.services import simple_service
@@ -77,6 +77,9 @@ from akara.services import method_dispatcher
 from akara import request, logger, module_config
 from akara.registry import get_a_service_by_id
 from akara.opensearch import apply_template
+
+from zen.util import requested_imt
+from zen import ZEN_SERVICE_ID
 
 #import zenlib.moinmodel
 #from zenlib.moinmodel import node, rulesheet, moinrest_resolver, parse_moin_xml, zenuri_to_moinrest, MOINREST_SERVICE_ID
@@ -89,11 +92,13 @@ SPACES = {}
 UNSUPPORTED_IN_FILENAME = re.compile('\W')
 
 DEFAULT_MOUNT = 'zen'
-SERVICE_ID = 'http://purl.org/com/zepheira/zen/main'
+
 H = httplib2.Http('/tmp/.cache')
 
 FIRST_REQUEST_FLAG = False
 #def module_load():
+
+FIND_PEER_SERVICE_KEY = 'akara.FIND_PEER_SERVICE'
 
 def setup_request(environ):
     '''
@@ -104,6 +109,7 @@ def setup_request(environ):
         FIRST_REQUEST_FLAG = True
 
         #Set up spaces
+        environ[FIND_PEER_SERVICE_KEY] = find_peer_service
         for space in dir(SPACESDEF):
         #for space, slaveclass in SPACES.items():
             if not space.startswith('__'):
@@ -115,22 +121,16 @@ def setup_request(environ):
                     sclass, sparams = sinfo, None
                 head, tail = sclass.rsplit('.', 1)
                 module = __import__(head, {}, {}, [tail])
-                slaveinstance = getattr(module, tail)()
+                sclassobj = getattr(module, tail)
+                slaveinstance = sclassobj(environ)
                 s = get_a_service_by_id(slaveinstance.SERVICEID)
+                #Set up class/instance params based on live Akara environment
                 slaveinstance.service = s
-                SPACES[space] = s
-            #logger.debug('module: ' + repr(module))
-            #s = get_a_service_by_id(slaveinstance.SERVICEID)
-            #slaveinstance.service = s
-    #
-    #logger.debug('SPACES: ' + repr((SPACES)))
-    #baseurl = apply_template(s.template, **sparams)
-
-        #Use akara discovery, via find_peer_service, to get the full base URI for this very
-        #zen endpoint, and its moinrest peer
-        #zenlib.moinmodel.MOINREST_BASEURI = find_peer_service(environ, MOINREST_SERVICE_ID)
-        #zenlib.moinmodel.ZEN_BASEURI = find_peer_service(environ, SERVICE_ID)
-        #environ['SCRIPT_NAME'].rstrip('/') #$ServerPath/zen
+                slaveinstance.params = sparams
+                slaveinstance.space_tag = space
+                slaveinstance.logger = logger
+                slaveinstance.SECRET = SECRET
+                SPACES[space] = slaveinstance
     return
 
 
@@ -145,7 +145,7 @@ def setup_request(environ):
 # excessive duplication of error handling code.
 
 #@method_dispatcher(SERVICE_ID, DEFAULT_MOUNT, wsgi_wrapper=moin_error_wrapper)
-@method_dispatcher(SERVICE_ID, DEFAULT_MOUNT)
+@method_dispatcher(ZEN_SERVICE_ID, DEFAULT_MOUNT)
 def dispatcher():
     #__doc__ = SAMPLE_QUERIES_DOC
     return
@@ -156,79 +156,26 @@ def get_resource(environ, start_response):
     #FIXME: Needs update to forward cookies, i.e. headers to moinrest (see put_resource)
     #Set up to use HTTP auth for all wiki requests
     setup_request(environ)
-    space_tag = shift_path_info(environ)
+    #space_tag = shift_path_info(environ)
+    space_tag = environ['PATH_INFO'].lstrip('/').split('/', 1)[0]
 
     slaveinfo = SPACES[space_tag]
-    new_env = slaveinfo.transformenv(environ)
     
-    slave_status = None
-    slave_response_headers = None
-    slave_exc_info = None
-    def start_response_wrapper(status, response_headers, exc_info=None):
-        slave_status = status
-        slave_response_headers = response_headers
-        slave_exc_info = exc_info
-        def dummy_write(data):
-            raise RuntimeError('Does not support the deprectated write() callable in WSGI clients')
-        return dummy_write
-
-    response = slaveinfo.service(new_env, start_response_wrapper)
-    #logger.debug('After moin call: ' + repr(response)[:100] + repr())
-    logger.debug('After moin call: ' + repr(response)[:100] + repr(new_env['PATH_INFO']))
-
-    start_response(status_response(httplib.OK), headers)
-    #start_response(status_response(status), [("Content-Type", ctype), (moin.ORIG_BASE_HEADER, moin_base_info)])
+    #Forward the query to the slave, and get the result
+    #FIXME: Zen should do some processing in order to assess/override/suppress etc. the rulesheet
+    #Though this may be in the form of utility functions for the driver
+    rendered = slaveinfo.forward(environ, start_response)
+    #slaveinfo.forward should have called start_response already
     return rendered
 
-    #environ['PATH_INFO'].lstrip('/')
+    #qparams = cgi.parse_qs(environ['QUERY_STRING'])
+    #rulesheet_override = qparams.get('rulesheet')
 
-    baseuri = environ['SCRIPT_NAME'].rstrip('/') #$ServerPath/zen
-    handler = copy_auth(environ, baseuri)
-    opener = urllib2.build_opener(handler) if handler else urllib2.build_opener()
-    #Pass on the full moinrest and zen base URIs for the resources accessed on this request
-    environ['zen.RESOURCE_URI'] = join(zenlib.moinmodel.ZEN_BASEURI, environ['PATH_INFO'].lstrip('/').split('/')[0])
-    environ['moinrest.RESOURCE_URI'] = join(zenlib.moinmodel.MOINREST_BASEURI, environ['PATH_INFO'].lstrip('/').split('/')[0])
-
-    H = httplib2.Http('/tmp/.cache')
-    zenlib.moinmodel.H = H
-
-    resource = node.lookup(zenuri_to_moinrest(environ), opener=opener, environ=environ)
-    if not resource:
-        start_response(status_response(400),[('Content-Type','text/plain')])
-        return( "Unable to access resource\n" )
-
-    resolver = resource.resolver
-    
-    # Choose a preferred media type from the Accept header, using application/json as presumed
-    # default, and stripping out any wildcard types and type parameters
-    #
-    # FIXME Ideally, this should use the q values and pick the best media type, rather than
-    # just picking the first non-wildcard type.  Perhaps: http://code.google.com/p/mimeparse/
-    accepted_imts = []
-    accept_header = environ.get('HTTP_ACCEPT')
-    if accept_header :
-        accepted_imts = [ type.split(';')[0].strip() for type in accept_header.split(',') ]
-    accepted_imts.append('application/json')
-    logger.debug('accepted_imts: ' + repr(accepted_imts))
-    imt = first_item(dropwhile(lambda x: '*' in x, accepted_imts))
-
-    qparams = cgi.parse_qs(environ['QUERY_STRING'])
-    rulesheet_override = qparams.get('rulesheet')
-
-    if rulesheet_override:
-        handler = rulesheet(rulesheet_override[0], resource.resource_type, resolver=resolver).run(environ, 'GET', imt)
-    else:
-        handler = resource.resource_type.run_rulesheet(environ, 'GET', imt)
-    rendered = handler(resource)
-
-    headers = [("Content-Type", str(handler.imt)),
-               ("Vary", "Accept")]
-    if handler.ttl:
-        headers.append(("Cache-Control", "max-age="+str(handler.ttl)))
-
-    start_response(status_response(httplib.OK), headers)
+    #if rulesheet_override:
+    #    handler = rulesheet(rulesheet_override[0], resource.resource_type, resolver=resolver).run(environ, 'GET', imt)
+    #else:
+    #    handler = resource.resource_type.run_rulesheet(environ, 'GET', imt)
     #start_response(status_response(status), [("Content-Type", ctype), (moin.ORIG_BASE_HEADER, moin_base_info)])
-    return rendered
 
 
 @dispatcher.method("PUT")
@@ -304,7 +251,6 @@ def post_resource(environ, start_response):
 
     #Set up to use HTTP auth for all wiki requests
     baseuri = environ['SCRIPT_NAME'].rstrip('/') #'/zen' ; note: does not include $ServerPath
-    #logger.debug('STACEY: ' + repr((baseuri, )))
     handler = copy_auth(environ, baseuri)
     creds = extract_auth(environ)
     opener = urllib2.build_opener(handler) if handler else urllib2.build_opener()

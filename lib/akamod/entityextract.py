@@ -78,6 +78,7 @@ def yahoo_extract(body, ctype):
         H = httplib2.Http()
         resp, rbody = H.request(url) #headers={'Content-Type' : 'text/plain'})
         entities = []
+        value = []
         if resp['status'].startswith('200'):
             doc = parse(rbody)
             try:
