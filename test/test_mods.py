@@ -5,7 +5,7 @@ Tests MODS processing methods at low level, not through Akara
 import re
 import doctest
 
-from zenlib import mods
+from zen import mods
 
 
 def test_docstring():

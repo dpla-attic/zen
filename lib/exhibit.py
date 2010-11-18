@@ -1,4 +1,4 @@
-#zenlib.exhibit
+#zen.exhibit
 """
 For more on Exhibit JSON conventions see:
 
@@ -49,7 +49,7 @@ def prep(items, schema=None, strict=False):
 
     import string
     from amara.lib.util import mcompose, first_item
-    from zenlib import exhibit
+    from zen import exhibit
 
     PIPELINES = { u'atom:entry': {
         u"type": None,

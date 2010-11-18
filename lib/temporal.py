@@ -12,7 +12,7 @@
 
 import feedparser
 import datetime
-from zenlib import dateparser, iso8601
+from zen import dateparser, iso8601
 
 from amara.lib.date import timezone, UTC
 

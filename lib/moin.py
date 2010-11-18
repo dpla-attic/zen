@@ -385,7 +385,7 @@ from amara.lib.iri import split_uri_ref, split_fragment, relativize, absolutize,
 #from amara.bindery.model import examplotron_model, generate_metadata, metadata_dict
 from amara.bindery.util import dispatcher, node_handler, property_sequence_getter
 
-from zenlib.services import zservice, service_proxy
+from zen.services import zservice, service_proxy
 
 #Following is updated on each request, to avoid possible reentrancy problems:
 #H = httplib2.Http('/tmp/.cache')
@@ -405,7 +405,7 @@ def linkify(link, wikibase):
         return u'[[%s]]'%link
 
 
-from zenlib.services import SERVICES
+from zen.services import SERVICES
 
 def use(pymodule):
     '''
@@ -562,7 +562,7 @@ def curation_ingest_versions(rest_uri, user, H, auth_headers):
     return prior_rev, zen_rev, curated_rev
 
 
-from zenlib.services import register_service
+from zen.services import register_service
 
 #Services for processing Moin pages
 @zservice(u'http://purl.org/com/zepheira/zen/moinmodel/get-link-urls')
@@ -619,7 +619,7 @@ def handle_lone_para(node):
 def simple_struct(node):
     '''
     >>> from amara.bindery import parse
-    >>> from zenlib.moinmodel import simple_struct
+    >>> from zen.moin import simple_struct
     >>> X = '<s2 id="XYZ" title="XYZ"><p>Hello</p></s2>'
     >>> doc = parse(X)
     >>> simple_struct(doc)
@@ -677,7 +677,7 @@ def get_child_pages(node, limit=None):
     node - the node for the page to be processed
     limit - return no more than this many pages
     
-    >>> from zenlib.moinmodel import node, get_child_pages
+    >>> from zen.moin import node, get_child_pages
     >>> p = node.lookup(u'http://localhost:8880/moin/x/poetpaedia/poet')
     >>> print get_child_pages(p)
     [u'http://localhost:8880/moin/x/poetpaedia/poet/epound', u'http://localhost:8880/moin/x/poetpaedia/poet/splath']

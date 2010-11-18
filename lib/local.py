@@ -2,22 +2,22 @@
 The catalog of local services supplied with Zen
 '''
 
-from zenlib.services import register_service
+from zen.services import register_service
 
 #Local services
-from zenlib.geo import geolookup
+from zen.geo import geolookup
 
 geolookup.serviceid = u'http://purl.org/com/zepheira/geo/geolookup'
 
 register_service(geolookup)
 
-from zenlib.temporal import smart_parse_date
+from zen.temporal import smart_parse_date
 
 smart_parse_date.serviceid = u'http://purl.org/com/zepheira/zen/temporal/parse-date'
 
 register_service(smart_parse_date)
 
-from zenlib.exhibit import prep
+from zen.exhibit import prep
 
 prep.serviceid = u'http://purl.org/com/zepheira/zen/exhibit/prep'
 

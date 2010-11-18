@@ -1,8 +1,8 @@
 import re
 import doctest
 
-from zenlib import dateparser
-from zenlib.dateparser import regex_patterns, to_iso8601
+from zen import dateparser
+from zen.dateparser import regex_patterns, to_iso8601
 
 TEST_DATES = """
 # Lines starting 'ISO:' contain an ISO date.  The tester does a
@@ -205,7 +205,7 @@ def test_docstring():
     doctest.testmod(dateparser, verbose=True, raise_on_error=True)
 
 
-from zenlib.temporal import smart_parse_date
+from zen.temporal import smart_parse_date
 def test_rubbish_dates():
     smart_parse_date("1941504 ") #Should return None, but at one time would hang
     return

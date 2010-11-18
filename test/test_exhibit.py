@@ -6,7 +6,7 @@ from amara.lib.util import mcompose, first_item
 from amara.tools import atomtools
 from amara.test.xslt import filesource, stringsource
 
-from zenlib import exhibit
+from zen import exhibit
 
 ENTRY_PIPELINE = {
     u"type": None,

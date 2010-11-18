@@ -17,7 +17,7 @@ from amara.thirdparty import httplib2
 from amara.writers.struct import structwriter, structencoder, E, NS, ROOT, RAW, E_CURSOR
 from akara.util import header_credentials
 
-from zenlib.util import sign_rulesheet
+from zen.util import sign_rulesheet
 
 WIKITEXT_FNAME = "__pagetext__.txt"
 

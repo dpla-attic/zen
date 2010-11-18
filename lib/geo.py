@@ -9,7 +9,7 @@ from akara import logger
 from akara import request
 from akara.caching import cache
 
-from zenlib.util import find_peer_service
+from zen.util import find_peer_service
 
 GEOLOOKUP_URI = None
 

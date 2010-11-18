@@ -15,9 +15,9 @@ try:
 except ImportError:
     logger = None
 
-from zenlib import register_service, zservice
-from zenlib.temporal import smart_parse_date
-from zenlib.geo import geolookup
+from zen import register_service, zservice
+from zen.temporal import smart_parse_date
+from zen.geo import geolookup
 
 import time; from functools import partial; isobase = partial(time.strftime, "%Y-%m-%dT%H:%M:%S")
 
@@ -156,7 +156,7 @@ def augment_shredded_list(source, propertyinfo, augmented, failed):
     '''
     See: http://community.zepheira.com/wiki/loc/ValidPatternsList
 
-    >>> from zenlib import augmentation
+    >>> from zen import augmentation
     >>> source = [{u"id": u"_1", u"label": u"_1", u"orig": u"text, text, text"}]
     >>> propinfo = {u"delimiter": u",", u"extract": u"orig", u"property": u"shredded", u"enabled": True, u"label": "shredded result", u"tags": [u"property:type=text"]}
     >>> result = []
