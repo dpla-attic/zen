@@ -4,6 +4,7 @@ import hashlib
 from wsgiref.util import request_uri
 from amara.lib.util import first_item
 from amara.lib.iri import absolutize#, split_fragment, relativize, basejoin, join
+from itertools import dropwhile
 
 from akara.util.moin import wiki_normalize
 
