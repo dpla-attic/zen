@@ -87,8 +87,8 @@ class space(object):
         if handler.ttl:
             headers.append(("Cache-Control", "max-age="+str(handler.ttl)))
 
-        start_response(status_response(httplib.OK), self.slave_response_headers)
-        return response
+        start_response(status_response(httplib2.httplib.OK), self.slave_response_headers)
+        return rendered
 
     def start_response_wrapper(self, status, response_headers, exc_info=None):
         self.slave_status = status
