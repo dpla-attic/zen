@@ -4,6 +4,10 @@
 
 """
 
+#Other ideas: http://textalyser.net/
+# https://digitalresearchtools.pbworks.com/w/page/17801708/Text-Analysis-Tools
+# 
+
 import hashlib
 import datetime
 from gettext import gettext as _
@@ -35,6 +39,10 @@ RESOURCE_TYPE_TYPE = u'http://purl.org/xml3k/akara/cms/resource-type'
 class space(object):
     SERVICEID = 'http://purl.org/xml3k/akara/services/demo/moinrest'
     def __init__(self, initial_environ=None, **kwargs):
+        '''
+        initial_environ is the environment used from the first call to Zen for this space, which causes
+        this space to be set up
+        '''
         #Use akara discovery, via find_peer_service, to get the full base URI for this very
         #zen endpoint, and its moinrest peer
         #self.space_tag = kwargs['space_tag']
@@ -44,19 +52,20 @@ class space(object):
             self.ZEN_BASEURI = find_peer_service(initial_environ, ZEN_SERVICE_ID)
         return
 
-    def setupenv(self, environ):
-        self.environ = environ.copy()
-        self.environ['SCRIPT_NAME'] = environ['SCRIPT_NAME'].rsplit('/', 2)[0] + '/moin'
-        self.environ['zen.RESOURCE_URI'] = join(self.ZEN_BASEURI, environ['PATH_INFO'].lstrip('/').split('/')[0])
-        self.environ['moinrest.RESOURCE_URI'] = join(self.MOINREST_BASEURI, environ['PATH_INFO'].lstrip('/').split('/')[0])
-        self.environ['HTTP_ACCEPT'] = XML_IMT
-        return
-
     def forward(self, environ, start_response):
+        '''
+        Handle a forwarded call from Zen central, including the WSGI environ of the original invocation
+        '''
+        #Prepare the WSGI start_response function, which covers response headers and status
         self.slave_status = None
         self.slave_response_headers = None
         self.slave_exc_info = None
-        self.setupenv(environ)
+        self.environ = environ
+        self.h = httplib2.Http('/tmp/.cache')
+
+        #Set up utility environ variable for rulesheets
+        self.environ['zen.RESOURCE_URI'] = join(self.ZEN_BASEURI, environ['PATH_INFO'].lstrip('/').split('/')[0])
+        self.environ['moinrest.RESOURCE_URI'] = join(self.MOINREST_BASEURI, environ['PATH_INFO'].lstrip('/').split('/')[0])
 
         resource = self.resource_factory()
         #if logger: logger.debug('After moin call: ' + repr((response[:100], new_env['SCRIPT_NAME'], new_env['PATH_INFO'])))
@@ -87,21 +96,37 @@ class space(object):
         return dummy_write
 
     def resource_factory(self, path=None):
-        '''Look up and retrieve a new resource based on a uri path'''
         '''
-        rest_uri - URI of the moinrest-wrapped version of the page
-        opener - for specializing the HTTP request (e.g. to use auth)
+        Look up and retrieve a new resource based on WSGI environment or a uri path
         '''
+        #Set up the environment with which we'll invoke the slave service (moin)
         environ = self.environ.copy()
+
+        #We need to simulate a call to moinrest.  For example, an external caller to Akara invoking:
+        #http://localhost:8880/moin/mywiki/MyPage
+        #Gets forwarded eventually to the moinrest get_page function with:
+        #(environ['SCRIPT_NAME'], environ['PATH_INFO']) = ('/moin', '/mywiki/MyPage')
+
+        #Replace .../zen with .../moin
+        environ['SCRIPT_NAME'] = environ['SCRIPT_NAME'].rsplit('/', 2)[0] + '/moin' #Should result in e.g. '/moin/mywiki'
+
         if path:
             #Then assume relative path to top of wiki, and add the moinrest wiki ID bit
-            environ['PATH_INFO'] = '/' + self.space_tag + '/' + path.lstrip('/')
+            environ['PATH_INFO'] = '/' + self.space_tag + '/'+ path.lstrip('/') #e.g. '/MyPage'
+        #else:
+            #We're looking up the resource based on the WSGI environment of the original call to Zen
+        #    environ['PATH_INFO'] = '/' + environ['PATH_INFO'].lstrip('/').rsplit(self.space_tag, 1)[1].lstrip('/') #e.g. '/mywiki/MyPage' -> '/MyPage'
+
         if logger: logger.debug('resource_factory ' + repr((environ['SCRIPT_NAME'], environ['PATH_INFO'])))
+
+        #We handle XML fromt the wiki.  Requires the application_xml.py moin plugin that comes with Akara
+        environ['HTTP_ACCEPT'] = XML_IMT
+
         response = self.service.handler(environ, self.start_response_wrapper)
         slave_wrapper = get_slave_wrapper(self.service.handler, environ)
         response, ctype, clength = convert_body(response, slave_wrapper.content_type, slave_wrapper.encoding, slave_wrapper.writer)
         response = response[0]
-        #if logger: logger.debug('resp ' + repr((response[:100],)))
+        if logger: logger.debug('resp ' + repr((response[:100],)))
         if not self.slave_status.startswith('20'):
             if logger: logger.debug("Error looking up resource: %s\n" % self.slave_status)
             return None
@@ -345,11 +370,10 @@ class rulesheet(object):
 
         #env = {'write': write, 'resource': self, 'service': service, 'U': U1}
         
-        #FIXME!
-        
-        resource_getter = partial(node.lookup, resolver=self.rtype.resolver)
+        #resource_getter = partial(node.lookup, resolver=self.rtype.resolver)
+        resource_getter = self.space.resource_factory
         env = {'service': service_proxy, 'U': U1, 'handles': handles, 'R': resource_getter,
-                'use': use, 'environ': environ, 'logger': logger, 'H': H}
+                'use': use, 'environ': environ, 'logger': logger, 'H': self.space.h}
 
         #Execute the rule sheet
         exec self.body in env

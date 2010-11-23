@@ -24,6 +24,7 @@ from akara import logger
 import y_serial_v060 as y_serial
 
 CACHE_DIR = make_named_cache('akara.yahoo.extract')
+if not CACHE_DIR: CACHE_DIR = '/tmp'
 CACHE = y_serial.Main(os.path.join(CACHE_DIR, 'cache.sqlite'))
 
 def memoize(table):
