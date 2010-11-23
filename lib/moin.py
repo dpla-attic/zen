@@ -17,6 +17,9 @@ from itertools import islice, dropwhile
 
 from amara.thirdparty import json, httplib2
 
+from amara.lib import U
+from amara.lib.iri import split_uri_ref, split_fragment, relativize, absolutize, IriError, join, is_absolute
+
 from akara.util import status_response, requested_imt, header_credentials, extract_auth
 #from akara.util.moin import wiki_uri, wiki_normalize, WSGI_ORIG_BASE_HEADER, XML_IMT
 from akara.util.moin import wiki_uri, wiki_normalize, ORIG_BASE_HEADER, XML_IMT
@@ -152,6 +155,10 @@ class space(object):
 
 
 def get_slave_wrapper(handler, environ):
+    '''
+    Akara service handler functions can have a few structures, depending on how they are registered
+    This ensures we always get the lowest level WSGI handler function
+    '''
     if isinstance(handler, service_method_dispatcher):
         return handler.method_table.get(environ.get("REQUEST_METHOD"))
     else:
@@ -177,7 +184,8 @@ class resource(object):
         '''
         #Primarily to decide whether to create a resource or a resource_type object
         if not rtype:
-            rtype = resource.zen_type_path(rest_uri, doc)
+            (tid, tpath) = resource.zen_type(rest_uri, doc, original_base, wrapped_base, original_page)
+            rtype = tpath or tid
         if rtype == RESOURCE_TYPE_TYPE:
             return resource_type(space, rest_uri, doc, original_base, wrapped_base, original_page, rtype=rtype)
         return resource(space, rest_uri, doc, original_base, wrapped_base, original_page, rtype=rtype)
@@ -215,21 +223,23 @@ class resource(object):
     #    raise NotImplementedError
 
     @staticmethod
-    def zen_type_path(rest_uri, doc):
+    def zen_type(rest_uri, doc, original_base, wrapped_base, original_page):
+        '''
+        Computer a Zen type full moinrest uri as well as a path relative to top of the wiki instance
+        '''
         #TYPE_PATTERN = u'//*[@title="akara:metadata"]/gloss/label[.="akara:type"]/following-sibling::item[1]//@href'
         #TYPE_PATTERN = u'//*[@title="akara:metadata"]/following-sibling::gloss/label[.="akara:type"]/following-sibling::item[1]//jump'
         #type = U(doc.xml_select(u'//definition_list/item[term = "akara:type"]/defn'))
         rtype = U(doc.xml_select(TYPE_PATTERN))
-        if logger: logger.debug('zen_type: ' + repr(rtype))
-        return rtype or None
-
-    @staticmethod
-    def zen_type_id(rest_uri, doc, original_base, wrapped_base, original_page):
-        rtype = resource.zen_type_path(rest_uri, doc)
-        if not rtype: return None
+        if logger: logger.debug('zen_type link from XML: ' + repr(rtype))
+        if not rtype: return (None, None)
         wrapped_type, orig_type = wiki_uri(original_base, wrapped_base, rtype, rest_uri, raw=True)
         if logger: logger.debug('resource_type.construct_id wiki_uri trace: ' + repr((wrapped_type, original_base, wrapped_base, rest_uri)))
-        return wrapped_type or rtype
+        #wrapped_type == None means the XML link for some reason uses full absolute path, as we assume it's the moinrest path?
+        tid = wrapped_type or rtype
+        tpath = relativize(tid, wrapped_base.rstrip('/')+'/')
+        if logger: logger.debug('zen_type successful: ' + repr((tid, tpath)))
+        return (tid, tpath)
 
     def section(self, title):
         '''
@@ -404,8 +414,6 @@ from amara.lib.irihelpers import resolver as baseresolver
 #from amara.xslt import transform
 #from amara.writers.struct import *
 #from amara.bindery.html import parse as htmlparse
-from amara.lib import U
-from amara.lib.iri import split_uri_ref, split_fragment, relativize, absolutize, IriError, join, is_absolute
 #from amara.bindery.model import examplotron_model, generate_metadata, metadata_dict
 from amara.bindery.util import dispatcher, node_handler, property_sequence_getter
 
