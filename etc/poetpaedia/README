@@ -1,0 +1,15 @@
+Bootstrap example:
+
+Put your zen secret from akara.conf by itself into a file, e.g.:
+
+echo "abcdef" > ~/.config/zensecret
+
+wikibootstrap --zensecret=~/.config/zensecret --target=http://localhost:8880/moin/mywiki/poetpaedia etc/poetpaedia/bootstrap
+
+You should eyeball wiki recent changes to verify the new pages & attachments
+
+Then e.g.:
+
+curl http://localhost:8880/zen/mywiki/poetpaedia/poet/splath/
+
+

@@ -15,4 +15,4 @@ Known primarily for her poetry, Plath also wrote a semi-autobiographical novel [
 
 = akara:metadata =
 
- akara:type:: [[foo/poetpaedia/poet]]
+ akara:type:: [[poetpaedia/poet]]

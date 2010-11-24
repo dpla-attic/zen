@@ -8,6 +8,7 @@
 # https://digitalresearchtools.pbworks.com/w/page/17801708/Text-Analysis-Tools
 # 
 
+import cStringIO
 import hashlib
 import datetime
 from gettext import gettext as _
@@ -53,47 +54,37 @@ class space(object):
             find_peer_service = initial_environ[FIND_PEER_SERVICE_KEY]
             self.MOINREST_BASEURI = find_peer_service(initial_environ, MOINREST_SERVICE_ID)
             self.ZEN_BASEURI = find_peer_service(initial_environ, ZEN_SERVICE_ID)
+        self.environ = initial_environ
         return
 
-    def forward(self, environ, start_response):
+    def setup_request(self, environ):
         '''
-        Handle a forwarded call from Zen central, including the WSGI environ of the original invocation
+        Prepare to service a forwarded call from Zen central
+        environ - the WSGI environ of the original invocation
         '''
         #Prepare the WSGI start_response function, which covers response headers and status
-        self.slave_status = None
-        self.slave_response_headers = None
-        self.slave_exc_info = None
+        self.resp_status = None
+        self.resp_headers = None
+        self.exc_info = None
         self.environ = environ
+        #FIXME: Use akara to get the right cache location
         self.h = httplib2.Http('/tmp/.cache')
 
         #Set up utility environ variable for rulesheets
         self.environ['zen.RESOURCE_URI'] = join(self.ZEN_BASEURI, environ['PATH_INFO'].lstrip('/').split('/')[0])
         self.environ['moinrest.RESOURCE_URI'] = join(self.MOINREST_BASEURI, environ['PATH_INFO'].lstrip('/').split('/')[0])
 
-        resource = self.resource_factory()
+        #resource = self.resource_factory()
         #if logger: logger.debug('After moin call: ' + repr((response[:100], new_env['SCRIPT_NAME'], new_env['PATH_INFO'])))
-        if not self.slave_status.startswith('20'):
-            start_response(status_response(400), [('Content-Type','text/plain')])
-            return ["Unable to access resource\n"]
+        #if not self.slave_status.startswith('20'):
+        #    start_response(status_response(400), [('Content-Type','text/plain')])
+        #    return ["Unable to access resource\n"]
         #handler = resource.resource_type.run_rulesheet(environ, 'GET', imt)
 
-        imt = requested_imt(environ)
-
-        handler = resource.type.run_rulesheet(environ, 'GET', imt)
-        rendered = handler(resource)
-
-        headers = [("Content-Type", str(handler.imt)),
-                   ("Vary", "Accept")]
-        if handler.ttl:
-            headers.append(("Cache-Control", "max-age="+str(handler.ttl)))
-
-        start_response(status_response(httplib.OK), self.slave_response_headers)
-        return response
-
     def start_response_wrapper(self, status, response_headers, exc_info=None):
-        self.slave_status = status
-        self.slave_response_headers = response_headers
-        self.slave_exc_info = exc_info
+        self.resp_status = status
+        self.resp_headers = response_headers
+        self.exc_info = exc_info
         def dummy_write(data):
             raise RuntimeError('Does not support the deprectated write() callable in WSGI clients')
         return dummy_write
@@ -122,28 +113,73 @@ class space(object):
 
         if logger: logger.debug('resource_factory ' + repr((environ['SCRIPT_NAME'], environ['PATH_INFO'])))
 
-        #We handle XML fromt the wiki.  Requires the application_xml.py moin plugin that comes with Akara
+        #We handle XML from the wiki.  Requires the application_xml.py moin plugin that comes with Akara
         environ['HTTP_ACCEPT'] = XML_IMT
+        environ['REQUEST_METHOD'] = 'GET' #Force method to GET to retrieve a resource
 
         response = self.service.handler(environ, self.start_response_wrapper)
+
+        #Akara handler functions can return the body in a variety of formats.  This bit normalizes it to a Unicode object
         slave_wrapper = get_slave_wrapper(self.service.handler, environ)
         response, ctype, clength = convert_body(response, slave_wrapper.content_type, slave_wrapper.encoding, slave_wrapper.writer)
         response = response[0]
         if logger: logger.debug('resp ' + repr((response[:100],)))
-        if not self.slave_status.startswith('20'):
-            if logger: logger.debug("Error looking up resource: %s\n" % self.slave_status)
-            return None
+
+        if not self.resp_status.startswith('20'):
+            if logger: logger.debug("Error looking up resource: %s\n" % self.resp_status)
+            return None #No resource could be retrieved
 
         doc = bindery.parse(inputsource.text(response)) #, model=MOIN_XML_MODEL
         moinrest_header = None
-        for k, v in self.slave_response_headers:
+        for k, v in self.resp_headers:
             if k == ORIG_BASE_HEADER:
                 moinrest_header = v
-        #if logger: logger.debug('moinrest_header: ' + repr((moinrest_header,self.slave_response_headers)))
+        #if logger: logger.debug('moinrest_header: ' + repr((moinrest_header,self.resp_headers)))
         original_base, wrapped_base, original_page = moinrest_header.split()
         rest_uri = join(wrapped_base, environ['PATH_INFO'].lstrip('/'))
 
         return resource.factory(self, rest_uri, doc, original_base, wrapped_base, original_page)
+
+    def update_resource(self, path=None):
+        '''
+        Look up and retrieve a new resource based on WSGI environment or a uri path
+        '''
+        #Set up the environment with which we'll invoke the slave service (moin)
+        environ = self.environ.copy()
+
+        #We need to simulate a call to moinrest.  For example, an external caller to Akara invoking:
+        #http://localhost:8880/moin/mywiki/MyPage
+        #Gets forwarded eventually to the moinrest get_page function with:
+        #(environ['SCRIPT_NAME'], environ['PATH_INFO']) = ('/moin', '/mywiki/MyPage')
+
+        #Replace .../zen with .../moin
+        environ['SCRIPT_NAME'] = environ['SCRIPT_NAME'].rsplit('/', 2)[0] + '/moin' #Should result in e.g. '/moin/mywiki'
+
+        if path:
+            #Then assume relative path to top of wiki, and add the moinrest wiki ID bit
+            environ['PATH_INFO'] = '/' + self.space_tag + '/'+ path.lstrip('/') #e.g. '/MyPage'
+        #else:
+            #We're looking up the resource based on the WSGI environment of the original call to Zen
+        #    environ['PATH_INFO'] = '/' + environ['PATH_INFO'].lstrip('/').rsplit(self.space_tag, 1)[1].lstrip('/') #e.g. '/mywiki/MyPage' -> '/MyPage'
+
+        if logger: logger.debug('resource_factory ' + repr((environ['SCRIPT_NAME'], environ['PATH_INFO'])))
+
+        environ['REQUEST_METHOD'] = 'PUT' #Force method to GET to retrieve a resource
+
+        response = self.service.handler(environ, self.start_response_wrapper)
+
+        #Akara handler functions can return the body in a variety of formats.  This bit normalizes it to a Unicode object
+        slave_wrapper = get_slave_wrapper(self.service.handler, environ)
+        response, ctype, clength = convert_body(response, slave_wrapper.content_type, slave_wrapper.encoding, slave_wrapper.writer)
+        response = response[0]
+        if logger: logger.debug('resp ' + repr((response[:100],)))
+
+        if not self.resp_status.startswith('20'):
+            if logger: logger.debug("Error updating resource: %s\n" % self.resp_status)
+            return None
+
+        return response
+
 
     #def parse_moin(new_env):
     #    '''Look up and retrieve a new resource based on '''
@@ -152,6 +188,8 @@ class space(object):
         #if 'HTTP_CACHE_CONTROL' in environ:
         #    # Propagate any cache-control request header received by Zen
         #    headers['cache-control'] = environ['HTTP_CACHE_CONTROL']
+
+    #logger.debug('put_resource wikified result: ' + repr((wikified,)))
 
 
 def get_slave_wrapper(handler, environ):
@@ -238,7 +276,7 @@ class resource(object):
         #wrapped_type == None means the XML link for some reason uses full absolute path, as we assume it's the moinrest path?
         tid = wrapped_type or rtype
         tpath = relativize(tid, wrapped_base.rstrip('/')+'/')
-        if logger: logger.debug('zen_type successful: ' + repr((tid, tpath)))
+        if logger: logger.debug('Retrieved zen_type: ' + repr((tid, tpath)))
         return (tid, tpath)
 
     def section(self, title):
@@ -325,7 +363,6 @@ class rulesheet(object):
         '''
         #rs = inputsource(source, resolver=resolver)
         #self.token = rs.stream.readline().strip().lstrip('#')
-        import cStringIO
         h = httplib2.Http('/tmp/.cache')
         if auth:
             user, passwd = auth

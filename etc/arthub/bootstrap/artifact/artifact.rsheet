@@ -11,6 +11,7 @@ obj_urls = service(u'http://purl.org/com/zepheira/zen/moinmodel/get-obj-urls')
 def objectify(resource):
     #Data extraction
     meta = resource.definition_section(u'artifact:metadata')
+    image = resource.section(u'artifact:full-image')
 
     #Output
     obj = {
@@ -19,7 +20,7 @@ def objectify(resource):
       u'date': U(parsedate(U(meta[u'Date']))),
       u'creator': U(meta[u'Creator']),
       u'thimage': obj_urls(meta[u'Thumbnail image']),
-      u'images': obj_urls(meta[u'Full image']),
+      u'image': obj_urls(image),
     }
     return obj
 

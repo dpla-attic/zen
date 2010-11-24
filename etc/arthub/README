@@ -1,5 +1,25 @@
 See: http://community.zepheira.com/wiki/development/UcheOgbuji/Zen/Arthub_demo
 
+Bootstrap example:
+
+Put your zen secret from akara.conf by itself into a file, e.g.:
+
+echo "abcdef" > ~/.config/zensecret
+
+wikibootstrap --zensecret=~/.config/zensecret --target=http://localhost:8880/moin/mywiki/arthub etc/arthub/bootstrap
+
+You should eyeball wiki recent changes to verify the new pages & attachments
+
+Then try to add an artifact:
+
+curl --request PUT --data-binary "@-" "http://localhost:8880/zen/mywiki/arthub/artifact/whitney2-3?type=arthub/artifact" < etc/arthub/whitney2-3.js
+
+Then retrieve it e.g.:
+
+curl http://localhost:8880/zen/mywiki/arthub/artifact/whitney2-3
+
+----
+
 Current location: http://potlach.org/2008/02/whitney/
 
 Data:

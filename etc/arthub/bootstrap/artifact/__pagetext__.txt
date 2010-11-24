@@ -9,5 +9,5 @@ An artifact managed in ArtHub
 = akara:metadata =
 
  akara:type:: http://purl.org/xml3k/akara/cms/resource-type
- akara:rulesheet:: [[artifact.rsheet]]
+ akara:rulesheet:: [[attachment:artifact.rsheet|Rulesheet for artifact resources|&do=get]]
 

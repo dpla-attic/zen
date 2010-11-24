@@ -56,6 +56,7 @@ import re
 import cgi
 import pprint
 import httplib
+import cStringIO
 import urllib, urllib2
 from wsgiref.util import shift_path_info, request_uri
 from itertools import dropwhile
@@ -113,7 +114,7 @@ def setup_request(environ):
         for space in dir(SPACESDEF):
         #for space, slaveclass in SPACES.items():
             if not space.startswith('__'):
-                logger.debug('spaces: ' + repr(space))
+                #logger.debug('spaces: ' + repr(space))
                 sinfo = getattr(SPACESDEF, space)()
                 if isinstance(sinfo, tuple):
                     sclass, sparams = sinfo
@@ -131,7 +132,11 @@ def setup_request(environ):
                 slaveinstance.logger = logger
                 slaveinstance.SECRET = SECRET
                 SPACES[space] = slaveinstance
-    return
+
+    space_tag = environ['PATH_INFO'].lstrip('/').split('/', 1)[0]
+    slaveinstance = SPACES[space_tag]
+    slaveinstance.setup_request(environ)
+    return slaveinstance, space_tag
 
 
 # ----------------------------------------------------------------------
@@ -153,19 +158,29 @@ def dispatcher():
 
 @dispatcher.method("GET")
 def get_resource(environ, start_response):
-    #FIXME: Needs update to forward cookies, i.e. headers to moinrest (see put_resource)
-    #Set up to use HTTP auth for all wiki requests
-    setup_request(environ)
+    slaveinfo, space_tag = setup_request(environ)
     #space_tag = shift_path_info(environ)
-    space_tag = environ['PATH_INFO'].lstrip('/').split('/', 1)[0]
-
-    slaveinfo = SPACES[space_tag]
     
     #Forward the query to the slave, and get the result
     #FIXME: Zen should do some processing in order to assess/override/suppress etc. the rulesheet
     #Though this may be in the form of utility functions for the driver
-    rendered = slaveinfo.forward(environ, start_response)
-    #slaveinfo.forward should have called start_response already
+    resource = slaveinfo.resource_factory()
+    
+    if resource is None:
+        start_response(status_response(slaveinfo.resp_status), slaveinfo.resp_headers)
+        return ["Unable to access resource\n"]
+
+    imt = requested_imt(environ)
+
+    handler = resource.type.run_rulesheet(environ, 'GET', imt)
+    rendered = handler(resource)
+
+    headers = [("Content-Type", str(handler.imt)),
+               ("Vary", "Accept")]
+    if handler.ttl:
+        headers.append(("Cache-Control", "max-age="+str(handler.ttl)))
+
+    start_response(status_response(httplib.OK), headers)
     return rendered
 
     #qparams = cgi.parse_qs(environ['QUERY_STRING'])
@@ -180,21 +195,7 @@ def get_resource(environ, start_response):
 
 @dispatcher.method("PUT")
 def put_resource(environ, start_response):
-    setup_request(environ)
-    # Keep inbound headers so we can forward to moinrest
-    req_headers = copy_headers_to_dict(environ)
-
-    #Set up to use HTTP auth for all wiki requests
-    baseuri = environ['SCRIPT_NAME'].rstrip('/') #$ServerPath/zen
-    handler = copy_auth(environ, baseuri)
-    creds = extract_auth(environ)
-    opener = urllib2.build_opener(handler) if handler else urllib2.build_opener()
-    #Pass on the full moinrest and zen base URIs for the resources accessed on this request
-    environ['zen.RESOURCE_URI'] = join(zenlib.moinmodel.ZEN_BASEURI, environ['PATH_INFO'].lstrip('/').split('/')[0])
-    environ['moinrest.RESOURCE_URI'] = join(zenlib.moinmodel.MOINREST_BASEURI, environ['PATH_INFO'].lstrip('/').split('/')[0])
-
-    H = httplib2.Http('/tmp/.cache')
-    zenlib.moinmodel.H = H
+    slaveinfo, space_tag = setup_request(environ)
 
     #import pprint; logger.debug('put_resource input environ: ' + repr(pprint.pformat(environ)))
     imt = environ['CONTENT_TYPE']
@@ -205,39 +206,54 @@ def put_resource(environ, start_response):
         start_response(status_response(status), [("Content-Type", 'text/plain')])
         return 'type URL parameter required\n'
 
+    #We got what we wanted from qparams.  Now strip them
+    environ['QUERY_STRING'] = ''
+
     rtype = rtype[0]
-    if not is_absolute(rtype):
-        moinresttop = find_peer_service(environ, MOINREST_SERVICE_ID)
-        rtype = join(moinresttop, environ['PATH_INFO'].lstrip('/').split('/')[0], rtype)
-    resource_type = node.lookup(rtype, opener=opener, environ=environ)
+    #if not is_absolute(rtype):
+    #    moinresttop = find_peer_service(environ, MOINREST_SERVICE_ID)
+    #    rtype = join(moinresttop, environ['PATH_INFO'].lstrip('/').split('/')[0], rtype)
+    resource_type = slaveinfo.resource_factory(rtype)
     
+    if resource_type is None:
+        start_response(status_response(slaveinfo.resp_status), slaveinfo.resp_headers)
+        return ["Unable to access resource type\n"]
+
     temp_fpath = read_http_body_to_temp(environ, start_response)
     body = open(temp_fpath, "r").read()
 
     handler = resource_type.run_rulesheet(environ, 'PUT', imt)
-    wikified = handler(resource_type, body)
-    #logger.debug('put_resource wikified result: ' + repr((wikified,)))
+    #Comes back as Unicode, but we need to feed it to wiki as encoded byte string
+    content = handler(resource_type, body).encode('utf-8')
 
-    # This was originally always returning 200 even if moinrest failed, so an improvement
-    # would be to return the moinrest response as the Zen response.  FIXME Even better would
-    # be to decide exactly what this relationship should look like, e.g. how redirects
-    # or auth responses are managed, if any content needs URL-rewriting, how other response or
-    # entity headers are handled, etc..., plus general be-a-good-proxy behaviour
-    #
-    # This httplib2 feature permits a single code path for proxying responses
-    H.force_exception_to_status_code = True
+    logger.debug('post-rulesheet content: ' + repr(content[:100]))
 
-    headers = req_headers
-    headers['Content-Type'] = 'text/plain'
+    environ['wsgi.input'] = cStringIO.StringIO(content)
 
-    if creds:
-        user, passwd = creds
-        H.add_credentials(user, passwd)
+    response = slaveinfo.update_resource()
+
+    #headers = req_headers
+    #headers['Content-Type'] = 'text/plain'
+
+    #if creds:
+    #    user, passwd = creds
+    #    H.add_credentials(user, passwd)
     
-    resp, content = H.request(zenuri_to_moinrest(environ), "PUT", body=wikified.encode('UTF-8'), headers=headers)
+    #resp, content = H.request(zenuri_to_moinrest(environ), "PUT", body=wikified.encode('UTF-8'), headers=headers)
 
-    start_response(status_response(resp.status), [("Content-Type", resp['content-type'])])
-    return content
+    #start_response(status_response(slave_resp_status), [("Content-Type", resp['content-type'])])
+    start_response(slaveinfo.resp_status, slaveinfo.resp_headers)
+    return response
+
+#Older comment from when we forwarded requests via HTTP rather than by proxy via WSGI
+## This was originally always returning 200 even if moinrest failed, so an improvement
+## would be to return the moinrest response as the Zen response.  FIXME Even better would
+## be to decide exactly what this relationship should look like, e.g. how redirects
+## or auth responses are managed, if any content needs URL-rewriting, how other response or
+## entity headers are handled, etc..., plus general be-a-good-proxy behaviour
+##
+## This httplib2 feature permits a single code path for proxying responses
+#H.force_exception_to_status_code = True
 
 
 @dispatcher.method("POST")

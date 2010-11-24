@@ -15,4 +15,4 @@ He was an American expatriate poet, critic and intellectual who was a major figu
 
 = akara:metadata =
 
- akara:type:: [[foo/poetpaedia/poet]]
+ akara:type:: [[poetpaedia/poet]]

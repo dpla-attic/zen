@@ -1,3 +1,4 @@
+from string import Template
 from amara.thirdparty import json
 
 #Declare transform services
@@ -24,7 +25,7 @@ def objectify(resource):
     return obj
 
 #Used to serve normal HTTP GET requests for the default representation of this resource
-@handles('GET')
+@handles('GET', ttl=86400)
 def get_poet(resource):
     return json.dumps(objectify(resource), indent=4)
 
@@ -32,4 +33,22 @@ def get_poet(resource):
 @handles('collect', 'raw/pydict')
 def collect_poets(resources):
     return json.dumps([objectify(resource) for resource in resources], indent=4)
+
+#Used to process HTTP PUT requests to update this resource
+@handles('PUT')
+def put_poet(resource_type, body):
+    data = json.loads(body)
+    items = u'\n'.join([ u' * ' + linkify(item, resource_type.wrapped_base) for item in data[u'items'] ])
+    return COLLECTION_PAGE_TEMPLATE.substitute(locals())
+
+
+COLLECTION_PAGE_TEMPLATE = Template(u'''\
+= collection:items =
+
+$items
+
+= akara:metadata =
+
+ akara:type:: [[poetpaedia/collection]]
+''')
 

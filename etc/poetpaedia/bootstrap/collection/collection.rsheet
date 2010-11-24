@@ -1,9 +1,8 @@
 from string import Template
 from amara.thirdparty import json
-from zenlib.moinmodel import linkify
+from zen.moin import linkify
 
 #Declare transform services
-strip = service(u'http://purl.org/xml3k/akara/builtins/string/strip')
 parsedate = service(u'http://purl.org/com/zepheira/zen/temporal/parse-date')
 
 #Used to serve requests for a raw Python dictionary
@@ -12,7 +11,7 @@ def objectify(resource):
     #Metadata
     info = resource.definition_section(u'collection:metadata')
     metadata = {
-        u'name': strip(U(info[u'collection:name'])),
+        u'name': U(info[u'collection:name']).strip(),
         u'description': U(resource.section(u'collection:description')),
         #u'last-modified': U(parsedate(U(bio[u'collection:last-modified']))),
     }
