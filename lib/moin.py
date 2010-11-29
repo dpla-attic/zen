@@ -89,11 +89,10 @@ class space(object):
             raise RuntimeError('Does not support the deprectated write() callable in WSGI clients')
         return dummy_write
 
-    def resource_factory(self, path=None):
+    def prepare_environ(self, path=None):
         '''
-        Look up and retrieve a new resource based on WSGI environment or a uri path
+        Set up the environment with which we'll invoke the slave service (moin)
         '''
-        #Set up the environment with which we'll invoke the slave service (moin)
         environ = self.environ.copy()
 
         #We need to simulate a call to moinrest.  For example, an external caller to Akara invoking:
@@ -111,8 +110,14 @@ class space(object):
             #We're looking up the resource based on the WSGI environment of the original call to Zen
         #    environ['PATH_INFO'] = '/' + environ['PATH_INFO'].lstrip('/').rsplit(self.space_tag, 1)[1].lstrip('/') #e.g. '/mywiki/MyPage' -> '/MyPage'
 
-        if logger: logger.debug('resource_factory ' + repr((environ['SCRIPT_NAME'], environ['PATH_INFO'])))
+        if logger: logger.debug('URI path info for WSGI slave invokation ' + repr((environ['SCRIPT_NAME'], environ['PATH_INFO'])))
+        return environ
 
+    def resource_factory(self, path=None):
+        '''
+        Look up and retrieve a new resource based on WSGI environment or a uri path
+        '''
+        environ = self.prepare_environ(path)
         #We handle XML from the wiki.  Requires the application_xml.py moin plugin that comes with Akara
         environ['HTTP_ACCEPT'] = XML_IMT
         environ['REQUEST_METHOD'] = 'GET' #Force method to GET to retrieve a resource
@@ -142,29 +147,11 @@ class space(object):
 
     def update_resource(self, path=None):
         '''
-        Look up and retrieve a new resource based on WSGI environment or a uri path
+        Update a resource based on WSGI environment or a uri path
         '''
-        #Set up the environment with which we'll invoke the slave service (moin)
-        environ = self.environ.copy()
+        environ = self.prepare_environ(path)
 
-        #We need to simulate a call to moinrest.  For example, an external caller to Akara invoking:
-        #http://localhost:8880/moin/mywiki/MyPage
-        #Gets forwarded eventually to the moinrest get_page function with:
-        #(environ['SCRIPT_NAME'], environ['PATH_INFO']) = ('/moin', '/mywiki/MyPage')
-
-        #Replace .../zen with .../moin
-        environ['SCRIPT_NAME'] = environ['SCRIPT_NAME'].rsplit('/', 2)[0] + '/moin' #Should result in e.g. '/moin/mywiki'
-
-        if path:
-            #Then assume relative path to top of wiki, and add the moinrest wiki ID bit
-            environ['PATH_INFO'] = '/' + self.space_tag + '/'+ path.lstrip('/') #e.g. '/MyPage'
-        #else:
-            #We're looking up the resource based on the WSGI environment of the original call to Zen
-        #    environ['PATH_INFO'] = '/' + environ['PATH_INFO'].lstrip('/').rsplit(self.space_tag, 1)[1].lstrip('/') #e.g. '/mywiki/MyPage' -> '/MyPage'
-
-        if logger: logger.debug('resource_factory ' + repr((environ['SCRIPT_NAME'], environ['PATH_INFO'])))
-
-        environ['REQUEST_METHOD'] = 'PUT' #Force method to GET to retrieve a resource
+        environ['REQUEST_METHOD'] = 'PUT' #Force method to PUT to create or update a wiki page via moinrest
 
         response = self.service.handler(environ, self.start_response_wrapper)
 
@@ -176,7 +163,30 @@ class space(object):
 
         if not self.resp_status.startswith('20'):
             if logger: logger.debug("Error updating resource: %s\n" % self.resp_status)
-            return None
+
+        return response
+        
+    #For moinrest create & update happen to be the same back end mechanism
+    create_resource = update_resource
+
+    def delete_resource(self, path=None):
+        '''
+        Delete a resource based on WSGI environment or a uri path
+        '''
+        environ = self.prepare_environ(path)
+
+        environ['REQUEST_METHOD'] = 'DELETE' #Force method to DELETE a wiki page via moinrest
+
+        response = self.service.handler(environ, self.start_response_wrapper)
+
+        #Akara handler functions can return the body in a variety of formats.  This bit normalizes it to a Unicode object
+        slave_wrapper = get_slave_wrapper(self.service.handler, environ)
+        response, ctype, clength = convert_body(response, slave_wrapper.content_type, slave_wrapper.encoding, slave_wrapper.writer)
+        response = response[0]
+        if logger: logger.debug('resp ' + repr((response[:100],)))
+
+        if not self.resp_status.startswith('20'):
+            if logger: logger.debug("Error deleting resource: %s\n" % self.resp_status)
 
         return response
 
@@ -190,6 +200,9 @@ class space(object):
         #    headers['cache-control'] = environ['HTTP_CACHE_CONTROL']
 
     #logger.debug('put_resource wikified result: ' + repr((wikified,)))
+
+    #req_headers = copy_headers_to_dict(environ)
+    # Keep inbound headers so we can forward to moinrest
 
 
 def get_slave_wrapper(handler, environ):
@@ -250,7 +263,9 @@ class resource(object):
         self.original_base = original_base
         self.wrapped_base = wrapped_base
         self.rulesheet = None
-        
+        self.wiki_path = relativize(rest_uri, wrapped_base)
+        logger.debug('resource wiki path: ' + repr((self.wiki_path,)))
+
         if isinstance(rtype, basestring) and rtype != RESOURCE_TYPE_TYPE:
             self.type = space.resource_factory(rtype)
         else:

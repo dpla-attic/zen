@@ -1,3 +1,4 @@
+import time
 from string import Template
 from amara.thirdparty import json
 
@@ -33,6 +34,14 @@ def get_artifact(resource):
 @handles('collect', 'raw/pydict')
 def collect_artifacts(resources):
     return json.dumps([objectify(resource) for resource in resources], indent=4)
+
+#Used to process HTTP POST requests to create a new resource of this type
+@handles('POST')
+def post_artifact(resource_type, body):
+    data = json.loads(body)
+    slug = str(time.time()) #Use the timestamp for a super dumb slug
+    newuri = '/'.join((resource_type.wiki_path, slug))
+    return newuri, ARTIFACT_PAGE_TEMPLATE.substitute(data)
 
 #Used to process HTTP PUT requests to update this resource
 @handles('PUT')
