@@ -21,6 +21,8 @@ from akara.services import simple_service
 from akara.caching import cache, make_named_cache
 from akara import logger
 
+from zen.services import zservice
+
 import y_serial_v060 as y_serial
 
 CACHE_DIR = make_named_cache('akara.yahoo.extract')
@@ -56,7 +58,8 @@ def memoize(table):
 
 SERVICE_ID = 'http://purl.org/akara/services/demo/yahoo.extract.json'
 @simple_service('POST', SERVICE_ID, 'akara.yahoo.extract', 'application/json')
-def yahoo_extract(body, ctype):
+@zservice(SERVICE_ID)
+def yahoo_extract(body, ctype=None):
     '''
     See:
     http://developer.yahoo.com/search/content/V1/termExtraction.html
