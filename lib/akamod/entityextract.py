@@ -47,7 +47,7 @@ def memoize(table):
             except Exception as e:
                 logger.debug('Exception computing from key %s: %s'%(key, repr(e)))
                 logger.debug('Will not be cached')
-                #raise
+                raise
             else:
                 #Only cache if function raised no exceptions
                 CACHE.insert(value, key, table)
