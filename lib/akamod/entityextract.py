@@ -47,7 +47,7 @@ def memoize(table):
             except Exception as e:
                 logger.debug('Exception computing from key %s: %s'%(key, repr(e)))
                 logger.debug('Will not be cached')
-                raise
+                #raise
             else:
                 #Only cache if function raised no exceptions
                 CACHE.insert(value, key, table)
@@ -75,12 +75,12 @@ def yahoo_extract(body, ctype=None):
 
     @memoize('yahoo')
     def execute_query(key):
-        yql = u'select * from search.termextract where context="%s"'%body.replace(u'""', u'')
-        query = urllib.urlencode({'q' : yql})
-        url = 'http://query.yahooapis.com/v1/public/yql?' + query
+        yql = u'select * from search.termextract where context="%s"'%body.replace(u'""', u'').replace(u'"',u'\\"')
+        query = urllib.quote(yql,safe='*"')
+        url = 'http://query.yahooapis.com/v1/public/yql?q=' + query
 
         H = httplib2.Http()
-        resp, rbody = H.request(url) #headers={'Content-Type' : 'text/plain'})
+        resp, rbody = H.request(url)
         entities = []
         value = []
         if resp['status'].startswith('200'):
