@@ -1,0 +1,47 @@
+import time
+from amara.thirdparty import json
+
+#Declare transform services
+parsedate = service(u'http://purl.org/com/zepheira/zen/temporal/parse-date')
+obj_urls = service(u'http://purl.org/com/zepheira/zen/moinmodel/get-obj-urls')
+
+#Used to serve requests for a raw Python dictionary
+@handles('GET', 'raw/pydict')
+def objectify(resource):
+    #Data extraction
+    meta = resource.data[u'zen:metadata']
+    link = resource.data[u'feed:source']
+    #image = resource.section(u'artifact:full-image')
+
+    #Output
+    obj = {
+      u'id': resource.slave_uri,
+      #u'medium': U(meta[u'Medium']).strip(),
+    }
+    return obj
+
+#Used to serve normal HTTP GET requests for the default representation of this resource
+@handles('GET')
+def get_artifact(resource):
+    return json.dumps(objectify(resource), indent=4)
+
+#Used to serve requests for a collection of resources, in raw form
+@handles('collect', 'raw/pydict')
+def collect_artifacts(resources):
+    return json.dumps([objectify(resource) for resource in resources], indent=4)
+
+#Used to process HTTP POST requests to create a new resource of this type
+@handles('POST')
+def post_artifact(resource_type, body):
+    data = json.loads(body)
+    slug = str(time.time()) #Use the timestamp for a super dumb slug
+    newuri = '/'.join((resource_type.wiki_path, slug))
+    return newuri, ARTIFACT_PAGE_TEMPLATE.substitute(data)
+
+#Used to process HTTP PUT requests to update this resource
+@handles('PUT')
+def put_artifact(resource_type, body):
+    data = json.loads(body)
+    #e.g. "id" : "http://potlach.org/2008/02/whitart/whitart/7"
+    return ARTIFACT_PAGE_TEMPLATE.substitute(data)
+

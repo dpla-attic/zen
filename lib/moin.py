@@ -25,6 +25,7 @@ from akara.util import status_response, requested_imt, header_credentials, extra
 #from akara.util.moin import wiki_uri, wiki_normalize, WSGI_ORIG_BASE_HEADER, XML_IMT
 from akara.util.moin import wiki_uri, wiki_normalize, ORIG_BASE_HEADER, XML_IMT
 from akara.services import convert_body, service_method_dispatcher
+from akara.registry import get_a_service_by_id
 
 try:
     from akara import logger
@@ -32,6 +33,9 @@ except ImportError:
     logger = None
 
 from zen import ZEN_SERVICE_ID
+from zen.services import SERVICES
+from zen.util import use
+
 
 MOINREST_SERVICE_ID = 'http://purl.org/xml3k/akara/services/demo/moinrest'
 #WSGI_ORIG_BASE_HEADER = 'HTTP_X_AKARA_WRAPPED_MOIN'
@@ -42,7 +46,7 @@ RESOURCE_TYPE_TYPE = u'http://purl.org/xml3k/akara/cms/resource-type'
 
 class space(object):
     SERVICEID = 'http://purl.org/xml3k/akara/services/demo/moinrest'
-    def __init__(self, initial_environ=None, **kwargs):
+    def __init__(self, params, space_tag, logger, zensecret, initial_environ=None):
         '''
         initial_environ is the environment used from the first call to Zen for this space, which causes
         this space to be set up
@@ -55,6 +59,13 @@ class space(object):
             self.MOINREST_BASEURI = find_peer_service(initial_environ, MOINREST_SERVICE_ID)
             self.ZEN_BASEURI = find_peer_service(initial_environ, ZEN_SERVICE_ID)
         self.environ = initial_environ
+        s = get_a_service_by_id(self.SERVICEID)
+        #Set up class/instance params based on live Akara environment
+        self.service = s
+        self.params = params
+        self.space_tag = space_tag
+        self.logger = logger
+        self.zensecret = zensecret
         return
 
     def setup_request(self, environ):
@@ -130,7 +141,7 @@ class space(object):
         response = response[0]
         if logger: logger.debug('resp ' + repr((response[:100],)))
 
-        if not self.resp_status.startswith('20'):
+        if not (resp['status'].startswith('20') or resp['status'] == '304'):
             if logger: logger.debug("Error looking up resource: %s\n" % self.resp_status)
             return None #No resource could be retrieved
 
@@ -141,9 +152,9 @@ class space(object):
                 moinrest_header = v
         #if logger: logger.debug('moinrest_header: ' + repr((moinrest_header,self.resp_headers)))
         original_base, wrapped_base, original_page = moinrest_header.split()
-        rest_uri = join(wrapped_base, environ['PATH_INFO'].lstrip('/'))
+        slave_uri = join(wrapped_base, environ['PATH_INFO'].lstrip('/'))
 
-        return resource.factory(self, rest_uri, doc, original_base, wrapped_base, original_page)
+        return resource.factory(self, slave_uri, doc, original_base, wrapped_base, original_page)
 
     def update_resource(self, path=None):
         '''
@@ -222,24 +233,22 @@ class resource(object):
     activity, including metadata extraction
     '''
     AKARA_TYPE = u'http://purl.org/xml3k/akara/cms/resource-type'
-    #NODES = {}
-    #ENDPOINTS = None
 
     @staticmethod
-    def factory(space, rest_uri, doc, original_base, wrapped_base, original_page, rtype=None):
+    def factory(space, slave_uri, doc, original_base, wrapped_base, original_page, rtype=None):
         '''
-        rest_uri - the full URI to the Moin/REST wrapper for this page
+        slave_uri - the full URI to the Moin/REST wrapper for this page
         relative - the URI of this page relative to the Wiki base
         
         it's a fatal error if this can't figure out the resource type
         '''
         #Primarily to decide whether to create a resource or a resource_type object
         if not rtype:
-            (tid, tpath) = resource.zen_type(rest_uri, doc, original_base, wrapped_base, original_page)
+            (tid, tpath) = resource.zen_type(slave_uri, doc, original_base, wrapped_base, original_page)
             rtype = tpath or tid
         if rtype == RESOURCE_TYPE_TYPE:
-            return resource_type(space, rest_uri, doc, original_base, wrapped_base, original_page, rtype=rtype)
-        return resource(space, rest_uri, doc, original_base, wrapped_base, original_page, rtype=rtype)
+            return resource_type(space, slave_uri, doc, original_base, wrapped_base, original_page, rtype=rtype)
+        return resource(space, slave_uri, doc, original_base, wrapped_base, original_page, rtype=rtype)
 
         #
         #try:
@@ -252,18 +261,19 @@ class resource(object):
         #    pass
         #return
 
-    def __init__(self, space, rest_uri, doc, original_base, wrapped_base, original_page, rtype=None):
+    def __init__(self, space, slave_uri, doc, original_base, wrapped_base, original_page, rtype=None):
         '''
-        rest_uri - the full URI to the Moin/REST wrapper for this page
+        slave_uri - the full URI to the Moin/REST wrapper for this page
         relative - the URI of this page relative to the Wiki base
         '''
         self.doc = doc
         self.space = space
-        self.rest_uri = rest_uri
+        self.slave_uri = slave_uri
+        self.rest_uri = slave_uri #Legacy naming
         self.original_base = original_base
         self.wrapped_base = wrapped_base
         self.rulesheet = None
-        self.wiki_path = relativize(rest_uri, wrapped_base)
+        self.wiki_path = relativize(slave_uri, wrapped_base)
         logger.debug('resource wiki path: ' + repr((self.wiki_path,)))
 
         if isinstance(rtype, basestring) and rtype != RESOURCE_TYPE_TYPE:
@@ -272,11 +282,8 @@ class resource(object):
             self.type = rtype
         return
 
-    #def render(self):
-    #    raise NotImplementedError
-
     @staticmethod
-    def zen_type(rest_uri, doc, original_base, wrapped_base, original_page):
+    def zen_type(slave_uri, doc, original_base, wrapped_base, original_page):
         '''
         Computer a Zen type full moinrest uri as well as a path relative to top of the wiki instance
         '''
@@ -286,8 +293,8 @@ class resource(object):
         rtype = U(doc.xml_select(TYPE_PATTERN))
         if logger: logger.debug('zen_type link from XML: ' + repr(rtype))
         if not rtype: return (None, None)
-        wrapped_type, orig_type = wiki_uri(original_base, wrapped_base, rtype, rest_uri, raw=True)
-        if logger: logger.debug('resource_type.construct_id wiki_uri trace: ' + repr((wrapped_type, original_base, wrapped_base, rest_uri)))
+        wrapped_type, orig_type = wiki_uri(original_base, wrapped_base, rtype, slave_uri, raw=True)
+        if logger: logger.debug('resource_type.construct_id wiki_uri trace: ' + repr((wrapped_type, original_base, wrapped_base, slave_uri)))
         #wrapped_type == None means the XML link for some reason uses full absolute path, as we assume it's the moinrest path?
         tid = wrapped_type or rtype
         tpath = relativize(tid, wrapped_base.rstrip('/')+'/')
@@ -332,8 +339,8 @@ class resource(object):
 
     def absolute_wrap(self, link):
         link = '/' + link.lstrip('/')
-        #if logger: logger.debug('absolute_wrap: ' + repr((self.original_base, self.wrapped_base, link, self.rest_uri)))
-        wrapped_link, orig_link = wiki_uri(self.original_base, self.wrapped_base, link, self.rest_uri)
+        #if logger: logger.debug('absolute_wrap: ' + repr((self.original_base, self.wrapped_base, link, self.slave_uri)))
+        wrapped_link, orig_link = wiki_uri(self.original_base, self.wrapped_base, link, self.slave_uri)
         #if logger: logger.debug('absolute_wrap: ' + repr((link, wrapped_link, orig_link)))
         return wrapped_link
 
@@ -351,19 +358,19 @@ class resource_type(resource):
             #isrc = inputsource(req, resolver=self.resolver)
             rulesheet_link = U(self.doc.xml_select(RULESHEET_LINK_PATTERN))
             if rulesheet_link and not is_absolute(rulesheet_link):
-                wrapped, orig = wiki_uri(self.original_base, self.wrapped_base, rulesheet_link, self.rest_uri)
+                wrapped, orig = wiki_uri(self.original_base, self.wrapped_base, rulesheet_link, self.slave_uri)
                 self.rulesheet = wrapped
             elif rulesheet_link:
                 self.rulesheet = rulesheet_link
             else:
                 rulesheet_att = U(self.doc.xml_select(RULESHEET_ATT_PATTERN))
                 if rulesheet_att:
-                    self.rulesheet = self.rest_uri + u';attachment=' + rulesheet_att
+                    self.rulesheet = self.slave_uri + u';attachment=' + rulesheet_att
                 else:
-                    if logger: logger.debug("GRIPPO: " + repr((self.doc.xml_encode(),)))
+                    if logger: logger.debug("rulesheet unspecified: " + repr((self.doc.xml_encode(),)))
                     self.rulesheet = UNSPECIFIED
 
-            if self.space: self.space.logger.debug('resource_type.get_rulesheet rest_uri, rulesheet: ' + repr((self.rest_uri, self.rulesheet)))
+            if self.space: self.space.logger.debug('resource_type.get_rulesheet slave_uri, rulesheet: ' + repr((self.slave_uri, self.rulesheet)))
         return self.rulesheet
     
     def run_rulesheet(self, environ, method='GET', accept='application/json'):
@@ -396,9 +403,9 @@ class rulesheet(object):
 
     def run(self, environ, method='GET', accept='application/json'):
         #e.g. you can sign a rulesheet as follows:
-        #python -c "import sys, hashlib; print hashlib.sha1('MYSECRET' + sys.stdin.read()).hexdigest()" < rsheet.py 
+        #python -c "import sys, hashlib; print hashlib.sha1('MYzensecret' + sys.stdin.read()).hexdigest()" < rsheet.py 
         #Make sure the rulesheet has not already been signed (i.e. does not have a hash on the first line)
-        rheet_sig = hashlib.sha1(self.space.SECRET + self.body).hexdigest()
+        rheet_sig = hashlib.sha1(self.space.zensecret + self.body).hexdigest()
         if self.token != rheet_sig:
             if logger: logger.debug("Computed signature: " + repr(rheet_sig))
             raise RuntimeError('Security token verification failed')
@@ -489,33 +496,13 @@ def linkify(link, wikibase):
         return u'[[%s]]'%link
 
 
-from zen.services import SERVICES
-
-def use(pymodule):
-    '''
-    e.g. use("pypath.to.yourmodule")
-    '''
-    #Just importing the module should be enough if they're registering services properly
-    try:
-        mod = __import__(pymodule)
-    except ImportError as e:
-        logger.debug('Unable to import declared module, so associated services will have to be available through discovery: ' + repr(e))
-    return
-
-
-#XXX: do we really need this function indirection for simple global dict assignment?
-def register_node_type(type_id, nclass):
-    node.NODES[type_id] = nclass
-
-#
-
-def curation_ingest(rest_uri, mointext, user, H, auth_headers):
+def curation_ingest(slave_uri, mointext, user, H, auth_headers):
     '''
     '''
     import diff_match_patch
     from akara.util.moin import HISTORY_MODEL
 
-    resp, content = H.request(rest_uri + ';history', "GET", headers=auth_headers)
+    resp, content = H.request(slave_uri + ';history', "GET", headers=auth_headers)
     historydoc = bindery.parse(content, model=HISTORY_MODEL)
     rev = first_item(dropwhile(lambda rev: unicode(rev.editor) != user, (historydoc.history.rev or [])))
     if not rev or historydoc.history.rev.editor == user:
@@ -525,7 +512,7 @@ def curation_ingest(rest_uri, mointext, user, H, auth_headers):
     else:
         #Potential conflict
         logger.debug('Potential conflict scenario')
-        resp, curr_akara_rev = H.request(rest_uri + '?rev=' + rev.id, "GET", headers=auth_headers)
+        resp, curr_akara_rev = H.request(slave_uri + '?rev=' + rev.id, "GET", headers=auth_headers)
         curr_akara_rev = curation_ingest.wiki_normalize(curr_akara_rev)
         dmp = diff_match_patch.diff_match_patch()
         patches = dmp.patch_make(curr_akara_rev, mointext)
@@ -533,7 +520,7 @@ def curation_ingest(rest_uri, mointext, user, H, auth_headers):
         diff_match_patch.patch_fixup(patches) #Uche's hack-around for an apparent bug in diff_match_patch
         logger.debug('PATCHES: ' + dmp.patch_toText(patches))
         #XXX Possible race condition.  Should probably figure out a way to get all revs atomically
-        resp, present_rev = H.request(rest_uri, "GET", headers=auth_headers)
+        resp, present_rev = H.request(slave_uri, "GET", headers=auth_headers)
         present_rev = curation_ingest.wiki_normalize(present_rev)
         patched, flags = dmp.patch_apply(patches, present_rev)
         logger.debug('PATCH RESULTS: ' + repr((flags)))
@@ -550,7 +537,7 @@ def curation_ingest(rest_uri, mointext, user, H, auth_headers):
 DIFF_CMD = 'diff -u'
 PATCH_CMD = 'patch -p0'
 
-def curation_ingest_via_subprocess(rest_uri, mointext, prior_ingested, user, H, auth_headers):
+def curation_ingest_via_subprocess(slave_uri, mointext, prior_ingested, user, H, auth_headers):
     '''
     Support function for freemix services.  Inital processing to guess media type of post body.
     '''
@@ -558,7 +545,7 @@ def curation_ingest_via_subprocess(rest_uri, mointext, prior_ingested, user, H, 
     import tempfile
     from subprocess import Popen, PIPE
 
-    prior_rev, zen_rev, curated_rev = curation_ingest_versions(rest_uri, user, H, auth_headers)
+    prior_rev, zen_rev, curated_rev = curation_ingest_versions(slave_uri, user, H, auth_headers)
     if not curated_rev:
         #If there has never been a curated rev, we don't have to be on guard for conflicts
         logger.debug('Direct update (no conflict scenario)')
@@ -583,7 +570,7 @@ def curation_ingest_via_subprocess(rest_uri, mointext, prior_ingested, user, H, 
 
         logger.debug('PATCHES: \n' + patch)
         #XXX Possible race condition.  Should probably figure out a way to get all revs atomically
-        resp, present_rev = H.request(rest_uri, "GET", headers=auth_headers)
+        resp, present_rev = H.request(slave_uri, "GET", headers=auth_headers)
         present_rev = curation_ingest.wiki_normalize(present_rev)
 
         currwiki = tempfile.mkstemp(suffix=".txt")
@@ -624,9 +611,9 @@ curation_ingest = curation_ingest_via_subprocess
 #By default, normalize for curator ops using standard Akara wiki normalization
 curation_ingest.wiki_normalize = wiki_normalize
 
-def curation_ingest_versions(rest_uri, user, H, auth_headers):
+def curation_ingest_versions(slave_uri, user, H, auth_headers):
     from akara.util.moin import HISTORY_MODEL
-    resp, content = H.request(rest_uri + ';history', "GET", headers=auth_headers)
+    resp, content = H.request(slave_uri + ';history', "GET", headers=auth_headers)
     historydoc = bindery.parse(content, model=HISTORY_MODEL)
     try:
         prior_rev = historydoc.history.rev[1]
@@ -641,8 +628,8 @@ def curation_ingest_versions(rest_uri, user, H, auth_headers):
     except AttributeError: #'entity_base' object has no attribute 'history'
         curated_rev = None
     #if not rev or historydoc.history.rev.editor == user: #New record, or the most recent modification is also by the akara user
-    logger.debug('curation_ingest_versions: rest_uri, curr_rev, zen_rev, curated_rev: ' +
-        repr((rest_uri, (prior_rev.xml_encode() if prior_rev else None, zen_rev.xml_encode() if zen_rev else None, curated_rev.xml_encode() if curated_rev else None))))
+    logger.debug('curation_ingest_versions: slave_uri, curr_rev, zen_rev, curated_rev: ' +
+        repr((slave_uri, (prior_rev.xml_encode() if prior_rev else None, zen_rev.xml_encode() if zen_rev else None, curated_rev.xml_encode() if curated_rev else None))))
     return prior_rev, zen_rev, curated_rev
 
 
@@ -767,7 +754,7 @@ def get_child_pages(node, limit=None):
     [u'http://localhost:8880/moin/x/poetpaedia/poet/epound', u'http://localhost:8880/moin/x/poetpaedia/poet/splath']
     
     '''
-    #isrc, resp = parse_moin_xml(node.rest_uri, resolver=node.resolver)
+    #isrc, resp = parse_moin_xml(node.slave_uri, resolver=node.resolver)
     #hrefs = node.doc.xml_select(u'//h:table[@class="navigation"]//@href', prefixes={u'h': u'http://www.w3.org/1999/xhtml'})
     #For some reason some use XHTML NS and some don't
     #if not hrefs:
@@ -777,7 +764,7 @@ def get_child_pages(node, limit=None):
     if limit:
         hrefs = islice(hrefs, 0, int(limit))
     hrefs = list(hrefs); #logger.debug('get_child_pages HREFS1: ' + repr(hrefs))
-    hrefs = [ wiki_uri(node.original_base, node.wrapped_base, navchild.xml_value, node.rest_uri, raw=True)[0] for navchild in hrefs ]
+    hrefs = [ wiki_uri(node.original_base, node.wrapped_base, navchild.xml_value, node.slave_uri, raw=True)[0] for navchild in hrefs ]
     return hrefs
 
 
@@ -802,44 +789,4 @@ def zenuri_to_moinrest(environ, uri=None):
     #logger.debug('moinrest_uri: ' + repr(moinrest_uri))
     #logger.debug('moinrest_uri: ' + repr(MOINREST_BASEURI))
     return moinrest_uri
-
-
-class moinrest_resolver(baseresolver):
-    """
-    Resolver that uses a specialized URL opener
-    """
-    def __init__(self, authorizations=None, lenient=True, opener=None):
-        """
-        """
-        self.opener = opener or urllib2.build_opener()
-        self.last_lookup_headers = None
-        baseresolver.__init__(self, authorizations, lenient)
-
-    def resolve(self, uri, base=None):
-        if not isinstance(uri, urllib2.Request):
-            if base is not None:
-                uri = self.absolutize(uri, base)
-            req = urllib2.Request(uri)
-        else:
-            req, uri = uri, uri.get_full_url()
-        try:
-            #stream = self.opener(uri)
-            resp = self.opener.open(req)
-            stream = resp
-            self.last_lookup_headers = resp.info()
-        except IOError, e:
-            raise IriError(IriError.RESOURCE_ERROR,
-                               uri=uri, loc=uri, msg=str(e))
-        return stream
-
-
-#FIXME: consolidate URIs, opener, etc. into an InputSource derivative
-#class inputsource(baseinputsource):
-#    def __new__(cls, arg, uri=None, encoding=None, resolver=None, sourcetype=0, opener=None):
-#       isrc = baseinputsource.__new__(cls, arg, uri, encoding, resolver, sourcetype)
-#        isrc.opener = opener
-#        return isrc
-
-#    def __init__(self, arg, uri=None, encoding=None, resolver=None, sourcetype=0, opener=None):
-#        baseinputsource.__init__(cls, arg, uri, encoding, resolver, sourcetype)
 

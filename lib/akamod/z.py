@@ -76,7 +76,6 @@ from akara.util.moin import ORIG_BASE_HEADER, DOCBOOK_IMT, RDF_IMT, HTML_IMT, XM
 #from akara.services import simple_service
 from akara.services import method_dispatcher
 from akara import request, logger, module_config
-from akara.registry import get_a_service_by_id
 from akara.opensearch import apply_template
 
 from zen.util import requested_imt
@@ -111,11 +110,11 @@ def setup_request(environ):
 
         #Set up spaces
         environ[FIND_PEER_SERVICE_KEY] = find_peer_service
-        for space in dir(SPACESDEF):
+        for space_tag in dir(SPACESDEF):
         #for space, slaveclass in SPACES.items():
-            if not space.startswith('__'):
+            if not space_tag.startswith('__'):
                 #logger.debug('spaces: ' + repr(space))
-                sinfo = getattr(SPACESDEF, space)()
+                sinfo = getattr(SPACESDEF, space_tag)()
                 if isinstance(sinfo, tuple):
                     sclass, sparams = sinfo
                 else:
@@ -123,20 +122,13 @@ def setup_request(environ):
                 head, tail = sclass.rsplit('.', 1)
                 module = __import__(head, {}, {}, [tail])
                 sclassobj = getattr(module, tail)
-                slaveinstance = sclassobj(environ)
-                s = get_a_service_by_id(slaveinstance.SERVICEID)
-                #Set up class/instance params based on live Akara environment
-                slaveinstance.service = s
-                slaveinstance.params = sparams
-                slaveinstance.space_tag = space
-                slaveinstance.logger = logger
-                slaveinstance.SECRET = SECRET
-                SPACES[space] = slaveinstance
+                spaceinstance = sclassobj(sparams, space_tag, logger, SECRET, environ)
+                SPACES[space_tag] = spaceinstance
 
     space_tag = environ['PATH_INFO'].lstrip('/').split('/', 1)[0]
-    slaveinstance = SPACES[space_tag]
-    slaveinstance.setup_request(environ)
-    return slaveinstance, space_tag
+    spaceinstance = SPACES[space_tag]
+    spaceinstance.setup_request(environ)
+    return spaceinstance, space_tag
 
 
 # ----------------------------------------------------------------------

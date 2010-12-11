@@ -1,3 +1,37 @@
+Add the feed type
+
+curl -H "Content-Type: application/json" -X PUT --data-binary "@-" http://sforza.ogbuji.net:5984/test1/feed < etc/feedhub/bootstrap/__feed__.js 
+
+Add the feed type rule sheet
+
+DOC=http://sforza.ogbuji.net:5984/test1/feed
+REV=`python -c "import urllib; from amara.thirdparty import json; doc = '$DOC'; print json.load(urllib.urlopen(doc))['_rev']"`
+sign_rulesheet zenzenzen etc/feedhub/bootstrap/__feed__.rsheet | curl -H "Content-Type: application/python" -X PUT --data-binary "@-" $DOC/attachment?rev=$REV
+
+Add a feed instance
+
+curl --request PUT --data-binary @- "http://sforza.ogbuji.net:5984/test1/spam.feed" << END
+{
+    "feed:name": "Copia",
+    "feed:source": "http://copia.posterous.com/",
+    "feed:description": "Ogbujis on an abundance of topics",
+    "zen:metadata": {
+	"zen:type": "feed"
+    }
+}
+END
+
+
+
+
+
+
+
+
+
+
+
+
 See: http://community.zepheira.com/wiki/development/UcheOgbuji/Zen/Arthub_demo
 
 Bootstrap example:
