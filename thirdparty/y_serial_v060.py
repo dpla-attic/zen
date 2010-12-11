@@ -559,7 +559,7 @@ class Base:
                c = "             tried this sql and parameter list:   \n"
                raise IOError, "%s%s%s%s\n%s" % ( a, b, c, sql, parlist )
           finally:
-               cur.close()
+               if 'cur' in locals(): cur.close()
                con.close()
                #   ^ very important to release lock for concurrency.
 

@@ -21,6 +21,8 @@ from akara.services import simple_service
 from akara.caching import cache, make_named_cache
 from akara import logger
 
+from zen.services import zservice
+
 import y_serial_v060 as y_serial
 
 CACHE_DIR = make_named_cache('akara.yahoo.extract')
@@ -56,7 +58,8 @@ def memoize(table):
 
 SERVICE_ID = 'http://purl.org/akara/services/demo/yahoo.extract.json'
 @simple_service('POST', SERVICE_ID, 'akara.yahoo.extract', 'application/json')
-def yahoo_extract(body, ctype):
+@zservice(SERVICE_ID)
+def yahoo_extract(body, ctype=None):
     '''
     See:
     http://developer.yahoo.com/search/content/V1/termExtraction.html
@@ -72,12 +75,12 @@ def yahoo_extract(body, ctype):
 
     @memoize('yahoo')
     def execute_query(key):
-        yql = u'select * from search.termextract where context="%s"'%body.replace(u'""', u'')
-        query = urllib.urlencode({'q' : yql})
-        url = 'http://query.yahooapis.com/v1/public/yql?' + query
+        yql = u'select * from search.termextract where context="%s"'%body.replace(u'""', u'').replace(u'"',u'\\"')
+        query = urllib.quote(yql,safe='*"')
+        url = 'http://query.yahooapis.com/v1/public/yql?q=' + query
 
         H = httplib2.Http()
-        resp, rbody = H.request(url) #headers={'Content-Type' : 'text/plain'})
+        resp, rbody = H.request(url)
         entities = []
         value = []
         if resp['status'].startswith('200'):
