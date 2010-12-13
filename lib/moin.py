@@ -141,7 +141,7 @@ class space(object):
         response = response[0]
         if logger: logger.debug('resp ' + repr((response[:100],)))
 
-        if not (resp['status'].startswith('20') or resp['status'] == '304'):
+        if not (self.resp_status.startswith('20') or self.resp_status == '304'):
             if logger: logger.debug("Error looking up resource: %s\n" % self.resp_status)
             return None #No resource could be retrieved
 
