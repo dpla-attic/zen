@@ -2,7 +2,7 @@ Add the feed type
 
 curl -H "Content-Type: application/json" -X PUT --data-binary "@-" http://sforza.ogbuji.net:5984/test1/feed < etc/feedhub/bootstrap/__feed__.js 
 
-Add the feed type rule sheet
+Add the feed type rule sheet:
 
 DOC=http://sforza.ogbuji.net:5984/test1/feed
 REV=`python -c "import urllib; from amara.thirdparty import json; doc = '$DOC'; print json.load(urllib.urlopen(doc))['_rev']"`
@@ -21,55 +21,30 @@ curl --request PUT --data-binary @- "http://sforza.ogbuji.net:5984/test1/spam.fe
 }
 END
 
+Retrieve it.
 
+curl http://localhost:8880/zen/c/spam.feed
 
+Might return:
 
+{
+    "id": "http://sforza.ogbuji.net:5984/test1/spam.feed"
+}
 
+You can of course also create a page through the Zen resource type (it will generate a slug for you):
 
+curl --request POST --data-binary @- "http://localhost:8880/zen/c/feed" << END
+{
+    "feed:name": "Zepheira news",
+    "feed:source": "http://zepheira.com/feed/atom/",
+    "feed:description": "What's happening at Zepheira LLC",
+    "zen:metadata": {
+	"zen:type": "feed"
+    }
+}
+END
 
+And of course:
 
-
-
-
-
-See: http://community.zepheira.com/wiki/development/UcheOgbuji/Zen/Arthub_demo
-
-Bootstrap example:
-
-Put your zen secret from akara.conf by itself into a file, e.g.:
-
-echo "abcdef" > ~/.config/zensecret
-
-wikibootstrap --zensecret=~/.config/zensecret --target=http://localhost:8880/moin/mywiki/arthub etc/arthub/bootstrap
-
-You should eyeball wiki recent changes to verify the new pages & attachments
-
-Then try to add an artifact:
-
-curl --request POST --data-binary "@-" "http://localhost:8880/zen/mywiki/arthub/artifact?type=arthub/artifact" < etc/arthub/whitney2-3.js
-
-See what URL it's given, e.g. ...arthub/artifact/1291066634.09
-
-Then retrieve it e.g.:
-
-curl http://localhost:8880/zen/mywiki/arthub/artifact/1291066634.09
-
-You can also modify the source file and update:
-
-curl --request PUT --data-binary "@-" "http://localhost:8880/zen/mywiki/arthub/artifact/1291066634.09?type=arthub/artifact" < etc/arthub/modified-whitney2-3.js
-
-And delete:
-
-curl --request DELETE http://localhost:8880/zen/mywiki/arthub/artifact/1291066634.09
-
-
-----
-
-Current location: http://potlach.org/2008/02/whitney/
-
-Data:
-
-http://potlach.org/2008/02/whitney/art.json
-http://potlach.org/2008/02/miller/miller-art.json
-
+curl --request DELETE http://localhost:8880/zen/c/spam.feed
 

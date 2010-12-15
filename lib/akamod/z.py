@@ -185,23 +185,22 @@ def get_resource(environ, start_response):
     #start_response(status_response(status), [("Content-Type", ctype), (moin.ORIG_BASE_HEADER, moin_base_info)])
 
 
-#Factored out code from PUT & POST handler
-def prep_for_update(environ, start_response):
+def check_forced_type(environ, start_response):
     '''
-    Create or update a record
+    Check whether the user wants to override the resource type in this PUT request
     '''
-    slaveinfo, space_tag = setup_request(environ)
-
     #import pprint; logger.debug('put_resource input environ: ' + repr(pprint.pformat(environ)))
-    imt = environ['CONTENT_TYPE']
+    imt = environ['CONTENT_TYPE'].split(';')[0]
     qparams = cgi.parse_qs(environ['QUERY_STRING'])
     rtype = qparams.get('type')
     if not rtype:
-        status = httplib.BAD_REQUEST
-        start_response(status_response(status), [("Content-Type", 'text/plain')])
-        return 'type URL parameter required\n'
+        return None
+        #status = httplib.BAD_REQUEST
+        #start_response(status_response(status), [("Content-Type", 'text/plain')])
+        #return 'type URL parameter required\n'
 
     #We got what we wanted from qparams.  Now strip them
+    #FIXME: just strip the rtype param
     environ['QUERY_STRING'] = ''
 
     rtype = rtype[0]
@@ -210,20 +209,30 @@ def prep_for_update(environ, start_response):
     #    rtype = join(moinresttop, environ['PATH_INFO'].lstrip('/').split('/')[0], rtype)
     resource_type = slaveinfo.resource_factory(rtype)
     
-    if resource_type is None:
-        start_response(status_response(slaveinfo.resp_status), slaveinfo.resp_headers)
-        return ["Unable to access resource type\n"]
+    #if resource_type is None:
+    #    start_response(status_response(slaveinfo.resp_status), slaveinfo.resp_headers)
+    #    return ["Unable to access resource type\n"]
 
-    temp_fpath = read_http_body_to_temp(environ, start_response)
-    body = open(temp_fpath, "r").read()
-
-    handler = resource_type.run_rulesheet(environ, environ['REQUEST_METHOD'], imt)
-    return slaveinfo, handler, resource_type, body
+    return resource_type
 
 
 @dispatcher.method("PUT")
 def put_resource(environ, start_response):
-    slaveinfo, handler, resource_type, body = prep_for_update(environ, start_response)
+    slaveinfo, space_tag = setup_request(environ)
+
+    resource_type = check_forced_type(environ, start_response)
+
+    imt = environ['CONTENT_TYPE'].split(';')[0]
+
+    temp_fpath = read_http_body_to_temp(environ, start_response)
+    body = open(temp_fpath, "r").read()
+    resource = slaveinfo.resource_factory()
+
+    logger.debug('resource_type: ' + repr((resource_type, resource, resource.type)))
+
+    if not resource_type:
+        resource_type = resource.type
+    handler = resource_type.run_rulesheet(environ, environ['REQUEST_METHOD'], imt)
 
     content = handler(resource_type, body)
 
@@ -269,7 +278,15 @@ def post_resource(environ, start_response):
     '''
     Create a new record with a resource type
     '''
-    slaveinfo, handler, resource_type, body = prep_for_update(environ, start_response)
+    slaveinfo, space_tag = setup_request(environ)
+
+    temp_fpath = read_http_body_to_temp(environ, start_response)
+    body = open(temp_fpath, "r").read()
+
+    resource_type = slaveinfo.resource_factory()
+    imt = environ['CONTENT_TYPE'].split(';')[0]
+
+    handler = resource_type.run_rulesheet(environ, environ['REQUEST_METHOD'], imt)
 
     new_path, content = handler(resource_type, body)
 

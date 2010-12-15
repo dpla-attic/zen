@@ -12,7 +12,7 @@ You should eyeball wiki recent changes to verify the new pages & attachments
 
 Then try to add an artifact:
 
-curl --request POST --data-binary "@-" "http://localhost:8880/zen/mywiki/arthub/artifact?type=arthub/artifact" < etc/arthub/whitney2-3.js
+curl --request POST --data-binary "@-" "http://localhost:8880/zen/mywiki/arthub/artifact" < etc/arthub/whitney2-3.js
 
 See what URL it's given, e.g. ...arthub/artifact/1291066634.09
 
@@ -22,7 +22,7 @@ curl http://localhost:8880/zen/mywiki/arthub/artifact/1291066634.09
 
 You can also modify the source file and update:
 
-curl --request PUT --data-binary "@-" "http://localhost:8880/zen/mywiki/arthub/artifact/1291066634.09?type=arthub/artifact" < etc/arthub/modified-whitney2-3.js
+curl --request PUT --data-binary "@-" "http://localhost:8880/zen/mywiki/arthub/artifact/1291066634.09" < etc/arthub/modified-whitney2-3.js
 
 And delete:
 

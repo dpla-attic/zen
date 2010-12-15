@@ -118,46 +118,59 @@ class space(object):
         '''
         Update a resource based on WSGI environment or a uri path
         '''
-        environ = self.prepare_environ(path)
+        if path:
+            docid = path
+            if is_absolute(path):
+                docid = relativize(path, self.remotedb)
+        else:
+            docid = self.environ['PATH_INFO'].lstrip('/').rsplit(self.space_tag, 1)[1].lstrip('/') #e.g. '/mydb/MyDoc' -> 'MyDoc'
 
-        environ['REQUEST_METHOD'] = 'PUT' #Force method to PUT to create or update a wiki page via moinrest
-
-        response = self.service.handler(environ, self.start_response_wrapper)
-
-        #Akara handler functions can return the body in a variety of formats.  This bit normalizes it to a Unicode object
-        slave_wrapper = get_slave_wrapper(self.service.handler, environ)
-        response, ctype, clength = convert_body(response, slave_wrapper.content_type, slave_wrapper.encoding, slave_wrapper.writer)
-        response = response[0]
-        if logger: logger.debug('resp ' + repr((response[:100],)))
-
-        if not self.resp_status.startswith('20'):
-            if logger: logger.debug("Error updating resource: %s\n" % self.resp_status)
-
-        return response
+        if logger: logger.debug('query ' + repr((self.remotedb, docid, join(self.remotedb, docid))))
+        body = self.environ['wsgi.input'].read()
+        resp, content = self.h.request(join(self.remotedb, docid), "PUT", body=body)#, headers=headers)
         
-    #For moinrest create & update happen to be the same back end mechanism
+        if logger: logger.debug('resp ' + repr((content[:100], resp)))
+
+        self.resp_status = resp['status']
+        #XXX: do we need to bother with a copy?
+        self.resp_headers = resp.copy()
+        del self.resp_headers['status']
+
+        if not (self.resp_status.startswith('20') or self.resp_status == '304'):
+            if logger: logger.debug("Error looking up resource: %s: %s\n" % (content, self.resp_status))
+            return None #No resource could be retrieved
+
+        return content
+        
+    #For couchdb create & update happen to be the same back end mechanism (since rulesheets are expected to provide the URL location)
     create_resource = update_resource
 
     def delete_resource(self, path=None):
         '''
         Delete a resource based on WSGI environment or a uri path
         '''
-        environ = self.prepare_environ(path)
+        if path:
+            docid = path
+            if is_absolute(path):
+                docid = relativize(path, self.remotedb)
+        else:
+            docid = self.environ['PATH_INFO'].lstrip('/').rsplit(self.space_tag, 1)[1].lstrip('/') #e.g. '/mydb/MyDoc' -> 'MyDoc'
 
-        environ['REQUEST_METHOD'] = 'DELETE' #Force method to DELETE a wiki page via moinrest
+        if logger: logger.debug('query ' + repr((self.remotedb, docid, join(self.remotedb, docid))))
+        resp, content = self.h.request(join(self.remotedb, docid), "DELETE", body=body)#, headers=headers)
+        
+        if logger: logger.debug('resp ' + repr((content[:100], resp)))
 
-        response = self.service.handler(environ, self.start_response_wrapper)
+        self.resp_status = resp['status']
+        #XXX: do we need to bother with a copy?
+        self.resp_headers = resp.copy()
+        del self.resp_headers['status']
 
-        #Akara handler functions can return the body in a variety of formats.  This bit normalizes it to a Unicode object
-        slave_wrapper = get_slave_wrapper(self.service.handler, environ)
-        response, ctype, clength = convert_body(response, slave_wrapper.content_type, slave_wrapper.encoding, slave_wrapper.writer)
-        response = response[0]
-        if logger: logger.debug('resp ' + repr((response[:100],)))
+        if not (self.resp_status.startswith('20') or self.resp_status == '304'):
+            if logger: logger.debug("Error looking up resource: %s: %s\n" % (content, self.resp_status))
+            return None #No resource could be retrieved
 
-        if not self.resp_status.startswith('20'):
-            if logger: logger.debug("Error deleting resource: %s\n" % self.resp_status)
-
-        return response
+        return content
 
 
 #FIXME: Detect resource reference loops
