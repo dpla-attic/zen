@@ -76,7 +76,7 @@ from akara.util import status_response
 from akara import response
 from akara import logger
 
-from zenlib.latlong import latlong
+from zen.latlong import latlong
 
 GEOCODER = AKARA.module_config.get('geocoder', "geocoders.get_geocoder('geonames')")
 #GEOCODER = AKARA.module_config.get('geocoder', "geocoders.get_geocoder('google', resource='maps')")

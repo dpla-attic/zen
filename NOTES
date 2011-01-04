@@ -44,10 +44,10 @@ Currently this reports
 Aliases: 738 countries, 144 'states', 151155 cities
 
 
-The LatLong.py module contains functionality to help simplify the
+The latlong.py module contains functionality to help simplify the
 different types of searches. Here's a bit to get you started:
 
->>> from zenlib import latlong
+>>> from zen import latlong
 >>> ll = latlong.latlong("geonames.sqlite3")
 >>> ll.using_city("Paris")
 (u'48.85341', u'2.3488')

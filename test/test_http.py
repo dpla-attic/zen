@@ -1,8 +1,7 @@
 import sys
-import hashlib
 
 from amara.thirdparty import httplib2
-
+from zen.util import sign_rulesheet
 from testconfig import config
 
 """
@@ -31,12 +30,10 @@ Children: <<Navigation(children)>>
 = akara:metadata =
 
  akara:type:: http://purl.org/xml3k/akara/cms/resource-type
- akara:rulesheet:: http://www.markbaker.ca/poet.txt
+ akara:rulesheet:: [[attachment:poet.rsheet]]
 '''
-#akara:rulesheet:: [[poetpaedia/rulesheet]]
 
-POET_RULESHEET_URI = 'http://localhost:8880/%s/testwiki/poetpaedia/rulesheet'
-
+POET_RULESHEET_URI = POET_RESOURCE_TYPE_URI+';attachment=poet.rsheet'
 POET_RULESHEET = '''
 from amara.thirdparty import json
 
@@ -59,8 +56,8 @@ def objectify(resource):
       u'born': U(parsedate(U(bio[u'poet:born']))),
       u'died': U(parsedate(U(bio[u'poet:died']))),
       u'images': obj_urls(bio[u'poet:image']),
-      u'wikipedia': link_urls(bio[u'poet:wikipedia']),
       u'description': U(resource.section(u'About')),
+      u'wikipedia': link_urls(bio[u'poet:wikipedia']),
     }
     return obj
 
@@ -73,12 +70,12 @@ def get_poet(resource):
 @handles('GET','text/plain',86400)
 def get_poet(resource):
     poet = objectify(resource)
-    return poet.name + ': ' + poet.description
+    return poet[u'name'] + ': ' + poet[u'description']
 
 @handles('GET','text/html',43200)
 def get_poet(resource):
     poet = objectify(resource)
-    return "<html><head><title>%s</title></head><body><p>%s</p></body></html" % (poet.name, poet.description)
+    return "<html><head><title>%s</title></head><body><p>%s</p></body></html" % (poet[u'name'], poet[u'description'])
 
 #Used to serve requests for a collection of resources, in raw form
 @handles('collect','raw/pydict')
@@ -99,6 +96,7 @@ He was an American expatriate poet, critic and intellectual who was a major figu
  poet:name:: Ezra Weston Loomis Pound
  poet:born:: 1885-10-30
  poet:died:: 1972-11-01
+ poet:image:: {{http://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Ezra_Pound.jpg/240px-Ezra_Pound.jpg}}
  poet:birthplace:: Hailey, ID
  poet:wikipedia:: http://en.wikipedia.org/wiki/Ezra_pound
 
@@ -107,7 +105,6 @@ He was an American expatriate poet, critic and intellectual who was a major figu
  akara:type:: [[poetpaedia/poet]]
 '''
 
-# poet:image:: {{http://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Ezra_Pound.jpg/240px-Ezra_Pound.jpg}}
 
 BASE_MOIN = 'moin'
 BASE_ZEN = 'zen'
@@ -121,7 +118,14 @@ class TestHttpResponses :
     def setUp(self) :
         # Write a poet to the TestWiki, along with its resource type page and rulesheet
 
+        secret = config['http']['secret']
+        user = config['http']['moin-user']
+        password = config['http']['moin-password']
+
         H = httplib2.Http()
+        H.force_exception_to_status_code = False
+        H.add_credentials(user,password)
+
         headers = {'Content-Type': 'text/plain'};
         try:
             resp, content = H.request(POET_RESOURCE_TYPE_URI % BASE_MOIN, 'PUT',
@@ -129,12 +133,10 @@ class TestHttpResponses :
         except Exception as e:
             assert 0
 
-        secret = config['http']['secret']
-
-        signed_rulesheet = "#" + hashlib.sha1(secret + POET_RULESHEET).hexdigest() + POET_RULESHEET
+        signed_rulesheet = sign_rulesheet(secret,POET_RULESHEET)
 
         try:
-            resp, content = H.request(POET_RULESHEET_URI % BASE_MOIN, 'PUT',
+            resp, content = H.request(POET_RULESHEET_URI % BASE_MOIN, 'POST',
                                       body=signed_rulesheet, headers=headers)
         except Exception as e:
             assert 0
@@ -145,8 +147,9 @@ class TestHttpResponses :
         except Exception as e:
             assert 0
 
-#    def tearDown(self) :
-        # Perhaps delete the test pages
+    def tearDown(self) :
+        # Perhaps delete the test pages?
+        pass
 
     def test_conneg1(self) :
 

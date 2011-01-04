@@ -4,7 +4,7 @@ from nose.tools import raises
 from amara import bindery
 from amara.test.xslt import filesource, stringsource
 
-from zen import moinmodel
+from zen import moin
 
 STRUCT1 = '''\
 == Locations ==
@@ -111,7 +111,7 @@ EXPECTED1 = [(u'xpage',
 
 def test_simple_struct1():
     doc = bindery.parse(STRUCT1_XML)
-    result = moinmodel.simple_struct(doc)
+    result = moin.simple_struct(doc)
     assert result == EXPECTED1, (result, EXPECTED1) # did not match
     #import pprint; pprint.pprint(result, stream=sys.stderr)
     return

@@ -15,7 +15,7 @@ try:
 except ImportError:
     logger = None
 
-from zen import register_service, zservice
+from zen.services import register_service, zservice
 from zen.temporal import smart_parse_date
 from zen.geo import geolookup
 

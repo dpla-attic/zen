@@ -236,7 +236,7 @@ def mods2json(source, run_diagnostics=False):
 
     Examples:
 
-    >>> from zenlib.mods import mods2json
+    >>> from zen.mods import mods2json
     >>> XML = """<modsCollection xmlns="http://www.loc.gov/mods/v3">
     ... <mods ID="ref1060-2004">
     ...     <titleInfo>
