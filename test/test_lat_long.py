@@ -1,10 +1,35 @@
-import latlong
+from zen import latlong
 import doctest
 import time
 
+import subprocess
+import os
+import sys
+
+GEO_DB = "geonames.sqlite3"
+
+def setup_module():
+    """
+    Create the local geonames mirror for use by the tests.
+    """
+     
+    os.chdir(os.path.join(sys.path[0],"..")) # cwd is set so that all tests will run in Zen root
+    if os.path.getsize(GEO_DB) > 0:
+        return # Database already exists and isn't empty
+
+    lg = subprocess.Popen(['load_geonames','mirror'])
+    lg.wait()
+    assert lg.returncode == 0
+
+    lg = subprocess.Popen(['load_geonames','create'])
+    lg.wait()
+    assert lg.returncode == 0
+
+def teardown_module():
+    pass
 
 def test_no_answers():
-    lalo = latlong.latlong("geonames.sqlite3")
+    lalo = latlong.latlong(GEO_DB)
     assert lalo.using_city_state("Miami", "QQ") is None
     assert lalo.using_city_country_code("Miami-Youramai", "PR") is None
 
@@ -15,7 +40,7 @@ def test_no_answers():
     assert lalo.using_city("QWERTYUIOP") is None
 
 def test_bad_country_code():
-    lalo = latlong.latlong("geonames.sqlite3")
+    lalo = latlong.latlong(GEO_DB)
     try:
         lalo.using_city_country_code("Miami", "**")
         raise AssertionError
@@ -24,8 +49,8 @@ def test_bad_country_code():
         assert "**" in str(s), str(s)
 
 def test_docstrings():
-    lalo = latlong.latlong("geonames.sqlite3")
-    doctest.testmod(lalo, globs=dict(lalo=lalo),
+    lalo = latlong.latlong(GEO_DB)
+    doctest.testmod(latlong, globs=dict(lalo=lalo),
                     verbose=True, raise_on_error=True)
 
     
@@ -39,8 +64,8 @@ def _time(f, *args):
 
 
 def test_city_state_timing():
-    lalo = latlong.latlong("geonames.sqlite3")
-    t1, ll1 = _time(lalo._get_lat_long, lalo.CITY_STATE_SQL,
+    lalo = latlong.latlong(GEO_DB)
+    t1, ll1 = _time(lalo._get_lat_long, latlong.CITY_STATE_SQL,
                     dict(city_name="MIAMI", admin1_code="FL", country_code="US"))
     t2, ll2 = _time(lalo._get_lat_long, """
 SELECT latitude, longitude
@@ -49,15 +74,15 @@ SELECT latitude, longitude
     ORDER BY population DESC
     limit 1
 """, {})
-    assert ll1 == ll2 == (u'25.7742658', u'-80.1936589'), (ll1, ll2)
+    assert ll1 == ll2 == (u'25.77427', u'-80.19366'), (ll1, ll2)
     # The real search is more complicated, but not all that more complicated
     assert t1 < t2*1.2, (t1, t2)
 
 
 def test_city_country_code_timing():
-    lalo = latlong.latlong("geonames.sqlite3")
+    lalo = latlong.latlong(GEO_DB)
 
-    t1, ll1 = _time(lalo._get_lat_long, lalo.CITY_COUNTRY_CODE_SQL,
+    t1, ll1 = _time(lalo._get_lat_long, latlong.CITY_COUNTRY_CODE_SQL,
                     dict(city_name="MIAMI", country_code="US"))
     t2, ll2 = _time(lalo._get_lat_long, """
 SELECT latitude, longitude
@@ -66,13 +91,13 @@ SELECT latitude, longitude
     ORDER BY population DESC
     limit 1
 """, {})
-    assert ll1 == ll2 == (u'25.7742658', u'-80.1936589'), (ll1, ll2)
+    assert ll1 == ll2 == (u'25.77427', u'-80.19366'), (ll1, ll2)
     assert t1 < t2*1.2, (t1, t2)
 
 def test_city_timing():
-    lalo = latlong.latlong("geonames.sqlite3")
+    lalo = latlong.latlong(GEO_DB)
 
-    t1, ll1 = _time(lalo._get_lat_long, lalo.CITY_SQL,
+    t1, ll1 = _time(lalo._get_lat_long, latlong.CITY_SQL,
                     dict(city_name="MIAMI"))
                     
     t2, ll2 = _time(lalo._get_lat_long, """
@@ -82,7 +107,7 @@ SELECT latitude, longitude
     ORDER BY population DESC
     limit 1
 """, {})
-    assert ll1 == ll2 == (u'25.7742658', u'-80.1936589'), (ll1, ll2)
+    assert ll1 == ll2 == (u'25.77427', u'-80.19366'), (ll1, ll2)
     # For some reason, 'OR' searches take a lot longer than 'UNION's
     assert t1 < t2, (t1, t2)
 

@@ -36,7 +36,7 @@ version control.
 
 If you are curious, you can see the data set size with:
 
-  geonames_loader stats
+  load_geonames stats
 
 Currently this reports
 
