@@ -1,7 +1,11 @@
 from string import Template
 from amara.thirdparty import json
 
+# Note that the values used here for, e.g. ttl, are used in a test suite. If you need to change them,
+# please update the test in test/test_moin.py
+
 #Declare transform services
+strip = service(u'http://purl.org/xml3k/akara/builtins/string/strip')
 parsedate = service(u'http://purl.org/com/zepheira/zen/temporal/parse-date')
 obj_urls = service(u'http://purl.org/com/zepheira/zen/moinmodel/get-obj-urls')
 link_urls = service(u'http://purl.org/com/zepheira/zen/moinmodel/get-link-urls')
@@ -15,7 +19,7 @@ def objectify(resource):
     #Output
     obj = {
       u'id': resource.rest_uri,
-      u'name': U(bio[u'poet:name']).strip(),
+      u'name': strip(U(bio[u'poet:name'])),
       u'born': U(parsedate(U(bio[u'poet:born']))),
       u'died': U(parsedate(U(bio[u'poet:died']))),
       u'images': obj_urls(bio[u'poet:image']),
@@ -25,9 +29,21 @@ def objectify(resource):
     return obj
 
 #Used to serve normal HTTP GET requests for the default representation of this resource
-@handles('GET', ttl=86400)
+@handles('GET', ttl=3600)
 def get_poet(resource):
     return json.dumps(objectify(resource), indent=4)
+
+#A simple text/plain representation, used in tests
+@handles('GET','text/plain',ttl=86400)
+def get_poet(resource):
+    poet = objectify(resource)
+    return poet[u'name'] + ': ' + poet[u'description']
+
+#A text/html representation, used in tests
+@handles('GET','text/html',ttl=43200)
+def get_poet(resource):
+    poet = objectify(resource)
+    return "<html><head><title>%s</title></head><body><p>%s</p></body></html" % (poet[u'name'], poet[u'description'])
 
 #Used to serve requests for a collection of resources, in raw form
 @handles('collect', 'raw/pydict')

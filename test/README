@@ -3,18 +3,6 @@ To run these tests use "nose" from
 
 or "pip install nose".
 
-Zen uses the nose testconfig plugin which can be installed with
-"pip install nose-testconfig".  Testconfig enables the use of
-an ini file for configuring the tests; the file test/http.ini
-should be used and configured to provide the Zen secret key as
-well as Moin credentials for a user with write and delete
-privileges (so that the test can upload an attachment).
+Then run;
 
-These tests are also unfortunately not standalone at this point.
-They assume a Moin wiki called "testwiki" be available at
-http://localhost/testwiki, and also that Akara be running on
-port 8880.
-
-Once that's all setup, run;
-
-  nosetests --tc-file=test/http.ini
+  nosetests

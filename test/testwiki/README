@@ -1,0 +1,8 @@
+Configures a standalone Moin instance for use by some Zen unit tests.
+
+The Akara application_xml.py formatter is included in place under plugin/formatter
+to simplify deployment of the tests, but should be updated if required.
+
+Note that the standalone server also throws a series of "broken pipe" errors in
+response to moinrest prodding via Zen's wikibootstrap.  This is harmless and will
+not affect the tests. FIXME
