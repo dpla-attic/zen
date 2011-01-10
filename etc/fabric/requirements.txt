@@ -1,6 +1,7 @@
 python-dateutil
 #odict #for ordered dictionaries in Python, which helps in organizing Zen JSON output
 feedparser
+couchdb
 
 http://files.akara.info/00-amara-latest.tar.bz2
 http://files.akara.info/00-akara-latest.tar.bz2
