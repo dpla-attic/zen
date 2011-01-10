@@ -1,7 +1,6 @@
 import sys
 
 from amara.thirdparty import httplib2
-from testconfig import config
 
 import subprocess
 import tempfile
@@ -61,13 +60,13 @@ class TestHttpResponses :
 
         # CD to the Akara working directory, and start it
         os.chdir(cls.akara_wd)
-        cls.akara_instance = subprocess.Popen(['akara','-f','akara.conf','start'])
+        akara_instance = subprocess.Popen(['akara','-f','akara.conf','start'])
 
         # Give them both time to start up properly
         import time; time.sleep(5)
 
-        cls.akara_instance.wait()
-        assert cls.akara_instance.returncode == 0 # Akara starts asynchronously
+        akara_instance.wait()
+        assert akara_instance.returncode == 0 # Akara starts asynchronously
         assert cls.moin_instance.returncode is None # i.e. still running
 
         # Now prepare to bootstrap the Wiki ...
