@@ -68,7 +68,7 @@ class TestCouchDB :
         rsheet, err = sign.communicate()
         rsheet_uri = FEED_RULESHEET_URI%feedtype_ret[1]
         resp, content = H.request(rsheet_uri,'PUT',body=rsheet)
-        assert resp['status'].startswith('2'), 'Problem saving rulesheet attachment: '+content
+        assert resp['status'].startswith('2'), 'Problem saving rulesheet as attachment: '+content
 
         # Create a feed
         ff = open('copia.js','r')
@@ -95,12 +95,11 @@ class TestCouchDB :
         
     @classmethod
     def tearDownClass(cls):
-        #del cls.db
-        #os.chdir(cls.akara_wd)
-        #ak = subprocess.Popen(['akara','-f','akara.conf','stop'])
-        #ak.wait()
-        #shutil.rmtree(cls.akara_wd)
-        pass
+        del cls.db
+        os.chdir(cls.akara_wd)
+        ak = subprocess.Popen(['akara','-f','akara.conf','stop'])
+        ak.wait()
+        shutil.rmtree(cls.akara_wd)
 
     def test_feed(self):
         resp, content = H.request(self.feed_uri,'GET',headers={HTTP_AC:JSON_IMT})
@@ -110,5 +109,3 @@ class TestCouchDB :
         resp, content = H.request(self.feed_zen_uri,'GET',headers={HTTP_AC:JSON_IMT})
         assert resp['status'].startswith('2'), ASSERT_GET_2XX%(self.feed_zen_uri,resp['status'])
         assert resp[HTTP_CT] == JSON_IMT
-        print >>sys.stderr,"t2r"+repr(resp)
-        print >>sys.stderr,"t2c"+repr(content)
