@@ -24,7 +24,7 @@ HTTP_AC = 'accept'
 HTTP_CT = 'content-type'
 JSON_IMT = 'application/json'
 
-ASSERT_GET_2XX = 'Response to GET of %s was %s, expected 2xx'
+ASSERT_2XX = 'Response to %s of %s was %s, expected 2xx'
 
 H = httplib2.Http()
 H.force_exception_to_status_code = True
@@ -103,9 +103,29 @@ class TestCouchDB :
 
     def test_feed(self):
         resp, content = H.request(self.feed_uri,'GET',headers={HTTP_AC:JSON_IMT})
-        assert resp['status'].startswith('2'), ASSERT_GET_2XX%(self.feed_uri,resp['status'])
+        assert resp['status'].startswith('2'), ASSERT_2XX%('GET',self.feed_uri,resp['status'])
 
     def test_zen_feed(self):
         resp, content = H.request(self.feed_zen_uri,'GET',headers={HTTP_AC:JSON_IMT})
-        assert resp['status'].startswith('2'), ASSERT_GET_2XX%(self.feed_zen_uri,resp['status'])
+        assert resp['status'].startswith('2'), ASSERT_2XX%('GET',self.feed_zen_uri,resp['status'])
         assert resp[HTTP_CT] == JSON_IMT
+
+    def test_zen_feed_update(self):
+        new_feed = {
+                       "name": "Copia",
+                       "source": "http://copia.posterous.com/",
+                       "description": "An updated description for Copia",
+                   }   
+
+        # Update it...
+        resp, content = H.request(self.feed_zen_uri,'PUT',
+                                  body=json.dumps(new_feed),
+                                  headers={HTTP_CT:JSON_IMT,HTTP_AC:JSON_IMT})
+        assert resp['status'].startswith('2'), ASSERT_2XX%('PUT',self.feed_zen_uri,resp['status'])
+
+        # ... then check it was updated
+        resp, content = H.request(self.feed_zen_uri,'GET',headers={HTTP_AC:JSON_IMT})
+        assert resp['status'].startswith('2'), ASSERT_2XX%('GET',self.feed_zen_uri,resp['status'])
+        assert resp[HTTP_CT] == JSON_IMT
+        read_feed = json.loads(content)
+        assert read_feed['description'] == new_feed['description']

@@ -1,3 +1,4 @@
+from string import Template
 import time
 from amara.thirdparty import json
 
@@ -10,7 +11,7 @@ obj_urls = service(u'http://purl.org/com/zepheira/zen/moinmodel/get-obj-urls')
 def objectify(resource):
     #Data extraction
     meta = resource.data[u'zen:metadata']
-    link = resource.data[u'feed:source']
+    link = resource.data[u'source']
     #image = resource.section(u'feed:full-image')
 
     #Output
@@ -45,3 +46,13 @@ def put_feed(resource_type, body):
     #e.g. "id" : "http://potlach.org/2008/02/whitart/whitart/7"
     return FEED_PAGE_TEMPLATE.substitute(data)
 
+FEED_PAGE_TEMPLATE = Template(u'''\
+{
+    "name": "$name",
+    "source": "$source",
+    "description": "$description",
+    "zen:metadata": {
+        "zen:type": "feed"
+    }
+}
+''')
