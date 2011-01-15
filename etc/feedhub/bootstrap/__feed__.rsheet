@@ -17,6 +17,7 @@ def objectify(resource):
     #Output
     obj = {
       u'id': resource.slave_uri,
+      u'description': resource.data[u'description']
       #u'medium': U(meta[u'Medium']).strip(),
     }
     return obj

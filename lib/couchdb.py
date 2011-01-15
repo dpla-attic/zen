@@ -86,6 +86,17 @@ class space(object):
         self.environ['zen.RESOURCE_URI'] = join(self.ZEN_BASEURI, environ['PATH_INFO'].lstrip('/').split('/')[0])
         return
 
+    def prep_slave_response(self, resp):
+        '''
+        Convert CouchDB response to Zen response
+        '''
+
+        # Keep it conservative. etag? cache-control?
+        COPY_HEADERS = lambda x: x[0] in ['date','content-type']
+        self.resp_headers = filter(COPY_HEADERS,resp.iteritems())
+
+        self.resp_status = status_response(resp.get('status') or '500')
+        
     def resource_factory(self, path=None):
         '''
         Look up and retrieve a new resource based on WSGI environment or a uri path
@@ -102,14 +113,11 @@ class space(object):
         
         if logger: logger.debug('resp ' + repr((content[:100], resp)))
 
-        self.resp_status = resp['status']
-        #XXX: do we need to bother with a copy?
-        self.resp_headers = resp.copy()
-        del self.resp_headers['status']
+        self.prep_slave_response(resp)
 
-        if not (self.resp_status.startswith('20') or self.resp_status == '304'):
+        if not (self.resp_status.startswith('2') or self.resp_status.startswith('304')):
             if logger: logger.debug("Error looking up resource: %s: %s\n" % (content, self.resp_status))
-            return None #No resource could be retrieved
+            return '' #No resource could be retrieved
 
         data = json.loads(content)
         return resource.factory(self, docid, data)
@@ -126,19 +134,18 @@ class space(object):
             docid = self.environ['PATH_INFO'].lstrip('/').rsplit(self.space_tag, 1)[1].lstrip('/') #e.g. '/mydb/MyDoc' -> 'MyDoc'
 
         if logger: logger.debug('query ' + repr((self.remotedb, docid, join(self.remotedb, docid))))
+
         body = self.environ['wsgi.input'].read()
-        resp, content = self.h.request(join(self.remotedb, docid), "PUT", body=body)#, headers=headers)
+        headers = {'content-type':self.environ['CONTENT_TYPE']}
+        resp, content = self.h.request(join(self.remotedb, docid), "PUT", body=body, headers=headers)
         
         if logger: logger.debug('resp ' + repr((content[:100], resp)))
 
-        self.resp_status = resp['status']
-        #XXX: do we need to bother with a copy?
-        self.resp_headers = resp.copy()
-        del self.resp_headers['status']
+        self.prep_slave_response(resp)
 
-        if not (self.resp_status.startswith('20') or self.resp_status == '304'):
+        if not (self.resp_status.startswith('2') or self.resp_status.startswith('304')):
             if logger: logger.debug("Error looking up resource: %s: %s\n" % (content, self.resp_status))
-            return None #No resource could be retrieved
+            return '' #No resource could be retrieved
 
         return content
         
@@ -161,14 +168,11 @@ class space(object):
         
         if logger: logger.debug('resp ' + repr((content[:100], resp)))
 
-        self.resp_status = resp['status']
-        #XXX: do we need to bother with a copy?
-        self.resp_headers = resp.copy()
-        del self.resp_headers['status']
+        self.prep_slave_response(resp)
 
-        if not (self.resp_status.startswith('20') or self.resp_status == '304'):
+        if not (self.resp_status.startswith('2') or self.resp_status.startswith('304')):
             if logger: logger.debug("Error looking up resource: %s: %s\n" % (content, self.resp_status))
-            return None #No resource could be retrieved
+            return '' #No resource could be retrieved
 
         return content
 

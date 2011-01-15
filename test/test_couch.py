@@ -95,11 +95,12 @@ class TestCouchDB :
         
     @classmethod
     def tearDownClass(cls):
-        del cls.db
-        os.chdir(cls.akara_wd)
-        ak = subprocess.Popen(['akara','-f','akara.conf','stop'])
-        ak.wait()
-        shutil.rmtree(cls.akara_wd)
+        #del cls.db
+        #os.chdir(cls.akara_wd)
+        #ak = subprocess.Popen(['akara','-f','akara.conf','stop'])
+        #ak.wait()
+        #shutil.rmtree(cls.akara_wd)
+        pass
 
     def test_feed(self):
         resp, content = H.request(self.feed_uri,'GET',headers={HTTP_AC:JSON_IMT})
@@ -128,4 +129,4 @@ class TestCouchDB :
         assert resp['status'].startswith('2'), ASSERT_2XX%('GET',self.feed_zen_uri,resp['status'])
         assert resp[HTTP_CT] == JSON_IMT
         read_feed = json.loads(content)
-        assert read_feed['description'] == new_feed['description']
+        assert read_feed.get('description') == new_feed['description'], read_feed
