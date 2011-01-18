@@ -185,7 +185,7 @@ def get_resource(environ, start_response):
     #start_response(status_response(status), [("Content-Type", ctype), (moin.ORIG_BASE_HEADER, moin_base_info)])
 
 
-def check_forced_type(environ, start_response):
+def check_forced_type(environ, start_response, slaveinfo):
     '''
     Check whether the user wants to override the resource type in this PUT request
     '''
@@ -220,7 +220,7 @@ def check_forced_type(environ, start_response):
 def put_resource(environ, start_response):
     slaveinfo, space_tag = setup_request(environ)
 
-    resource_type = check_forced_type(environ, start_response)
+    resource_type = check_forced_type(environ, start_response, slaveinfo)
 
     imt = environ['CONTENT_TYPE'].split(';')[0]
 
@@ -236,10 +236,12 @@ def put_resource(environ, start_response):
 
     content = handler(resource_type, body)
 
-    logger.debug('rulesheet transform output (post_resource): ' + repr(content[:100]))
+    logger.debug('rulesheet transform output (put_resource): ' + repr(content[:100]))
 
     #Comes back as Unicode, but we need to feed it to slave as encoded byte string
-    environ['wsgi.input'] = cStringIO.StringIO(content.encode('utf-8'))
+    content = content.encode('utf-8')
+    environ['wsgi.input'] = cStringIO.StringIO(content)
+    environ['CONTENT_LENGTH'] = len(content)
 
     #headers = req_headers
     #headers['Content-Type'] = 'text/plain'
@@ -293,7 +295,9 @@ def post_resource(environ, start_response):
     logger.debug('rulesheet transform output & new uri path (post_resource): ' + repr((content[:100], new_path)))
 
     #Comes back as Unicode, but we need to feed it to slave as encoded byte string
-    environ['wsgi.input'] = cStringIO.StringIO(content.encode('utf-8'))
+    content = content.encode('utf-8')
+    environ['wsgi.input'] = cStringIO.StringIO(content)
+    environ['CONTENT_LENGTH'] = len(content)
 
     response = slaveinfo.create_resource(new_path)
 
