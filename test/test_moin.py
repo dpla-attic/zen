@@ -1,6 +1,6 @@
 import sys
 
-from amara.thirdparty import httplib2
+from amara.thirdparty import httplib2, json
 
 import subprocess
 import tempfile
@@ -15,6 +15,7 @@ cache control, ...
 HTTP_CC = 'cache-control'
 HTTP_STATUS = 'status'
 HTTP_CT = 'content-type'
+HTTP_AC = 'accept'
 
 MOIN_PORT = 8787
 ZEN_SECRET = "TESTSECRET99"
@@ -109,7 +110,7 @@ class TestHttpResponses :
 
         H = httplib2.Http()
         try:
-            resp, content = H.request(POET_URI, 'GET',headers={'accept': ACCEPT_HEADER})
+            resp, content = H.request(POET_URI, 'GET',headers={HTTP_AC: ACCEPT_HEADER})
         except Exception as e:
             assert 0,e
 
@@ -122,7 +123,7 @@ class TestHttpResponses :
 
         H = httplib2.Http()
         try:
-            resp, content = H.request(POET_URI, 'GET',headers={'accept': ACCEPT_HEADER})
+            resp, content = H.request(POET_URI, 'GET',headers={HTTP_AC: ACCEPT_HEADER})
         except Exception as e:
             assert 0,e
 
@@ -148,7 +149,7 @@ class TestHttpResponses :
 
         H = httplib2.Http()
         try:
-            resp, content = H.request(POET_URI, 'GET',headers={'accept': ACCEPT_HEADER})
+            resp, content = H.request(POET_URI, 'GET',headers={HTTP_AC: ACCEPT_HEADER})
         except Exception as e:
             assert 0,e
 
@@ -163,7 +164,7 @@ class TestHttpResponses :
 
         H = httplib2.Http()
         try:
-            resp, content = H.request(POET_URI, 'GET',headers={'accept': ACCEPT_HEADER})
+            resp, content = H.request(POET_URI, 'GET',headers={HTTP_AC: ACCEPT_HEADER})
         except Exception as e:
             assert 0,e
 
@@ -182,3 +183,36 @@ class TestHttpResponses :
 
         assert resp.get(HTTP_STATUS,"9")[0] == "2", "Expected 2xx response, received %s"%(resp.get(HTTP_STATUS,"None"))
         assert resp.get(HTTP_CC,"") == EXPECTED_CC, "Expected C-C %s, received C-C %s"%(EXPECTED_CC,resp.get(HTTP_CC,"None"))
+
+    def test_update(self):
+
+        # Read in EPound JSON, change description, and save
+
+        POUND_DESC = 'An updated description of Ezra Pound'
+
+        H = httplib2.Http()
+        try:
+            resp, content = H.request(POET_URI, 'GET')
+        except Exception as e:
+            assert 0,e
+
+        epound = json.loads(content)
+        epound[u'description'] = POUND_DESC
+
+        body=json.dumps(epound)
+        headers={HTTP_CT:'application/json'}
+        try:
+            resp, content = H.request(POET_URI+'?type=poetpaedia/poet', 'PUT', body=body, headers=headers)
+        except Exception as e:
+            assert 0,e
+
+        assert resp.get(HTTP_STATUS,"9")[0] == "2", "Expected 2xx response, received %s"%(resp.get(HTTP_STATUS,"None"))
+
+        headers={HTTP_AC:'application/json'}
+        try:
+            resp, content = H.request(POET_URI, 'GET', headers=headers)
+        except Exception as e:
+            assert 0,e
+
+        epound2 = json.loads(content)
+        assert epound2[u'description'] == POUND_DESC, 'Retrieved description was: '+repr(epound2[u'description'])

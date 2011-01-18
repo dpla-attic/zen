@@ -23,8 +23,8 @@ def objectify(resource):
       u'born': U(parsedate(U(bio[u'poet:born']))),
       u'died': U(parsedate(U(bio[u'poet:died']))),
       u'images': obj_urls(bio[u'poet:image']),
-      u'wikipedia': link_urls(bio[u'poet:wikipedia']),
-      u'description': U(resource.section(u'About')),
+      u'wikipedia': U(bio[u'poet:wikipedia']),
+      u'description': strip(U(resource.section(u'About'))),
     }
     return obj
 
@@ -45,26 +45,28 @@ def get_poet(resource):
     poet = objectify(resource)
     return "<html><head><title>%s</title></head><body><p>%s</p></body></html" % (poet[u'name'], poet[u'description'])
 
-#Used to serve requests for a collection of resources, in raw form
-@handles('collect', 'raw/pydict')
-def collect_poets(resources):
-    return json.dumps([objectify(resource) for resource in resources], indent=4)
-
 #Used to process HTTP PUT requests to update this resource
 @handles('PUT')
 def put_poet(resource_type, body):
     data = json.loads(body)
-    items = u'\n'.join([ u' * ' + linkify(item, resource_type.wrapped_base) for item in data[u'items'] ])
-    return COLLECTION_PAGE_TEMPLATE.substitute(locals())
+    data[u'image'] = data[u'images'][0]
+    page = POET_PAGE_TEMPLATE.substitute(data)
+    return page
 
+POET_PAGE_TEMPLATE = Template(u'''\
+= About =
 
-COLLECTION_PAGE_TEMPLATE = Template(u'''\
-= collection:items =
+$description
 
-$items
+= poet:bio =
+
+ poet:name:: $name
+ poet:born:: $born
+ poet:died:: $died
+ poet:wikipedia:: $wikipedia
+ poet:image:: {{$image}}
 
 = akara:metadata =
 
- akara:type:: [[poetpaedia/collection]]
+ akara:type:: [[poetpaedia/poet]]
 ''')
-
