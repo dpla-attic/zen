@@ -50,7 +50,7 @@ def test_bad_country_code():
 
 def test_docstrings():
     lalo = latlong.latlong(GEO_DB)
-    doctest.testmod(latlong, globs=dict(lalo=lalo),
+    doctest.testmod(latlong, globs=dict(latlong=lalo),
                     verbose=True, raise_on_error=True)
 
     
