@@ -234,15 +234,15 @@ SELECT country_alias.name, geoname.country_code
         """Find the largest city in the state
 
         >>> latlong.using_city_state("Miami", "FL")
-        (u'25.7742658', u'-80.1936589')
+        (u'25.77427', u'-80.19366')
         >>> latlong.using_city_state("Dona Ana", "New Mexico")
-        (u'32.3895356', u'-106.813895')
+        (u'32.38954', u'-106.8139')
         >>> latlong.using_city_state(u"Do\u00F1a Ana", "New Mexico")  # n with tilde
-        (u'32.3895356', u'-106.813895')
+        (u'32.38954', u'-106.8139')
         >>> latlong.using_city_state("Saskatoon", "SK")
-        (u'52.116786331', u'-106.634521548')
+        (u'52.11679', u'-106.63452')
         >>> latlong.using_city_state("Yooto", "NM")  # Navajo name for Santa Fe
-        (u'35.6869752', u'-105.937799')
+        (u'35.68698', u'-105.9378')
         """
         city = normalize_name(city)
         state = normalize_name(state)
@@ -264,7 +264,7 @@ SELECT country_alias.name, geoname.country_code
         >>> latlong.using_city_country_code("Paris", "FR")
         (u'48.85341', u'2.3488')
         >>> latlong.using_city_country_code("Miami", "US")
-        (u'25.7742658', u'-80.1936589')
+        (u'25.77427', u'-80.19366')
         """
 
         city = normalize_name(city)
@@ -282,11 +282,11 @@ SELECT country_alias.name, geoname.country_code
         >>> latlong.using_city_country("Paris", "France")
         (u'48.85341', u'2.3488')
         >>> latlong.using_city_country("Gothenburg", "SE")
-        (u'57.7071623103656', u'11.9667935371399')
+        (u'57.70716', u'11.96679')
         >>> latlong.using_city_country(u"G\u00f6teborg", "Sweden") # o-with-diaeresis
-        (u'57.7071623103656', u'11.9667935371399')
+        (u'57.70716', u'11.96679')
         >>> latlong.using_city_country("Richmond", "Canada")  # The one in BC
-        (u'49.1700323203353', u'-123.136825561523')
+        (u'49.17003', u'-123.13683')
         """
         # Use the country name to look up the country's two-letter code
         city = normalize_name(city)
@@ -307,11 +307,12 @@ SELECT country_alias.name, geoname.country_code
         and not "Salem, India" (pop. 1.5 million).
 
         >>> latlong.using_city_and_state_then_country("Salem", "IN")
-        (u'38.6056131', u'-86.101089')
+        (u'38.60561', u'-86.10109')
         >>> latlong.using_city_and_state_then_country("Salem", "Indiana")
-        (u'38.6056131', u'-86.101089')
+        (u'38.60561', u'-86.10109')
         >>> latlong.using_city_and_state_then_country("Salem", "India")
-        (u'11.65', u'78.1666667')
+        (u'11.65', u'78.16667')
+
         """
         # In this function, states win over countries
         result = self.using_city_state(city, state_then_country)
@@ -330,11 +331,11 @@ SELECT country_alias.name, geoname.country_code
         "Richmond, California" (pop. 100,000).
 
         >>> latlong.using_city_and_country_then_state("Richmond", "CA")
-        (u'49.1700323203353', u'-123.136825561523')
+        (u'49.17003', u'-123.13683')
         >>> latlong.using_city_and_country_then_state("Richmond", "Canada")
-        (u'49.1700323203353', u'-123.136825561523')
+        (u'49.17003', u'-123.13683')
         >>> latlong.using_city_and_country_then_state("Richmond", "California")
-        (u'37.9357576', u'-122.3477486')
+        (u'37.93576', u'-122.34775')
         """
         # In this function, countries win over states
         result = self.using_city_country(city, country_then_state)
@@ -346,11 +347,12 @@ SELECT country_alias.name, geoname.country_code
         """Find the largest city in the world with the given name.
 
         >>> latlong.using_city("Miami")
-        (u'25.7742658', u'-80.1936589')
+        (u'25.77427', u'-80.19366')
         >>> latlong.using_city("Paris")
         (u'48.85341', u'2.3488')
         >>> latlong.using_city("Gothenburg")
-        (u'57.7071623103656', u'11.9667935371399')
+        (u'57.70716', u'11.96679')
+
         """
         city = normalize_name(city)
         return self._get_lat_long(CITY_SQL, dict(city_name=city))
