@@ -104,7 +104,7 @@ class TestCouchDB :
         os.chdir(cls.akara_wd)
         ak = subprocess.Popen(['akara','-f','akara.conf','stop'])
         ak.wait()
-        #shutil.rmtree(cls.akara_wd)
+        shutil.rmtree(cls.akara_wd)
 
     def test_feed(self):
         resp, content = H.request(self.feed_uri,'GET',headers={HTTP_AC:JSON_IMT})
