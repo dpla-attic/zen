@@ -226,12 +226,11 @@ def put_resource(environ, start_response):
 
     temp_fpath = read_http_body_to_temp(environ, start_response)
     body = open(temp_fpath, "r").read()
-    resource = slaveinfo.resource_factory()
-
-    logger.debug('resource_type: ' + repr((resource_type, resource, resource.type)))
 
     if not resource_type:
+        resource = slaveinfo.resource_factory()
         resource_type = resource.type
+
     handler = resource_type.run_rulesheet(environ, environ['REQUEST_METHOD'], imt)
 
     content = handler(resource_type, body)
@@ -256,7 +255,7 @@ def put_resource(environ, start_response):
 
     response = slaveinfo.update_resource()
 
-    if not slaveinfo.resp_status.startswith('20'):
+    if not slaveinfo.resp_status.startswith('2'):
         start_response(status_response(slaveinfo.resp_status), slaveinfo.resp_headers)
         return ["Unable to update resource\n"]
 
@@ -301,7 +300,7 @@ def post_resource(environ, start_response):
 
     response = slaveinfo.create_resource(new_path)
 
-    if not slaveinfo.resp_status.startswith('20'):
+    if not slaveinfo.resp_status.startswith('2'):
         start_response(status_response(slaveinfo.resp_status), slaveinfo.resp_headers)
         return ["Unable to create resource\n"]
 
@@ -314,7 +313,7 @@ def delete_resource(environ, start_response):
     slaveinfo, space_tag = setup_request(environ)
     response = slaveinfo.delete_resource()
     
-    if not slaveinfo.resp_status.startswith('20'):
+    if not slaveinfo.resp_status.startswith('2'):
         start_response(status_response(slaveinfo.resp_status), slaveinfo.resp_headers)
         return ["Unable to delete resource\n"]
 

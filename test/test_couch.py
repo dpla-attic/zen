@@ -19,6 +19,8 @@ FEED_TYPE_URI = 'http://localhost:5984/%s/feed'%COUCH_DB_NAME
 FEED_URI = 'http://localhost:5984/%s/%s'
 FEED_ZEN_URI = 'http://localhost:8788/zen/couchtest/%s'
 FEED_RULESHEET_URI = FEED_TYPE_URI+'/attachment?rev=%s'
+BLAH_FEED_ZEN_URI = (FEED_ZEN_URI%'blah')
+BLAH_FEED_ZEN_PUT_URI = BLAH_FEED_ZEN_URI+'?type=feed'
 
 HTTP_AC = 'accept'
 HTTP_CT = 'content-type'
@@ -50,7 +52,10 @@ class TestCouchDB :
         os.chdir(os.path.join(sys.path[0],'../etc/feedhub/bootstrap'))
 
         cls.couch = couchdb.Server()
-        cls.couch.delete(COUCH_DB_NAME)
+        try:
+            cls.couch.delete(COUCH_DB_NAME)
+        except:
+            pass
         cls.db = cls.couch.create(COUCH_DB_NAME)
         assert cls.db is not None
 
@@ -95,12 +100,11 @@ class TestCouchDB :
         
     @classmethod
     def tearDownClass(cls):
-        #del cls.db
-        #os.chdir(cls.akara_wd)
-        #ak = subprocess.Popen(['akara','-f','akara.conf','stop'])
-        #ak.wait()
+        cls.couch.delete(COUCH_DB_NAME)
+        os.chdir(cls.akara_wd)
+        ak = subprocess.Popen(['akara','-f','akara.conf','stop'])
+        ak.wait()
         #shutil.rmtree(cls.akara_wd)
-        pass
 
     def test_feed(self):
         resp, content = H.request(self.feed_uri,'GET',headers={HTTP_AC:JSON_IMT})
@@ -130,3 +134,26 @@ class TestCouchDB :
         assert resp[HTTP_CT] == JSON_IMT
         read_feed = json.loads(content)
         assert read_feed.get('description') == new_feed['description'], read_feed
+
+    def test_zen_new_resource(self):
+        # Create a new feed from scratch via Zen
+
+        new_feed = {
+                       "name": "Blah Blah",
+                       "source": "http://blah.example.net",
+                       "description": "A feed about nothing in particular",
+                       "zen:metadata": {
+                           "zen:type":"feed"
+                       }
+                   }   
+
+        resp, content = H.request(BLAH_FEED_ZEN_PUT_URI,'PUT',
+                                  body=json.dumps(new_feed),
+                                  headers={HTTP_CT:JSON_IMT,HTTP_AC:JSON_IMT})
+        assert resp['status'].startswith('2'), ASSERT_2XX%('PUT',BLAH_FEED_ZEN_PUT_URI,resp['status'])
+
+        # Check that it works as expected
+        resp, content = H.request(BLAH_FEED_ZEN_URI,'GET',headers={HTTP_AC:JSON_IMT})
+        assert resp['status'].startswith('2'), ASSERT_2XX%('GET',BLAH_FEED_ZEN_URI,resp['status'])
+        assert resp[HTTP_CT] == JSON_IMT
+        print >> sys.stderr, repr(content)

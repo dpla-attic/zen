@@ -136,6 +136,23 @@ class space(object):
         if logger: logger.debug('query ' + repr((self.remotedb, docid, join(self.remotedb, docid))))
 
         body = self.environ['wsgi.input'].read()
+
+        # If the document already exists, we need to determine its current rev and add it to the
+        # input body, skipping the process if rev is provided in the PUT request body
+        body_js = json.loads(body)
+        rev = json.loads(body).get('_rev',None)
+        if not rev:
+            # Need to GET the rev
+            resp, content = self.h.request(join(self.remotedb, docid), "GET")
+            if str(resp.status).startswith('2'):
+                rev = json.loads(content).get('_rev',None)
+
+            logger.debug('update_resource: found existing rev = '+repr(rev))
+
+        if rev:
+            body_js['_rev'] = rev
+            body = json.dumps(body_js)
+
         headers = {'content-type':self.environ['CONTENT_TYPE']}
         resp, content = self.h.request(join(self.remotedb, docid), "PUT", body=body, headers=headers)
         
