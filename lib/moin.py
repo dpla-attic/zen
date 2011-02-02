@@ -347,9 +347,9 @@ class resource(object):
 
 UNSPECIFIED = object()
 
-TYPE_PATTERN = u'//*[@title="akara:metadata"]/gloss/label[.="akara:type"]/following-sibling::item[1]//jump/@url'
-RULESHEET_LINK_PATTERN = u'//*[@title="akara:metadata"]/gloss/label[.="akara:rulesheet"]/following-sibling::item[1]//jump/@url'
-RULESHEET_ATT_PATTERN = u'//*[@title="akara:metadata"]/gloss/label[.="akara:rulesheet"]/following-sibling::item[1]//attachment/@href'
+TYPE_PATTERN = u'//*[@title="zen:metadata" or @title="akara:metadata"]/gloss/label[.="zen:type" or .="akara:type"]/following-sibling::item[1]//jump/@url'
+RULESHEET_LINK_PATTERN = u'//*[@title="zen:metadata" or @title="akara:metadata"]/gloss/label[.="zen:rulesheet" or .="akara:rulesheet"]/following-sibling::item[1]//jump/@url'
+RULESHEET_ATT_PATTERN = u'//*[@title="zen:metadata" or @title="akara:metadata"]/gloss/label[.="zen:rulesheet" or .="akara:rulesheet"]/following-sibling::item[1]//attachment/@href'
 
 class resource_type(resource):
     def get_rulesheet(self):

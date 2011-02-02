@@ -1,6 +1,16 @@
-import sys
+"""
+Nosetests for Zen's CouchDB support. By default assumes CouchDB is running on
+port 5984 of localhost.
+
+You can override this through the environment, for example:
+
+COUCH_DB_BASE=http://rex.zepheira.com:5984; AKARA_BASE=http://rex.zepheira.com:8788; nosetests test/test_couch.py
+"""
+
+import os, sys
 
 from amara.thirdparty import httplib2, json
+from amara.lib import iri
 
 import couchdb
 import subprocess
@@ -8,16 +18,15 @@ import os
 import tempfile
 import shutil
 
-"""
-Nosetests for Zen's CouchDB support. Assumes CouchDB is running on port 5984.
-"""
+COUCH_DB_BASE = os.environ.get('COUCH_DB_BASE', 'http://localhost:5984')
+AKARA_BASE = os.environ.get('AKARA_BASE', 'http://localhost:8788')
 
 DEV_SECRET = 'TESTSECRET99'
 COUCH_DB_NAME = 'zentest'
 
-FEED_TYPE_URI = 'http://localhost:5984/%s/feed'%COUCH_DB_NAME
-FEED_URI = 'http://localhost:5984/%s/%s'
-FEED_ZEN_URI = 'http://localhost:8788/zen/couchtest/%s'
+FEED_TYPE_URI = iri.join(COUCH_DB_BASE, COUCH_DB_NAME, 'feed')
+FEED_URI = iri.join(COUCH_DB_BASE, '%s/%s')
+FEED_ZEN_URI = iri.join(AKARA_BASE, 'zen/couchtest/%s')
 FEED_RULESHEET_URI = FEED_TYPE_URI+'/attachment?rev=%s'
 BLAH_FEED_ZEN_URI = (FEED_ZEN_URI%'blah')
 BLAH_FEED_ZEN_PUT_URI = BLAH_FEED_ZEN_URI+'?type=feed'
@@ -45,7 +54,7 @@ class TestCouchDB :
         """
 
         # Check that couchdb is running
-        resp, content = H.request('http://localhost:5984','GET',headers={HTTP_AC:JSON_IMT})
+        resp, content = H.request(COUCH_DB_BASE, 'GET', headers={HTTP_AC:JSON_IMT})
         assert HTTP_CT in resp, repr(resp)
         assert resp[HTTP_CT] == JSON_IMT, repr(resp)
 

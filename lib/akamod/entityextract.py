@@ -1,5 +1,15 @@
 # -*- encoding: utf-8 -*-
 '''
+See also:
+
+ * Puzzlepieces – Comparing NLP APIs for Entity Extraction (January 2, 2010) http://faganm.com/blog/2010/01/02/1009/
+
+To investigate as well:
+
+ * http://developer.zemanta.com/
+ * http://www.zemanta.com/api/
+ 
+
 '''
 import os, sys, time
 import urllib

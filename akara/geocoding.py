@@ -52,6 +52,8 @@ To-do
 """
 
 #See also: [[http://us.pycon.org/2009/tutorials/schedule/1PM4/|"Working with Geographic Information Systems (GIS) in Python"]]
+#geohash.org
+
 
 #configure to set: ipgeo.db 
 
