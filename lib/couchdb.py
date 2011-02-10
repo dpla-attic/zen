@@ -84,6 +84,7 @@ class space(object):
 
         #Set up utility environ variable for rulesheets
         self.environ['zen.RESOURCE_URI'] = join(self.ZEN_BASEURI, environ['PATH_INFO'].lstrip('/').split('/')[0])
+        self.environ['couchdb.RESOURCE_URI'] = self.remotedb
         return
 
     def prep_slave_response(self, resp):
