@@ -15,7 +15,9 @@ from itertools import islice
 
 from amara.thirdparty import httplib2
 from amara.writers.struct import structwriter, structencoder, E, NS, ROOT, RAW, E_CURSOR
+from amara.lib.iri import relativize, absolutize
 from akara.util import header_credentials
+from akara.util.moin import ORIG_BASE_HEADER, wiki_uri
 
 from zen.util import sign_rulesheet
 
@@ -36,10 +38,25 @@ def run(targetbase=None, root=None, out=None, usersecret=None, zensecret=None):
         zensecret = zensecret.read().strip()
 
     #files = glob.glob(os.path.join(filesource, '*.xml'))
-    #Prepare the envelope for the output 
+    #Prepare the envelope for the output
     targetbase = targetbase.rstrip('/')
+
+    #Try out the target, and figure out where it is relative to wiki root
+    try:
+        resp, respbody = H.request(targetbase)
+        if resp.get('status').startswith('20'):
+            original_base, wrapped_base, original_page = resp[ORIG_BASE_HEADER].split()
+            rel_baselink = relativize(targetbase, wrapped_base)
+        else:
+            print >> sys.stderr, 'An exception here might mean you do not have Akara running at localhost:8880:', e
+            sys.exit(0)
+    except (KeyboardInterrupt, SystemExit):
+        raise
+    except Exception as e:
+        print >> sys.stderr, 'An exception here might mean you do not have Akara running at %s:'%targetbase, e
+
     w = structwriter(stream=out, indent=True)
-    output = w.cofeed(ROOT(E_CURSOR(u'wikipost')))
+    output = w.cofeed(ROOT(E_CURSOR(u'wikipost', {u'rel-to-wikibase': rel_baselink})))
 
     #headers = {'Content-Type': 'application/xml'}; headers.update(auth_headers)
     headers = auth_headers
@@ -49,6 +66,9 @@ def run(targetbase=None, root=None, out=None, usersecret=None, zensecret=None):
         #print >> sys.stderr, wikipath, root, (os.path.split(root.rstrip('/')+'/')[-1], xroot[len(root):])
         if WIKITEXT_FNAME in files:
             content = open(os.path.join(xroot, WIKITEXT_FNAME)).read()
+            #Substitute wiki base URI where specified
+            #Note: yes this is of course a substitution of which users must be aware
+            content = content.replace('[[$BOOTSTRAPBASE', '[[%s'%rel_baselink)
             moinid = '/'.join((targetbase, wikipath))
             try:
                 resp, respbody = H.request(moinid, "PUT", body=content, headers=headers)
@@ -86,8 +106,8 @@ def run(targetbase=None, root=None, out=None, usersecret=None, zensecret=None):
             except (KeyboardInterrupt, SystemExit):
                 raise
             except Exception as e:
-                #FIXME: Provide an option to override localhost:8880
-                print >> sys.stderr, 'An exception here might mean you do not have Akara running at localhost:8880:', e
+                #FIXME: Provide an option to override localhost:8880 in message
+                print >> sys.stderr, 'An exception here might mean you do not have Akara running at %s:'%moinid, e
 
     output.close()
     return
