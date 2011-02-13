@@ -158,7 +158,7 @@ def get_resource(environ, start_response):
     #Though this may be in the form of utility functions for the driver
     resource = slaveinfo.resource_factory()
     
-    if resource is None:
+    if resource is None or resource == '':
         start_response(status_response(slaveinfo.resp_status), slaveinfo.resp_headers)
         return ["Unable to access resource\n"]
 
