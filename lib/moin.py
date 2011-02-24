@@ -638,6 +638,9 @@ def curation_ingest_versions(slave_uri, user, H, auth_headers):
 from zen.services import register_service
 
 #Services for processing Moin pages
+#Example of how to debug http://xml3k.org/FrontPage?action=show&mimetype=application/xml
+#AKA http://xml3k.org/FrontPage?action=show&mimetype=application%2Fxml
+
 @zservice(u'http://purl.org/com/zepheira/zen/moinmodel/get-link-urls')
 def get_link_urls(node):
     links = [ attr.xml_value for attr in node.xml_select(u'.//@href') ]
