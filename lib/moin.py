@@ -114,6 +114,7 @@ class space(object):
         #Replace .../zen with .../moin
         environ['SCRIPT_NAME'] = environ['SCRIPT_NAME'].rsplit('/', 2)[0] + '/moin' #Should result in e.g. '/moin/mywiki'
 
+        #if logger: logger.debug('prepare_environ ' + repr((path, self.space_tag, environ,)))
         if path:
             #Then assume relative path to top of wiki, and add the moinrest wiki ID bit
             environ['PATH_INFO'] = '/' + self.space_tag + '/'+ path.lstrip('/') #e.g. '/MyPage'
@@ -164,6 +165,7 @@ class space(object):
 
         environ['REQUEST_METHOD'] = 'PUT' #Force method to PUT to create or update a wiki page via moinrest
 
+        if logger: logger.debug('environ ' + repr((path, environ,)))
         response = self.service.handler(environ, self.start_response_wrapper)
 
         #Akara handler functions can return the body in a variety of formats.  This bit normalizes it to a Unicode object
