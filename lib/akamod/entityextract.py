@@ -80,6 +80,7 @@ def yahoo_extract(body, ctype=None):
     #resp: {'status': '200', 'content-length': '518', 'content-location': 'http://query.yahooapis.com/v1/public/yql?q=select+%2A+from+search.termextract+where+context%3D%22Referred+from%3A+Library+of+Congress+-+Recorded+Sound%2810047%29+by%3A+Karen+Fishman%28106031%29+to+institution%3A+Library+of+Congress+-+American+Folklife+Center%2810019%29%22', 'transfer-encoding': 'chunked', 'age': '1', 'vary': 'Accept-Encoding', 'server': 'YTS/1.19.4', 'connection': 'keep-alive', '-content-encoding': 'gzip', 'cache-control': 'no-cache', 'date': 'Wed, 10 Nov 2010 16:57:08 GMT', 'access-control-allow-origin': '*', 'content-type': 'text/xml;charset=utf-8'} <?xml version="1.0" encoding="UTF-8"?>
     #body: <query xmlns:yahoo="http://www.yahooapis.com/v1/base.rng" yahoo:count="5" yahoo:created="2010-11-10T16:57:09Z" yahoo:lang="en-US"><results><Result xmlns="urn:yahoo:cate">american folklife center</Result><Result xmlns="urn:yahoo:cate">congress american folklife center</Result><Result xmlns="urn:yahoo:cate">library of congress</Result><Result xmlns="urn:yahoo:cate">institution library</Result><Result xmlns="urn:yahoo:cate">fishman</Result></results></query><!-- total: 136 -->
 
+    body = body.encode('ascii','ignore') # naive avoidance of non-ascii chars good enough for this app
     m = hashlib.md5(body)
     bodyhash = m.hexdigest()
 
