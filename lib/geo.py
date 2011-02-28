@@ -8,14 +8,14 @@ from amara.thirdparty import httplib2, json
 from akara import logger
 from akara import request
 from akara.caching import cache
-
-from zen.util import find_peer_service
+from akara import global_config
+from akara.util import find_peer_service
 
 GEOLOOKUP_URI = None
 
 def setup():
     global GEOLOOKUP_URI, H
-    GEOLOOKUP_URI = find_peer_service(request.environ, u'http://purl.org/com/zepheira/services/geolookup.json')
+    GEOLOOKUP_URI = find_peer_service(u'http://purl.org/com/zepheira/services/geolookup.json')
     H = httplib2.Http('/tmp/.cache')
     return
 

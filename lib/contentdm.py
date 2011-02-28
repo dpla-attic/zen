@@ -1,11 +1,11 @@
 import sys
-import urllib, urlparse
+import urllib#, urlparse
 from cgi import parse_qs
 from itertools import islice, chain, imap
 
 from amara.bindery.html import parse as htmlparse
 
-from amara.lib.iri import absolutize
+from amara.lib.iri import absolutize, split_uri_ref
 from amara.lib.util import first_item
 from amara.lib import U
 from amara.tools import atomtools
@@ -107,8 +107,10 @@ def read_contentdm(site, collection=None, query=None, limit=None):
         entry = {}
         pageuri = absolutize(it.href, site)
         print >> sys.stderr, "Processing item URL: ", pageuri
-        (scheme, netloc, path, query, fragment) = urlparse.urlsplit(pageuri)
+        (scheme, netloc, path, query, fragment) = split_uri_ref(pageuri)
+        entry['domain'] = netloc
         params = parse_qs(query)
+        entry['cdm-coll'] = params['CISOROOT'][0].strip('/').split('/')[0]
         entry['id'] = params['CISOPTR'][0]
         if entry['id'] in seen:
             continue
@@ -137,8 +139,8 @@ def read_contentdm(site, collection=None, query=None, limit=None):
             locations = entry[u"Location_Depicted"].split(u', ')
             #locations = [ l.replace(' (', ', ').replace(')', '').replace(' ', '+') for l in locations if l.strip() ]
             locations = [ l.replace(' (', ', ').replace(')', '').replace('.', '') for l in locations if l.strip() ]
-            print >> sys.stderr, "LOCATIONS", repr(locations)
-            entry[u"Locations_Depicted_list"] = locations
+            #print >> sys.stderr, "LOCATIONS", repr(locations)
+            entry[u"Locations_Depicted"] = locations
         if u"Date_Original" in entry:
             entry[u"Estimated_Original_Date"] = entry[u"Date_Original"].strip().replace('-', '5').replace('?', '') 
         entry[u"Subject"] = [ s for s in entry.get(u"Subject", u'').split(', ') if s.strip() ]

@@ -56,7 +56,7 @@ class space(object):
         #self.space_tag = kwargs['space_tag']
         if initial_environ:
             find_peer_service = initial_environ[FIND_PEER_SERVICE_KEY]
-            self.ZEN_BASEURI = find_peer_service(initial_environ, ZEN_SERVICE_ID)
+            self.ZEN_BASEURI = find_peer_service(ZEN_SERVICE_ID)
         #Start out with the first environment used for a call that activated this space
         #self.environ will be updated upon every invocation of this space
         self.environ = initial_environ

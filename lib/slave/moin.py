@@ -56,8 +56,8 @@ class space(object):
         #self.space_tag = kwargs['space_tag']
         if initial_environ:
             find_peer_service = initial_environ[FIND_PEER_SERVICE_KEY]
-            self.MOINREST_BASEURI = find_peer_service(initial_environ, MOINREST_SERVICE_ID)
-            self.ZEN_BASEURI = find_peer_service(initial_environ, ZEN_SERVICE_ID)
+            self.MOINREST_BASEURI = find_peer_service(MOINREST_SERVICE_ID)
+            self.ZEN_BASEURI = find_peer_service(ZEN_SERVICE_ID)
         self.environ = initial_environ
         s = get_a_service_by_id(self.SERVICEID)
         #Set up class/instance params based on live Akara environment

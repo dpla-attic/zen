@@ -77,19 +77,20 @@ from akara.services import simple_service
 from akara.util import status_response
 from akara import response
 from akara import logger
+from akara import module_config
 
 from zen.latlong import latlong
 
-GEOCODER = AKARA.module_config.get('geocoder', "geocoders.get_geocoder('geonames')")
-#GEOCODER = AKARA.module_config.get('geocoder', "geocoders.get_geocoder('google', resource='maps')")
+GEOCODER = module_config().get('geocoder', "geocoders.get_geocoder('geonames')")
+#GEOCODER = module_config().get('geocoder', "geocoders.get_geocoder('google', resource='maps')")
 GEOCODER = eval(GEOCODER)
-DBFILE = AKARA.module_config.get('dbfile')
+DBFILE = module_config().get('dbfile')
 
 #See NOTES for info about setting
-GEONAMES_PLUS_DBFILE = AKARA.module_config.get('geonames-dbfile')
+GEONAMES_PLUS_DBFILE = module_config().get('geonames_dbfile')
 
 # Specifies the default max-age of across-the-board lookups
-CACHE_MAX_AGE = AKARA.module_config.get('cache-max-age')
+CACHE_MAX_AGE = str(module_config().get('cache_max_age'))
 
 
 def state_lookup(s):
