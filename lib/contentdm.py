@@ -61,7 +61,17 @@ def read_contentdm(site, collection=None, query=None, limit=None):
     The first yielded value is global metadata; the  second is the record
     for the first item  in the collection/query, and so on until all the items
     are returned, or the limit reached.
+
+    for a nice-sized collection to try:
+    >>> read_contentdm('http://digital.library.louisville.edu/cdm4/', collection='/maps', query=None, limit=None)
+
+    i.e.: http://digital.library.louisville.edu/cdm4/browse.php?CISOROOT=/maps
+
+    See also:
+
+    * http://content.lib.auburn.edu/cdm4/browse.php?CISOROOT=/football (51 items)
     '''
+    #For testing there are some very large collections at http://doyle.lib.muohio.edu/about-collections.php
     urlparams = {}
     #if urlparams:
     #   ingest_service += '?' + urllib.urlencode(urlparams)
