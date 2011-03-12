@@ -2,15 +2,17 @@ import sys
 import urllib#, urlparse
 from cgi import parse_qs
 from itertools import islice, chain, imap
+import logging
 
 from amara.bindery.html import parse as htmlparse
 
-from amara.lib.iri import absolutize, split_uri_ref
+from amara.lib.iri import join, absolutize, split_uri_ref
 from amara.lib.util import first_item
 from amara.lib import U
 from amara.tools import atomtools
 from amara.bindery.model import examplotron_model, generate_metadata, metadata_dict
 from amara.bindery.util import dispatcher, node_handler
+from amara.thirdparty import httplib2
 
 """
 ( http://www.contentdm.com/ )
@@ -46,7 +48,7 @@ class content_handlers(dispatcher):
 
 CONTENT = content_handlers()
 
-def read_contentdm(site, collection=None, query=None, limit=None):
+def read_contentdm(site, collection=None, query=None, limit=None, logger=logging, cachedir='/tmp'):
     '''
     A generator of CDM records
     First generates header info
@@ -62,26 +64,54 @@ def read_contentdm(site, collection=None, query=None, limit=None):
     for the first item  in the collection/query, and so on until all the items
     are returned, or the limit reached.
 
+    If you want to see the debug messages, just do (before calling read_contentdm for the first time):
+
+    >>> import logging; logging.basicConfig(level=logging.DEBUG)
+
     for a nice-sized collection to try:
-    >>> read_contentdm('http://digital.library.louisville.edu/cdm4/', collection='/maps', query=None, limit=None)
+    >>> read_contentdm('http://digital.library.louisville.edu/cdm4/', collection='/maps')
+
+    Auburn theater collection:
+
+    >>> read_contentdm('http://content.lib.auburn.edu', collection='/theatre01')
+    >>> read_contentdm('http://content.lib.auburn.edu', collection='/football')
 
     i.e.: http://digital.library.louisville.edu/cdm4/browse.php?CISOROOT=/maps
 
     See also:
 
-    * http://content.lib.auburn.edu/cdm4/browse.php?CISOROOT=/football (51 items)
+    * /cdm4/browse.php?CISOROOT=/football (51 items)
+
+    
     '''
+    #Note: We're not sure we have command of all CDM structures yet.  See: https://foundry.zepheira.com/issues/18#note-11
     #For testing there are some very large collections at http://doyle.lib.muohio.edu/about-collections.php
     urlparams = {}
     #if urlparams:
     #   ingest_service += '?' + urllib.urlencode(urlparams)
 
+    h = httplib2.Http(cachedir)
+    logger.debug("Input params: {0}".format(repr((site, collection, query, limit))))
+    #Make sure it has a trailing slash
+    site = site.rstrip('/')+'/'
+    #Execute the main query URL for ContentDM
     qstr = urllib.urlencode({'CISOBOX1' : query or '', 'CISOROOT' : collection})
-    url = '%sresults.php?CISOOP1=any&%s&CISOFIELD1=CISOSEARCHALL'%(site, qstr)
+    url = join(site, 'results.php?CISOOP1=any&{0}&CISOFIELD1=CISOSEARCHALL'.format(qstr))
+    usersite = site #We might have to change the site URL we use as a base from the user's entry point
 
     yield {'basequeryurl': url}
 
-    resultsdoc = htmlparse(url)
+    resp, content = h.request(url)
+    #XXX: Follow redirects?
+    if not resp['status'].startswith('20'):
+        #Soemtimes people mount CDM for the user at say http://content.lib.auburn.edu but you still need to access the pages with the stem http://content.lib.auburn.edu/cdm4/
+        if not site.rstrip('/').endswith('cdm4'):
+            site = join(site, 'cdm4/')
+            url = join(site, 'results.php?CISOOP1=any&{0}&CISOFIELD1=CISOSEARCHALL'.format(qstr))
+            resp, content = h.request(url)
+            if not resp['status'].startswith('20'):
+                raise RuntimeError('Http Error acessing {0}: {1}'.format(url, repr(resp)))
+    resultsdoc = htmlparse(content)
 
     seen = set()
     
@@ -94,18 +124,18 @@ def read_contentdm(site, collection=None, query=None, limit=None):
         while True:
             items = doc.xml_select(u'//a[starts-with(@href, "item_viewer.php")]')
             #items = list(items)
-            #print >> sys.stderr, "doc: ", items
             #for i in items: yield i
             for i in items:
-                print >> sys.stderr, "i: ", unicode(i)
+                logger.debug("i: {0}".format(unicode(i)))
                 yield i
             next = [ l.href for l in doc.xml_select(u'//a[@class="res_submenu"]') if int(l.href.split(u',')[-1]) > page_start ]
             if not next:
                 break
             page_start = int(l.href.split(u',')[-1])
             url = absolutize(next[0], site)
-            print >> sys.stderr, "Next page URL: ", url
-            doc = htmlparse(url)
+            logger.debug("Next page URL: {0}".format(url))
+            resp, content = h.request(url)
+            doc = htmlparse(content)
         return
 
     items = follow_pagination(resultsdoc)
@@ -116,7 +146,7 @@ def read_contentdm(site, collection=None, query=None, limit=None):
         at_least_one = True
         entry = {}
         pageuri = absolutize(it.href, site)
-        print >> sys.stderr, "Processing item URL: ", pageuri
+        logger.debug("Processing item URL: {0}".format(pageuri))
         (scheme, netloc, path, query, fragment) = split_uri_ref(pageuri)
         entry['domain'] = netloc
         params = parse_qs(query)
@@ -127,7 +157,8 @@ def read_contentdm(site, collection=None, query=None, limit=None):
         seen.add(entry['id'])
         entry['link'] = unicode(pageuri)
         entry['local_link'] = '#' + entry['id']
-        page = htmlparse(pageuri)
+        resp, content = h.request(pageuri)
+        page = htmlparse(content)
         image = first_item(page.xml_select(u'//td[@class="tdimage"]//img'))
         if image:
             imageuri = absolutize(image.src, site)
@@ -135,15 +166,16 @@ def read_contentdm(site, collection=None, query=None, limit=None):
             try:
                 entry['thumbnail'] = absolutize(dict(it.xml_parent.a.img.xml_attributes.items())[None, u'src'], site)
             except AttributeError:
-                print >> sys.stderr, "No thumbnail"
+                logger.debug("No thumbnail")
         #entry['thumbnail'] = DEFAULT_RESOLVER.normalize(it.xml_parent.a.img.src, root)
         fields = page.xml_select(u'//tr[td[@class="tdtext"]]')
         for f in fields:
             key = unicode(f.td[0].span.b).replace(' ', '_')
+            logger.debug("{0}".format(key))
             value = u''.join(CONTENT.dispatch(f.td[1].span))
             entry[key] = unicode(value)
         if u'Title' in entry:
-            print >> sys.stderr, "(%s)"%entry['Title']
+            logger.debug("{0}".format(entry['Title']))
             entry['label'] = entry['Title']
         if u"Location_Depicted" in entry:
             locations = entry[u"Location_Depicted"].split(u', ')
@@ -157,8 +189,7 @@ def read_contentdm(site, collection=None, query=None, limit=None):
         yield entry
         count += 1
         if limit and count > limit:
-            print >> sys.stderr, "Limit reached"
+            logger.debug("Limit reached")
             break
     return
-
 
