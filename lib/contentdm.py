@@ -1,4 +1,5 @@
 import sys
+import time
 import urllib#, urlparse
 from cgi import parse_qs
 from itertools import islice, chain, imap
@@ -48,7 +49,7 @@ class content_handlers(dispatcher):
 
 CONTENT = content_handlers()
 
-def read_contentdm(site, collection=None, query=None, limit=None, logger=logging, cachedir='/tmp'):
+def read_contentdm(site, collection=None, query=None, limit=None, logger=logging, cachedir='/tmp/.cache'):
     '''
     A generator of CDM records
     First generates header info
@@ -133,9 +134,15 @@ def read_contentdm(site, collection=None, query=None, limit=None, logger=logging
                 break
             page_start = int(l.href.split(u',')[-1])
             url = absolutize(next[0], site)
+
             logger.debug("Next page URL: {0}".format(url))
+            start_t = time.time()
             resp, content = h.request(url)
+            retrieved_t = time.time()
+            logger.debug("Retrieved in {0}s".format(retrieved_t - start_t))
             doc = htmlparse(content)
+            parsed_t = time.time()
+            logger.debug("Parsed in {0}s".format(parsed_t - retrieved_t))
         return
 
     items = follow_pagination(resultsdoc)
@@ -157,8 +164,15 @@ def read_contentdm(site, collection=None, query=None, limit=None, logger=logging
         seen.add(entry['id'])
         entry['link'] = unicode(pageuri)
         entry['local_link'] = '#' + entry['id']
+
+        start_t = time.time()
         resp, content = h.request(pageuri)
+        retrieved_t = time.time()
+        logger.debug("Retrieved in {0}s".format(retrieved_t - start_t))
+        parsed_t = time.time()
         page = htmlparse(content)
+        logger.debug("Parsed in {0}s".format(parsed_t - retrieved_t))
+
         image = first_item(page.xml_select(u'//td[@class="tdimage"]//img'))
         if image:
             imageuri = absolutize(image.src, site)
@@ -171,7 +185,7 @@ def read_contentdm(site, collection=None, query=None, limit=None, logger=logging
         fields = page.xml_select(u'//tr[td[@class="tdtext"]]')
         for f in fields:
             key = unicode(f.td[0].span.b).replace(' ', '_')
-            logger.debug("{0}".format(key))
+            #logger.debug("{0}".format(key))
             value = u''.join(CONTENT.dispatch(f.td[1].span))
             entry[key] = unicode(value)
         if u'Title' in entry:
