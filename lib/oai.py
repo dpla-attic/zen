@@ -114,7 +114,7 @@ class oaiservice(object):
 
         doc = bindery.parse(url, model=OAI_MODEL)
         #print >> sys.stderr, list(generate_metadata(doc))
-        resources, first_id = metadata_dict(generate_metadata(doc))
+        resources, first_id = metadata_dict(generate_metadata(doc), nesteddict=False)
         record = doc.OAI_PMH
 
         resource = resources[first_id]
@@ -132,14 +132,13 @@ class oaiservice(object):
         self.logger.debug('Retrieved in {0}s'.format(retrieved_t - start_t))
         doc = bindery.parse(url, model=OAI_LISTRECORDS_MODEL)
         #print >> sys.stderr, list(generate_metadata(doc))
-        resources, first_id = metadata_dict(generate_metadata(doc))
-        for id_, props in resources.items():
-            for k, v in props.items():
+        records, first_id = metadata_dict(generate_metadata(doc),
+                                          nesteddict=False)
+        for id_, props in records:
+            for k, v in props.iteritems():
                 props[k] = [ U(item) for item in v ]
-        #record = doc.OAI_PMH
 
-        #resource = resources[first_id]
-        return resources
+        return records
 
 #
 OAI_LISTSETS_XML = """<?xml version="1.0" encoding="UTF-8"?>
@@ -242,83 +241,4 @@ OAI_GETRECORD_XML = """<?xml version="1.0" encoding="UTF-8"?>
 
 OAI_GETRECORD_MODEL = examplotron_model(OAI_GETRECORD_XML)
 OAI_LISTRECORDS_MODEL = examplotron_model(OAI_LISTRECORDS_XML)
-
-
-#@simple_service('GET', 'http://open-science.zepheira.com/content/dspace/source', 'osci.dspace.atom', 'application/atom+xml')
-def dspace_adapter(search=None, id=None):
-    '''
-    Sample queries:
-    curl "http://localhost:8880/dspace?search=stem+cells"
-    curl "http://localhost:8880/dspace?id=19358275"
-    '''
-    #FIXME: How do we handle no search or id param?  Just serve up the latest entries?  Or error as below?
-    #assert_(not(search and id), msg="You must specify the 'search' or 'id' query parameter is mandatory.")
-    if search:
-        #reldate: only search for last N days
-        #query = urllib.urlencode({'db' : NCBI_DB, 'term': query, 'reldate': '60', 'datetype': 'edat', 'retmax': DEFAULT_MAX_RESULTS, 'usehistory': 'y'})
-        query = urllib.urlencode({'query': search, 'scope': '/', 'rpp': DEFAULT_MAX_RESULTS, 'sort_by': '0', 'order': 'DESC', 'submit': 'Go'})
-        search_url = DSPACE_SEARCH_PATTERN%(query)
-        #print >> sys.stderr, search_url
-        search_terms = search
-        alt_link = search_url
-        self_link = DSPACE_ADAPTER_BASE + '?' + urllib.urlencode({'search': search})
-        doc = html.parse(search_url)
-
-        f = feed(ATOM_ENVELOPE, title=search_terms.decode('utf-8'), id=self_link.decode('utf-8'))
-        #f.feed.update = self_link.decode('utf-8')
-        f.feed.xml_append(E((ATOM_NAMESPACE, u'link'), {u'rel': u'self', u'type': u'application/atom+xml', u'href': self_link.decode('utf-8')}))
-        f.feed.xml_append(E((ATOM_NAMESPACE, u'link'), {u'rel': u'search', u'type': u'application/opensearchdescription+xml', u'href': OSCI_BASE + u'/content/dspace.discovery'}))
-        f.feed.xml_append(E((ATOM_NAMESPACE, u'link'), {u'rel': u'alternate', u'type': u'text/xml', u'href': alt_link.decode('utf-8')}))
-        f.feed.xml_append(E((OPENSEARCH_NAMESPACE, u'Query'), {u'role': u'request', u'searchTerms': search_terms.decode('utf-8')}))
-        maxarticles = DEFAULT_MAX_RESULTS
-
-        #for item in doc.xml_select(u'//*[@class="result_table"]//*[@class="article_title"]'):
-        for li in islice(doc.xml_select(u'//*[@id="'+RESULTS_DIV+'"]//*[@class="artifact-description"]/..'), 0, maxarticles):
-            row = li.xml_parent.xml_parent
-            title = li.xml_select(u'.//*[@class="artifact-title"]')[0]
-            rel_id = title.a.href.partition(u'/handle/')[2]
-            dspace_id = DSPACE_ID_BASE + rel_id
-            alt_link = DSPACE_ARTICLE_BASE + u'1721.1/7488'
-            #Do not quote.  DSpace doesn't like that
-            #alt_link = DSPACE_ARTICLE_BASE + urllib.quote(u'1721.1/7488', '')
-            title = unicode(title)
-            summary = unicode(row.xml_select(u'string(.//*[@class="summary"])'))
-            updated = unicode(row.xml_select(u'string(.//*[@class="date"])')).strip().partition(u'Published: ')[2]
-            #updated = time.strptime(updated, "%m/%d/%Y %H:%M:%S") #2/11/2008 2:20:00 AM
-            authors = [ (name.strip(), None, None) for name in unicode(row.xml_select(u'string(.//*[@class="author"]//b)')).split(';') ]
-
-            #Retrieve the DSpace page
-            qstr = urllib.urlencode({'verb' : 'GetRecord', 'metadataPrefix': 'oai_dc', 'identifier': dspace_id})
-            url = DSPACE_OAI_ENDPOINT + '?' + qstr
-            logger.debug('DSpace URL: ' + str(url))
-            #keywords = [ (k.strip(), JOVE_TAG) for k in unicode(row.xml_select(u'string(.//*[@class="keywords"])')).split(',') ]
-
-            doc = bindery.parse(url, model=OAI_MODEL)
-            #print >> sys.stderr, list(generate_metadata(doc))
-            resources, first_id = metadata_dict(generate_metadata(doc))
-            record = doc.OAI_PMH
-
-            resource = resources[first_id]
-
-            authors = [ (a, None, None) for a in resource.get(u'creator', '') ]
-            links = [
-                (DSPACE_ARTICLE_BASE + rel_id, u'alternate'),
-                (u'dspace?id=' + dspace_id, u'self'),
-            ]
-            elements = [
-                E((ATOM_NAMESPACE, u'content'), {u'src': alt_link}),
-            ]
-            f.append(
-                dspace_id,
-                U(resource['title']),
-                updated=U(resource['date']),
-                summary=U(resource.get('description', '')),
-                authors=authors,
-                links=links,
-                #categories=categories,
-                elements=elements,
-            )
-
-        #FIXME: indent
-        return f.xml_encode()
 
