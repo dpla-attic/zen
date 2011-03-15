@@ -1,3 +1,12 @@
+"""
+( http://www.contentdm.com/ )
+
+python contentdm_adapter.py http://digital.library.louisville.edu/cdm4/ "crutches"
+
+ * http://digital.library.louisville.edu/collections/jthom/
+ * http://digital.library.louisville.edu/cdm4/search.php
+"""
+
 import sys
 import time
 import urllib#, urlparse
@@ -14,15 +23,6 @@ from amara.tools import atomtools
 from amara.bindery.model import examplotron_model, generate_metadata, metadata_dict
 from amara.bindery.util import dispatcher, node_handler
 from amara.thirdparty import httplib2
-
-"""
-( http://www.contentdm.com/ )
-
-python contentdm_adapter.py http://digital.library.louisville.edu/cdm4/ "crutches"
-
- * http://digital.library.louisville.edu/collections/jthom/
- * http://digital.library.louisville.edu/cdm4/search.php
-"""
 
 #QUERY = sys.argv[2]
 #URL = 'item_viewer.php?CISOROOT=/jthom&CISOPTR=920&CISOBOX=1&REC=1'
