@@ -12,6 +12,7 @@ import time
 import urllib#, urlparse
 from cgi import parse_qs
 from itertools import islice, chain, imap
+from urllib import quote
 import logging
 
 from amara.bindery.html import parse as htmlparse
@@ -49,7 +50,28 @@ class content_handlers(dispatcher):
 
 CONTENT = content_handlers()
 
-def read_contentdm(site, collection=None, query=None, limit=None, logger=logging, cachedir='/tmp/.cache'):
+
+class html2bindery(object):
+    def __init__(self, proxy, h, logger):
+        self._proxy = proxy
+        self._h = h
+        self._logger = logger
+
+    def __call__(self, url, logtag="Requesting URL: {0}"):
+        if self._proxy:
+            url = "{0}?url={1}".format(self._proxy, quote(url))
+        self._logger.debug(logtag.format(url))
+        start_t = time.time()
+        resp, content = self._h.request(url)
+        retrieved_t = time.time()
+        self._logger.debug("Retrieved in {0}s".format(retrieved_t - start_t))
+        doc = htmlparse(content)
+        parsed_t = time.time()
+        self._logger.debug("Parsed in {0}s".format(parsed_t - retrieved_t))
+        return resp, doc
+
+
+def read_contentdm(site, collection=None, query=None, limit=None, logger=logging, proxy=None, cachedir='/tmp/.cache'):
     '''
     A generator of CDM records
     First generates header info
@@ -83,15 +105,18 @@ def read_contentdm(site, collection=None, query=None, limit=None, logger=logging
 
     * /cdm4/browse.php?CISOROOT=/football (51 items)
 
-    
+    >>> results = read_contentdm('http://digital.library.louisville.edu/cdm4/', collection='/jthom', query=None, limit=None, proxy="http://localhost:8880/akara.cache-proxy")
+
     '''
+    h = httplib2.Http(cachedir)
+    getdoc = html2bindery(proxy, h, logger)
+
     #Note: We're not sure we have command of all CDM structures yet.  See: https://foundry.zepheira.com/issues/18#note-11
     #For testing there are some very large collections at http://doyle.lib.muohio.edu/about-collections.php
     urlparams = {}
     #if urlparams:
     #   ingest_service += '?' + urllib.urlencode(urlparams)
 
-    h = httplib2.Http(cachedir)
     logger.debug("Input params: {0}".format(repr((site, collection, query, limit))))
     #Make sure it has a trailing slash
     site = site.rstrip('/')+'/'
@@ -135,14 +160,7 @@ def read_contentdm(site, collection=None, query=None, limit=None, logger=logging
             page_start = int(l.href.split(u',')[-1])
             url = absolutize(next[0], site)
 
-            logger.debug("Next page URL: {0}".format(url))
-            start_t = time.time()
-            resp, content = h.request(url)
-            retrieved_t = time.time()
-            logger.debug("Retrieved in {0}s".format(retrieved_t - start_t))
-            doc = htmlparse(content)
-            parsed_t = time.time()
-            logger.debug("Parsed in {0}s".format(parsed_t - retrieved_t))
+            resp, doc = getdoc(url, "Next page URL: {0}")
         return
 
     items = follow_pagination(resultsdoc)
@@ -165,13 +183,7 @@ def read_contentdm(site, collection=None, query=None, limit=None, logger=logging
         entry['link'] = unicode(pageuri)
         entry['local_link'] = '#' + entry['id']
 
-        start_t = time.time()
-        resp, content = h.request(pageuri)
-        retrieved_t = time.time()
-        logger.debug("Retrieved in {0}s".format(retrieved_t - start_t))
-        parsed_t = time.time()
-        page = htmlparse(content)
-        logger.debug("Parsed in {0}s".format(parsed_t - retrieved_t))
+        resp, page = getdoc(pageuri)
 
         image = first_item(page.xml_select(u'//td[@class="tdimage"]//img'))
         if image:
