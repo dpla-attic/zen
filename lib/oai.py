@@ -1,3 +1,4 @@
+
 # -*- encoding: utf-8 -*-
 
 # Copyright 2008-2009 Zepheira LLC
@@ -6,24 +7,14 @@
 OAI tools - evolution of oaitools.py in akara demos
 '''
 
-import sys, time, logging
-import datetime
-import urllib, urllib2
-#from itertools import *
-#from functools import *
-from contextlib import closing
+import time, logging
+import urllib
 
-import amara
 from amara import bindery
 from amara.bindery.model import examplotron_model, generate_metadata, metadata_dict
 from amara.lib import U
-from amara.writers.struct import structwriter, E, NS, ROOT, RAW
-#from amara.lib.util import *
-from amara.bindery import html
-from amara.namespaces import *
 from amara.pushtree import pushtree
 from amara.thirdparty import httplib2
-from amara.tools.atomtools import feed
 
 OAI_NAMESPACE = u"http://www.openarchives.org/OAI/2.0/"
 

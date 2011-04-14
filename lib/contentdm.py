@@ -1,18 +1,21 @@
-"""
+'''
+Requires the Zen library.
+
 ( http://www.contentdm.com/ )
 
 python contentdm_adapter.py http://digital.library.louisville.edu/cdm4/ "crutches"
 
  * http://digital.library.louisville.edu/collections/jthom/
  * http://digital.library.louisville.edu/cdm4/search.php
-"""
+'''
 
-import sys
+import os, sys
 import time
 import urllib#, urlparse
 from cgi import parse_qs
 from itertools import islice, chain, imap
 from urllib import quote
+import hashlib
 import logging
 
 from amara.bindery.html import parse as htmlparse
@@ -23,7 +26,7 @@ from amara.lib import U
 from amara.tools import atomtools
 from amara.bindery.model import examplotron_model, generate_metadata, metadata_dict
 from amara.bindery.util import dispatcher, node_handler
-from amara.thirdparty import httplib2
+from amara.thirdparty import httplib2, json
 
 #QUERY = sys.argv[2]
 #URL = 'item_viewer.php?CISOROOT=/jthom&CISOPTR=920&CISOBOX=1&REC=1'
@@ -51,13 +54,14 @@ class content_handlers(dispatcher):
 CONTENT = content_handlers()
 
 
-class html2bindery(object):
-    def __init__(self, proxy, h, logger):
+class cdmsite_handler(object):
+    def __init__(self, proxy, h, logger, cachedir):
         self._proxy = proxy
         self._h = h
         self._logger = logger
+        self._cachedir = cachedir
 
-    def __call__(self, url, logtag="Requesting URL: {0}"):
+    def index_page(self, url, logtag="Requesting index at URL: {0}"):
         if self._proxy:
             url = "{0}?url={1}".format(self._proxy, quote(url))
         self._logger.debug(logtag.format(url))
@@ -69,6 +73,29 @@ class html2bindery(object):
         parsed_t = time.time()
         self._logger.debug("Parsed in {0}s".format(parsed_t - retrieved_t))
         return resp, doc
+
+    def item_page(self, url, logtag="Requesting item at URL: {0}"):
+        if self._proxy:
+            url = "{0}?url={1}".format(self._proxy, quote(url))
+        self._logger.debug(logtag.format(url))
+        start_t = time.time()
+        resp, content = self._h.request(url)
+        retrieved_t = time.time()
+        self._logger.debug("Retrieved in {0}s".format(retrieved_t - start_t))
+        cachekey = hashlib.md5(content).hexdigest()
+        self._logger.debug('MD5 Hash of HTTP body: {0}'.format(cachekey))
+        if self._cachedir:
+            try:
+                json_stream = open(os.path.join(self._cachedir, cachekey+'.extract.js'))
+                cached = json.load(json_stream)
+                self._logger.debug('Loaded from cache: {0}'.format(cachekey))
+                doc = None
+            except (IOError, ValueError):
+                doc = htmlparse(content)
+                cached = None
+        parsed_t = time.time()
+        self._logger.debug("Parsed in {0}s".format(parsed_t - retrieved_t))
+        return resp, doc, cachekey, cached
 
 
 def read_contentdm(site, collection=None, query=None, limit=None, logger=logging, proxy=None, cachedir='/tmp/.cache'):
@@ -109,7 +136,7 @@ def read_contentdm(site, collection=None, query=None, limit=None, logger=logging
 
     '''
     h = httplib2.Http(cachedir)
-    getdoc = html2bindery(proxy, h, logger)
+    cdmsite = cdmsite_handler(proxy, h, logger, cachedir)
 
     #Note: We're not sure we have command of all CDM structures yet.  See: https://foundry.zepheira.com/issues/18#note-11
     #For testing there are some very large collections at http://doyle.lib.muohio.edu/about-collections.php
@@ -160,7 +187,7 @@ def read_contentdm(site, collection=None, query=None, limit=None, logger=logging
             page_start = int(l.href.split(u',')[-1])
             url = absolutize(next[0], site)
 
-            resp, doc = getdoc(url, "Next page URL: {0}")
+            resp, doc = cdmsite.index_page(url, "Next page URL: {0}")
         return
 
     items = follow_pagination(resultsdoc)
@@ -183,35 +210,45 @@ def read_contentdm(site, collection=None, query=None, limit=None, logger=logging
         entry['link'] = unicode(pageuri)
         entry['local_link'] = '#' + entry['id']
 
-        resp, page = getdoc(pageuri)
+        resp, page, cachekey, cached = cdmsite.item_page(pageuri)
 
-        image = first_item(page.xml_select(u'//td[@class="tdimage"]//img'))
-        if image:
-            imageuri = absolutize(image.src, site)
-            entry['imageuri'] = imageuri
-            try:
-                entry['thumbnail'] = absolutize(dict(it.xml_parent.a.img.xml_attributes.items())[None, u'src'], site)
-            except AttributeError:
-                logger.debug("No thumbnail")
-        #entry['thumbnail'] = DEFAULT_RESOLVER.normalize(it.xml_parent.a.img.src, root)
-        fields = page.xml_select(u'//tr[td[@class="tdtext"]]')
-        for f in fields:
-            key = unicode(f.td[0].span.b).replace(' ', '_')
-            #logger.debug("{0}".format(key))
-            value = u''.join(CONTENT.dispatch(f.td[1].span))
-            entry[key] = unicode(value)
-        if u'Title' in entry:
-            logger.debug("{0}".format(entry['Title']))
-            entry['label'] = entry['Title']
-        if u"Location_Depicted" in entry:
-            locations = entry[u"Location_Depicted"].split(u', ')
-            #locations = [ l.replace(' (', ', ').replace(')', '').replace(' ', '+') for l in locations if l.strip() ]
-            locations = [ l.replace(' (', ', ').replace(')', '').replace('.', '') for l in locations if l.strip() ]
-            #print >> sys.stderr, "LOCATIONS", repr(locations)
-            entry[u"Locations_Depicted"] = locations
-        if u"Date_Original" in entry:
-            entry[u"Estimated_Original_Date"] = entry[u"Date_Original"].strip().replace('-', '5').replace('?', '') 
-        entry[u"Subject"] = [ s for s in entry.get(u"Subject", u'').split(', ') if s.strip() ]
+        if cached:
+            entry = cached
+        else:
+            image = first_item(page.xml_select(u'//td[@class="tdimage"]//img'))
+            if image:
+                imageuri = absolutize(image.src, site)
+                entry['imageuri'] = imageuri
+                try:
+                    entry['thumbnail'] = absolutize(dict(it.xml_parent.a.img.xml_attributes.items())[None, u'src'], site)
+                except AttributeError:
+                    logger.debug("No thumbnail")
+            #entry['thumbnail'] = DEFAULT_RESOLVER.normalize(it.xml_parent.a.img.src, root)
+            fields = page.xml_select(u'//tr[td[@class="tdtext"]]')
+            for f in fields:
+                key = unicode(f.td[0].span.b).replace(' ', '_')
+                #logger.debug("{0}".format(key))
+                value = u''.join(CONTENT.dispatch(f.td[1].span))
+                entry[key] = unicode(value)
+            if u'Title' in entry:
+                logger.debug("{0}".format(entry['Title']))
+                entry['label'] = entry['Title']
+            if u"Location_Depicted" in entry:
+                locations = entry[u"Location_Depicted"].split(u', ')
+                #locations = [ l.replace(' (', ', ').replace(')', '').replace(' ', '+') for l in locations if l.strip() ]
+                locations = [ l.replace(' (', ', ').replace(')', '').replace('.', '') for l in locations if l.strip() ]
+                #print >> sys.stderr, "LOCATIONS", repr(locations)
+                entry[u"Locations_Depicted"] = locations
+            if u"Date_Original" in entry:
+                entry[u"Estimated_Original_Date"] = entry[u"Date_Original"].strip().replace('-', '5').replace('?', '') 
+            entry[u"Subject"] = [ s for s in entry.get(u"Subject", u'').split(', ') if s.strip() ]
+            if cachedir:
+                try:
+                    json_stream = open(os.path.join(cachedir, cachekey+'.extract.js'), 'w')
+                    json.dump(entry, json_stream)
+                except IOError, ValueError:
+                    pass
+
         yield entry
         count += 1
         if limit and count > limit:
