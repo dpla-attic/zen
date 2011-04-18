@@ -14,17 +14,32 @@ from zen.contentdm import read_contentdm, cdmsite_handler
 
 # test against louisville for now.
 QUERY   = "http://digital.library.louisville.edu/cdm4/results.php?CISOOP1=any&CISOROOT=jthom&CISOBOX1=&CISOFIELD1=CISOSEARCHALL" 
-CACHE   = '.cache'
+
+#URL = 'item_viewer.php?CISOROOT=/jthom&CISOPTR=920&CISOBOX=1&REC=1'
 
 # globals
-H       = httplib2.Http(CACHE)
 LOGGER  = logging
+CACHE   = '.cache'
+PROXY   = None
+#PROXY   = 'http://localhost:8880/'
+
+H       = httplib2.Http(CACHE)
 
 def count_iterable(i):
-    """ want this: len(ifilter(condition, iterable))"""
+    """ want this: len(ifilter(condition, iterable)) """
     return sum(1 for e in i)
     
-class TestResponseOK(unittest.TestCase):
+class testMockFileOK(unittest.TestCase):
+    """ docstring """
+    def test(self):
+        try:
+            with open('./testcdm/cdm1.html') as a_file:
+                source = a_file.read()
+        except Exception as err:
+            assert 0, err
+        self.assertNotEqual(source, None)
+    
+class testResponseOK(unittest.TestCase):
     """ docstring """
     def test(self):
         """ docstring """
@@ -34,15 +49,15 @@ class TestResponseOK(unittest.TestCase):
             assert 0, err
         self.assertEqual(resp['status'].startswith('20'), True)
 
-class TestParsedDocumentHasContent(unittest.TestCase):
+class testParsedDocumentHasContent(unittest.TestCase):
     """ docstring """
     def test(self):
         """ docstring """
-        DOCUMENT = htmlparse(QUERY)
-        self.assertEqual(DOCUMENT.xml_type, 'document')
-        self.assertEqual(DOCUMENT.hasContent(), True)
+        doc = htmlparse(QUERY)
+        self.assertEqual(doc.xml_type, 'document')
+        self.assertEqual(doc.hasContent(), True)
 
-class TestRecordsReturnedMatchesLimit(unittest.TestCase):
+class testRecordsReturnedMatchesLimit(unittest.TestCase):
     """ docstring """
     def test(self):
         """ docstring """
@@ -53,35 +68,48 @@ class TestRecordsReturnedMatchesLimit(unittest.TestCase):
         #self.assertEqual(count, 1)
         self.assertEqual(count, 3)
 
-class TestISONotNone(unittest.TestCase):
+class testISONotNone(unittest.TestCase):
     """ Missing ISO date? """
     def test(self):
         """ docstring """
         from zen import dateparser
         from zen.dateparser import regex_patterns, to_iso8601
 
-class TestISOEqualsReference(unittest.TestCase):
+class testISOEqualsReference(unittest.TestCase):
     """ ISO date equals Reference date? """
     def test(self):
         """ docstring """
         from zen import dateparser
         from zen.dateparser import regex_patterns, to_iso8601
 
-class TestCdmSiteHandler(unittest.TestCase):
+class testCdmSiteHandlerIndexPage(unittest.TestCase):
     """ TODO """
     def test(self):
         """ docstring """
-        resp = cdmsite_handler(None, H, LOGGER, CACHE)
-        self.assertNotEqual(resp, None)
+        try:
+            resp, doc  = cdmsite_handler(PROXY, H, LOGGER, CACHE).index_page(QUERY)
+        except Exception as err:
+            assert 0, err
+        #self.assertNotEqual(doc, None)
 
-class TestPagination(unittest.TestCase):
+class testCdmSiteHandlerItemPage(unittest.TestCase):
+    """ TODO """
+    def test(self):
+        """ docstring """
+        try:
+            resp, doc, cachekey, cached  = cdmsite_handler(PROXY, H, LOGGER, CACHE).item_page(QUERY)
+        except Exception as err:
+            assert 0, err
+        #self.assertNotEqual(doc, None)
+        
+class testPagination(unittest.TestCase):
     """ TODO """
     def test(self):
         """ docstring """
         pass
 
 # Failing these might break dependency on caching.
-class TestHasDateHeader(unittest.TestCase):
+class testHasDateHeader(unittest.TestCase):
     """ Missing Date header? """
     def test(self):
         """ docstring """
@@ -91,7 +119,7 @@ class TestHasDateHeader(unittest.TestCase):
             assert 0, err
         self.assertNotEqual(resp['date'], None)
 
-class TestExpiresHeader(unittest.TestCase):
+class testHasExpiresHeader(unittest.TestCase):
     """ Missing Expires header? """
     def test(self):
         """ docstring """
@@ -101,7 +129,7 @@ class TestExpiresHeader(unittest.TestCase):
             assert 0, err
         self.assertNotEqual(resp['expires'], None)
 
-class TestCacheControlHeader(unittest.TestCase):
+class testHasCacheControlHeader(unittest.TestCase):
     """ Missing Cache-Control header? """
     def test(self):
         """ docstring """
@@ -122,13 +150,6 @@ class _response(StringIO.StringIO):
     def iteritems(self):
         """ docstring """
         return self.headers.iteritems()
-
-'''
->>> results = itertools.ifilter( \
-                                is_valid_record, \
-                                read_contentdm('http://digital.library.louisville.edu/cdm4/', \
-                                collection='/jthom', \
-                                limit=5)
->>> len(list(results))
-7
-'''
+        
+if __name__ == '__main__':
+    raise SystemExit("please use nosetests")
