@@ -1,0 +1,949 @@
+<!--   
+CONTENTdm Version 5.2
+(c) OCLC 2009. All Rights Reserved.
+//-->
+
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+        
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<meta http-equiv="Expires" content="Mon, 26 Jul 1997 05:00:00 GMT" /> 
+<meta http-equiv="Pragma" content="no-cache" />
+
+<title>CONTENTdm Collection : Search Results</title>
+
+<style type="text/css">
+<!--
+
+
+/*********************************** Add UofL Header and footer stylesheet **********************************/
+body, #UofLheader, #dcTitle, h1, form { margin:0; }
+
+#UofLheader  {
+	width:100%; height: 64px; 
+	min-width:780px; 
+	white-space: nowrap;
+	color: #ffffff; background: #000 none;
+	margin: 0; padding-top:.2em; padding-bottom: .2em; padding-left: .2em; 
+	text-align: left;
+	}
+
+#UofLheader a:link, #UofLheader a:visited {  color: #ffffff; background-color: #000; text-decoration: none; font-family: "Lucida Grande", "Lucida Sans Unicode", Verdana, Helvetica, Arial, sans-serif;  }
+#UofLheader a:hover, #UofLheader a:active { background-color:#ffffff; color: #000; text-decoration: none; font-family: "Lucida Grande", "Lucida Sans Unicode", Verdana, Helvetica, Arial, sans-serif; }
+
+#logos { float:left; width: 170px; }
+h1 { 
+	color: #ffffff; background: #000;
+	padding: 8px 8px 8px 100px; 
+	float:left;  
+	}
+
+.searchForm { padding: 8px 0;     /*padding:0;  */ }
+.share { padding-top:0; }
+
+
+
+/******************************** End UofL Header ***********************************/
+
+
+
+
+
+/******************* begin librariesFooter ****************************************/
+
+#librariesFooter {
+    font-family: "Lucida Grande", "Lucida Sans Unicode", Verdana, Helvetica, Arial, sans-serif;
+    font-size: 80%;
+    margin: 0; 
+    background-color: #000000;     color: #ffffff; 
+    width: 100%;
+    /*text-align:left;  */
+    height: 4.5em;
+    padding-top: 0; padding-bottom:10px;
+}
+#librariesFooter p { padding:10px; margin-top: 0; }
+#librariesFooter a:link, #librariesFooter a:visited {color:#ffffff; text-decoration: none}
+#librariesFooter a:hover, #librariesFooter a:active {color:#000000; background: #ffffff; text-decoration: none}
+
+
+.clear { clear:both; max-height:0; padding:0; margin:0;}
+
+/*******************  end libraries footer ******************************************/
+/*********************************** End add UofL Header and footer stylesheet **********************************/ 
+
+
+.maintext
+	{
+	font-family:verdana;
+	font-size:80%;
+	color:#000000;
+	}
+
+.maintextwhite
+	{
+	font-family:verdana;
+	font-size:80%;
+	color:#ffffff;
+	}
+
+.smalltext
+	{
+	color:#000000;
+	font-family:verdana;
+	font-size:65%;
+	}
+	
+.headertext
+	{
+	font-family:geneva,verdana;
+	font-size:170%;
+	color:#ffffff;
+	font-weight:bold;
+	letter-spacing:1.9pt;
+	}
+	
+.helpheading
+	{
+	font-family:verdana;
+	font-size:140%;	
+	color:#000000;
+	font-weight:bold;	
+	}
+
+.helpsubheading
+	{
+	font-family:verdana;
+	font-size:120%;	
+	color:#000000;
+	font-weight:bold;
+	}
+	
+.red
+	{
+	font-family:verdana;
+	font-size:100%;
+	color:#000099;
+	}
+
+hr
+	{
+	color:#777777;
+	}	
+/* Liren Liu  updated on 07-31-2009 */
+a
+	{
+	font-family:verdana;
+	font-size:100%;
+	color:#900000;
+	text-decoration:none;
+	}
+	
+a:hover
+	{
+	font-family:verdana;
+	font-size:100%;
+	color:#ffffff;
+	background-color:#900000; 
+	text-decoration:none;
+	}	
+	
+.copyright
+	{
+	font-family:verdana;
+	font-size:65%;
+	color:#99a99a;
+	}
+	
+a.copyright
+	{
+	font-family:verdana;
+	font-size:100%;
+	color:#99a99a;
+	text-decoration:none;
+	}
+	
+a.copyright:hover
+	{
+	font-family:verdana;
+	font-size:100%;
+	color:#ffffff;
+	/* background-color:#777777;		??? test: Liren Liu 07-31-2009  */
+	text-decoration:none;
+	}	
+
+.offstatus
+	{
+	color:#333333;
+	cursor:text;
+	}
+	
+a.offstatus
+	{
+	color:#333333;
+	cursor:text;
+	}	
+	
+a.offstatus:hover
+	{
+	color:#333333;
+	cursor:text;
+	}
+	
+a
+	{
+	font-family:verdana;
+	font-size:100%;
+	color:#900000;
+	text-decoration:none;
+	}
+	
+a:hover
+	{
+	font-family:verdana;
+	font-size:100%;
+	color:#ffffff;
+	text-decoration:none;
+	}
+
+.genmenu
+    {
+    font-family:"Trebuchet MS",verdana;
+    font-size:85%;
+    font-weight:normal;
+    letter-spacing:1.3pt;
+    text-decoration:none;
+	background-color: #e6e6e6; color:#000000;
+	margin: 0; padding:0;  border-bottom: 1px solid #555; 
+    }
+
+   
+a.genmenu
+    {
+    font-family:"Trebuchet MS",verdana;
+    background-color:#e6e6e6; color:#000000; 
+    font-size:85%;
+    font-weight:normal;
+    letter-spacing:1.3pt; padding: 0; 
+    text-decoration:none;
+    }
+    
+a.genmenu:hover
+    {
+    font-family:"Trebuchet MS",verdana;
+    background-color:#000000; color:#ffffff; 
+    font-size:85%;
+    font-weight:normal;
+    letter-spacing:1.3pt; padding:0; 
+    text-decoration:none;
+    }
+
+
+.submenu
+	{
+	font-family:verdana;
+	font-size:65%;
+	color:#000000;
+	font-weight:normal;
+	text-decoration:none;
+	}
+	
+a.submenu
+	{
+	font-family:verdana;
+	font-size:100%;
+	color:#ffffff;
+	font-weight:normal;
+	text-decoration:none;
+	}
+	
+a.submenu:hover
+	{
+	font-family:verdana;
+	font-size:100%;
+	color:#ffffff;
+	font-weight:normal;
+	text-decoration:none;
+	}
+
+.leftmenu
+	{
+	font-family:verdana;
+	font-size:70%;
+	color:#000000;
+	font-weight:normal;
+	text-decoration:none;
+	}
+	
+a.leftmenu
+	{
+	font-family:verdana;
+	font-size:100%;
+	color:#000000;
+	font-weight:normal;
+	text-decoration:none;
+	}
+	
+a.leftmenu:hover
+	{
+	font-family:verdana;
+	font-size:100%;
+	color:#ffffff;
+	font-weight:normal;
+	text-decoration:none;
+	}
+
+a.nonlink
+	{
+	font-family:verdana;
+	font-size:100%;
+	color:#000000;
+	text-decoration:none;
+	}
+
+a.nonlink:hover
+	{
+	font-family:verdana;
+	font-size:100%;
+	color:#000000;
+	text-decoration:none;
+	}	
+.asterix
+	{
+	color:#ff0000;
+	font-family:verdana;
+	font-size:90%;
+	font-weight:bold;
+	}
+	
+.tdtext
+	{
+	text-align:left;
+	vertical-align:top;
+	}
+	
+.tdviewtext
+	{
+	text-align:left;
+	vertical-align:top;
+	}
+	
+.tdimage
+	{
+	border:1px dashed #ffffff;
+	background-color:#ffffff;
+	padding:5px; vertical-align:top;		//12-02-2009
+	}
+
+.tdfavimage
+	{	
+	border:1px none #ffffff;
+	background-color:;
+	padding:5px; vertical-align:top;		//12-02-2009
+	}
+	
+input
+	{
+	font-family:verdana;
+	font-size:65%;
+	color:#000000;
+	background-color:#eeeeee;
+	}
+		
+input.buttons
+	{	
+	font-family:verdana;
+	font-size:65%;
+	font-weight:normal;
+	background-color:#aaaaaa;
+	color:#ffffff;
+	border-top-style:none;
+	border-right-style:none;
+	border-left-style:none;
+	border-bottom-style:none;
+	cursor:hand;
+	}
+	
+input.searchbutton
+	{	
+	font-family:verdana;
+	font-size:65%;
+	font-weight:normal;
+	background-color:#900000;
+	color:#ffffff;
+	border-top-style:none;
+	border-right-style:none;
+	border-left-style:none;
+	border-bottom-style:none;
+	cursor:hand;
+	}
+
+input.norm
+	{	
+	font-family:verdana;
+	font-size:65%;
+	font-weight:normal;
+	color:#ffffff;
+	border-top-style:none;
+	border-right-style:none;
+	border-left-style:none;
+	border-bottom-style:none;
+	cursor:hand;
+	}
+
+input.checkbox
+	{	
+	font-family:verdana;
+	font-size:65%;
+	font-weight:normal;
+	color:#000000;
+	border-top-style:none;
+	border-right-style:none;
+	border-left-style:none;
+	border-bottom-style:none;
+	cursor:hand;
+	}
+	
+select
+	{
+	font-family:verdana;
+	font-size:65%;
+	color:#000000;
+	background-color:#eeeeee;
+	}
+	
+a.item
+	{
+	color:#000000;
+	font-family:verdana;
+	font-size:90%;
+	font-weight:normal;
+	text-decoration:none;
+	}
+
+a.item:hover
+	{
+	color:#ffffff;
+	font-family:verdana;
+	font-size:90%;
+	font-weight:normal;
+	text-decoration:none;
+	}
+	
+.iframescroll
+	{
+	scrollbar-face-color:#777777;
+	scrollbar-highlight-color:#eaa96a;
+	scrollbar-shadow-color:#eaa96a;
+	scrollbar-arrow-color:#ffffff;
+	scrollbar-arrow-size:20px;
+	scrollbar-track-color:#ffffff;
+	scrollbar-darkshadow-color:#AAAAAA;
+	scrollbar-3Dlight-color:#EEEEEE;
+	}
+
+.highlightbox 
+{
+	border: none;
+	display:inline;
+}
+
+.transbox 
+{
+	border: 2px solid #ffff00;
+	background-color:#ffff00;
+	display:inline;
+	filter:alpha(opacity=20);
+	opacity:0.2;
+	-moz-opacity:0.2;
+}
+
+input.searchboxes
+	{
+	font-family:verdana;
+	font-size:65%;
+	color:#000000;
+	background-color:#eeeeee;
+	width:200px;
+	}
+
+a.langlink
+	{
+	font-family:arial;
+	font-size:65%;
+	color:#dddddd;
+	font-weight:bold;
+	letter-spacing:1.1pt;
+	text-decoration:none;
+	}
+	
+a.langlink:hover
+	{
+	font-family:arial;
+	font-size:65%;
+	color:#ffffff;
+	font-weight:bold;
+	letter-spacing:1.1pt;
+	text-decoration:none;
+	}
+
+	
+.breadcrumbs
+	{ 
+	background-color: #f7cead;
+	border: 1px solid #333333;
+	font-size: .9em; 
+	padding-top: .2em; padding-bottom: .2em; padding-left: 1em; padding-right: 1em; 	
+	}
+
+	
+.res_submenu
+	{
+	font-family:verdana;
+	font-size:80%;
+	color:#000000;
+	text-decoration:none;
+	}
+	
+a.res_submenu
+	{
+	color:#900000;
+	font-size:100%;
+ 
+	text-decoration:none;
+	}
+	
+a.res_submenu:hover
+	{
+	color:#ffffff;
+	font-size:100%;
+	text-decoration:none;
+	}
+	
+a.addfavoffstatus
+	{
+	color:#cccccc;
+	cursor:text;
+	}	
+	
+a.addfavoffstatus:hover
+	{
+	color:#cccccc;
+	cursor:text;
+	}	
+//-->
+</style>
+
+<script language="JavaScript" type="text/javascript">
+<!--
+// php definitions assigned to javascript variables for global.js
+var thisdomain = "digital.library.louisville.edu";
+var error_cookies = "Cookies must be enabled for this functionality.";
+var page_bgColor = "#ffffff";
+var status_off = "#333333";
+var status_on = "#ff0000";
+var already_fav = "One or more of the items you selected has been added previously to My Favorites.";
+var too_many_fav = "The items selected cannot be added. The maximum number of items in My Favorites is limited to 100. Either delete existing items from My Favorites or add fewer items.";
+var prefs_saved = "Your preferences have been updated.";
+var added_fav = "Items have been added to My Favorites.";
+var max_fav = 100;
+var pad_height = 10;
+var head_height = 89;
+var bot_menu = 0;
+var fav_menu_width = 212;
+var doc_menu_width = 216;
+var doc_menu_height = 62;
+//-->
+</script>	  
+
+
+
+<script language="JavaScript" type="text/javascript" src="jscripts/global.js"></script>
+
+
+<script language="javascript" type="text/javascript"> 
+<!--
+document.cookie="SEARCH=dc<0>;path=/";
+//-->
+</script> 
+
+</head>
+
+<body marginwidth="0" topmargin="0" leftmargin="0" marginheight="0" bgcolor="#ffffff" onclick="isStatus()">
+
+<a name="pagetopper"></a>
+
+<table cellpadding="0" cellspacing="0" border="0" width="100%">
+<tr>
+	<td rowspan="20" bgcolor="#333333" width="2">&nbsp;</td>
+	<td>
+
+
+
+
+
+
+<script type="text/JavaScript"><!-- rollover -->
+<!--
+function MM_swapImgRestore() { //v3.0
+  var i,x,a=document.MM_sr; for(i=0;a&&i<a.length&&(x=a[i])&&x.oSrc;i++) x.src=x.oSrc;
+}
+
+function MM_preloadImages() { //v3.0
+  var d=document; if(d.images){ if(!d.MM_p) d.MM_p=new Array();
+    var i,j=d.MM_p.length,a=MM_preloadImages.arguments; for(i=0; i<a.length; i++)
+    if (a[i].indexOf("#")!=0){ d.MM_p[j]=new Image; d.MM_p[j++].src=a[i];}}
+}
+
+function MM_findObj(n, d) { //v4.01
+  var p,i,x;  if(!d) d=document; if((p=n.indexOf("?"))>0&&parent.frames.length) {
+    d=parent.frames[n.substring(p+1)].document; n=n.substring(0,p);}
+  if(!(x=d[n])&&d.all) x=d.all[n]; for (i=0;!x&&i<d.forms.length;i++) x=d.forms[i][n];
+  for(i=0;!x&&d.layers&&i<d.layers.length;i++) x=MM_findObj(n,d.layers[i].document);
+  if(!x && d.getElementById) x=d.getElementById(n); return x;
+}
+
+function MM_swapImage() { //v3.0
+  var i,j=0,x,a=MM_swapImage.arguments; document.MM_sr=new Array; for(i=0;i<(a.length-2);i+=3)
+   if ((x=MM_findObj(a[i]))!=null){document.MM_sr[j++]=x; if(!x.oSrc) x.oSrc=x.src; x.src=a[i+2];}
+}
+//-->
+</script>
+
+<div id="UofLheader">
+
+<div id="logos"><a href="http://louisville.edu/" onmouseout="MM_swapImgRestore()" onmouseover="MM_swapImage('uofl logo','','../../images/homepage/uofl_2.jpg',1)"><img src="../../images/homepage/uofl_1.jpg" alt="University of Louisville" name="uofl logo" width="170" height="38" border="0" id="uofl logo" /></a><br />
+    <a href="http://louisville.edu/library/" onmouseout="MM_swapImgRestore()" onmouseover="MM_swapImage('logo libs','','../../images/homepage/libs_2.jpg',1)"><img src="../../images/homepage/libs_1.jpg" alt="University Libraries" name="logo libs" width="170" height="19" border="0" id="logo libs" /></a></div>
+
+
+<h1><a href="http://digital.library.louisville.edu">DIGITAL COLLECTIONS</a></h1>
+
+<div style="float:right; nowrap; margin:0; padding:0 8px 0 0;">
+
+<form class="searchForm"  method="GET" action="/cdm4/results.php">
+
+<input type="hidden" name="CISOOP1" value="all">
+<input type="hidden" name="CISOFIELD1" value="CISOSEARCHALL">
+<input type="hidden" name="CISORESTMP" value="results.php">
+<input type="hidden" name="CISOVIEWTMP" value="item_viewer.php">
+<input type="hidden" name="CISOMODE" value="grid">
+<input type="hidden" name="CISOGRID" value="thumbnail,A,1;title,A,1;subjec,A,0;descri,200,0;none,A,0;20;relevancy,none,none,none,none">
+<input type="hidden" name="CISOBIB" value="title,A,1,N;subjec,A,0,N;descri,200,0,N;none,A,0,N;none,A,0,N;20;relevancy,none,none,none,none">
+<input type="hidden" name="CISOTHUMB" value="20 (4x5);relevancy,none,none,none,none">
+<input type="hidden" name="CISOTITLE" value="20;title,none,none,none,none">
+<input type="hidden" name="CISOHIERA" value="20;subjec,title,none,none,none">
+<input type="hidden" name="CISOSUPPRESS" value="0">
+ 
+<input type="text" value="" name="CISOBOX1" size="12" title="simple search field" />
+<input type="hidden" name="CISOROOT" value="all">
+<input type="submit" value="search" title="Search" class="searchbutton" /> 
+
+</form> 
+<div class="share" >
+
+<a class="addthis_button" href="http://www.addthis.com/bookmark.php?v=250&amp;username=xa-4c3601d57588126d"><img src="../../images/homepage/share.jpg" width="127" height="19" alt="Bookmark and Share" style="border:0" /></a><script type="text/javascript" src="http://s7.addthis.com/js/250/addthis_widget.js#username=xa-4c3601d57588126d"></script>
+
+</div>
+
+
+</div><!-- basicSearchForm -->
+
+
+</div><!-- UofLheader -->
+
+
+
+<div class="clear"></div>
+           
+       
+                    <div class="genmenu">
+					<form name="bell" method="get" action="/dmscripts/admin/login.exe">
+					<a class="genmenu" href="#content" title="Skip to content"><img src="../../images/spacer.gif" width="1" height="1" border="0" alt="Skip to content" /></a>&nbsp;
+                    <a class="genmenu" href="/" title="Home">home</a> : 
+                    <a class="genmenu" href="collections.php" title="Collections">collections</a> : 
+                    <a class="genmenu" href="../collections/browse/index.php" title="Browse">browse</a> : 
+                    <a class="genmenu" href="search.php" title="Advanced Search">advanced search</a> : 
+                    <a class="genmenu" href="favorites.php" title="My Favorites">my favorites</a> : 
+                    <a class="genmenu" href="about.php" title="About">about</a> : 
+                    <a class="genmenu" href="order.php" title="Ordering Reproductions">ordering reproductions</a> : 
+                    <a class="genmenu" href="help.php" title="Help">help &amp; settings</a>&nbsp;
+					                             
+                    </form></div>
+
+
+	</td>
+	<td rowspan="20" bgcolor="#333333" width="2">&nbsp;</td>
+</tr>
+
+<tr>
+	<td valign="top" align="left">
+	
+	<a name="content"></a>
+
+	<table cellpadding="0" cellspacing="0" border="0" width="100%">
+	<tr>
+		<td align="left" valign="top">
+
+<!-- +++++++ >>> start content here +++++++ //-->
+<!-- +++++++ >>> start content here +++++++ //-->
+<!-- +++++++ >>> start content here +++++++ //-->
+
+
+<table cellpadding="0" cellspacing="0" border="0" width="100%">
+<tr>
+	<td colspan="3"><img src="images/spacer.gif" width="1" height="5" border="0" alt="" /></td>
+</tr>
+<tr>
+	<td align="left" nowrap="nowrap" style="padding-right:10px;padding-left:5px"><span class="maintext">Search results for	
+		
+	</span></td>
+	<td align="left" nowrap="nowrap" style="padding-bottom:3px">&nbsp;<input type="button" value="search again" title="Search again" class="buttons" onclick="location.href='search.php?CISOROOT=/jthom'" />&nbsp;</td>
+	<td align="right" width="80%"><span class="maintext"></span></td>
+</tr>
+	<tr>
+		<td colspan="3"><img src="images/spacer.gif" width="1" height="3" border="0" alt="" /></td>
+	</tr>
+</table>
+
+
+<table cellpadding="3" cellspacing="0" border="0" width="100%">
+<tr>
+
+
+	<td align="left" valign="top" width="160">
+	
+	<table cellpadding="0" cellspacing="0" border="0" width="100%" style="border-top: 2px solid #777777"> 
+<tr bgcolor="#777777"> 
+	<td align="left" width="5"><img src="images/spacer.gif" width="5" height="18" alt="" /></td> 
+	<td align="left" nowrap="nowrap"><span class="submenu"><b>Refine your search</b></span></td>	
+</tr> 
+ 
+<tr> 
+	<td align="left" valign="top" colspan="2" style="padding-left:3px;border-top: 2px solid #ffffff;border-left: 1px solid #ffffff;border-right: 1px solid #ffffff;border-bottom: 1px solid #ffffff"><span class="maintext"> 
+		
+		
+	</span></td> 
+</tr> 
+</table> 
+	
+ 
+
+	<br /><img src="images/spacer.gif" width="160" height="1" border="0" alt="" />
+	</td>
+	
+
+	<td align="left" valign="top">
+	
+	<table cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="#ffffff">
+<tr>
+	<td align="left" style="border-top: 1px solid #777777;border-bottom: 1px solid #777777;border-left: 1px solid #777777" width="5"><img src="images/spacer.gif" width="5" height="18" alt="" /></td>
+	<td align="left" style="border-top: 1px solid #777777;border-bottom: 1px solid #777777" nowrap="nowrap" width="70%"><span class="res_submenu">results <b>1</b>-<b>20</b> of <b>1077</b> item(s)&nbsp;</span></td>
+	<td align="right" style="border-top: 1px solid #777777;border-bottom: 1px solid #777777" nowrap="nowrap"><span class="res_submenu">
+
+page 1 of 54 : ( <span class="res_offstatus"><<</span> &#160;1&#160;&#160;<a class="res_submenu" href="/cdm4/results.php?CISOOP1=any&CISOROOT=%2Fjthom&CISOBOX1=&CISOFIELD1=CISOSEARCHALL'&CISOSTART=1,21" title="Go to page 2">2</a>&#160;&#160;<a class="res_submenu" href="/cdm4/results.php?CISOOP1=any&CISOROOT=%2Fjthom&CISOBOX1=&CISOFIELD1=CISOSEARCHALL'&CISOSTART=1,41" title="Go to page 3">3</a>&#160;&#160;<a class="res_submenu" href="/cdm4/results.php?CISOOP1=any&CISOROOT=%2Fjthom&CISOBOX1=&CISOFIELD1=CISOSEARCHALL'&CISOSTART=1,61" title="Go to page 4">4</a>&#160;&#160;<a class="res_submenu" href="/cdm4/results.php?CISOOP1=any&CISOROOT=%2Fjthom&CISOBOX1=&CISOFIELD1=CISOSEARCHALL'&CISOSTART=1,81" title="Go to page 5">5</a>&#160;&#160;<a class="res_submenu" href="/cdm4/results.php?CISOOP1=any&CISOROOT=%2Fjthom&CISOBOX1=&CISOFIELD1=CISOSEARCHALL'&CISOSTART=1,101" title="Go to page 6">6</a>&#160;&#160;<a class="res_submenu" href="/cdm4/results.php?CISOOP1=any&CISOROOT=%2Fjthom&CISOBOX1=&CISOFIELD1=CISOSEARCHALL'&CISOSTART=1,121" title="Go to page 7">7</a>&#160;&#160;<a class="res_submenu" href="/cdm4/results.php?CISOOP1=any&CISOROOT=%2Fjthom&CISOBOX1=&CISOFIELD1=CISOSEARCHALL'&CISOSTART=1,141" title="Go to page 8">8</a>&#160;&#160;<a class="res_submenu" href="/cdm4/results.php?CISOOP1=any&CISOROOT=%2Fjthom&CISOBOX1=&CISOFIELD1=CISOSEARCHALL'&CISOSTART=1,161" title="Go to page 9">9</a>&#160;&#160;<a class="res_submenu" href="/cdm4/results.php?CISOOP1=any&CISOROOT=%2Fjthom&CISOBOX1=&CISOFIELD1=CISOSEARCHALL'&CISOSTART=1,181" title="Go to page 10">10</a>&#160; <a class="res_submenu" href="/cdm4/results.php?CISOOP1=any&CISOROOT=%2Fjthom&CISOBOX1=&CISOFIELD1=CISOSEARCHALL'&CISOSTART=11,201" title="Next page">>></a> ) ::  <span class="res_offstatus">previous</span> : <a class="res_submenu" href="/cdm4/results.php?CISOOP1=any&CISOROOT=%2Fjthom&CISOBOX1=&CISOFIELD1=CISOSEARCHALL'&CISOSTART=1,21" title="Next page">next</a>
+
+	</span></td>
+	<td align="left" style="border-top: 1px solid #777777;border-bottom: 1px solid #777777;border-right: 1px solid #777777"><img src="images/spacer.gif" width="5" height="18" alt="" /></td>	
+</tr>
+</table>	<table cellpadding="0" cellspacing="0" border="0" width="100%">
+<tr>
+	<td align="left" width="5"><img src="images/spacer.gif" width="5" height="28" alt="" /></td>
+	<td align="left" nowrap="nowrap"><span class="maintext">
+	
+	<a href="javascript:checkAll()" title="Select all items">select all</a> : <a href="javascript:clearAll()" title="Clear all items">clear all</a> :	
+	<a id="adfav[1]" class="addfavoffstatus" href="javascript:addItemsFav(document.searchResultsForm)" title="Add item(s) to My Favorites">
+	add to favorites</a></span></td>
+
+	<td align="right"><span class="maintext"></span></td>	
+</tr>
+</table>	
+<table cellpadding="2" cellspacing="0" border="0" width="100%">
+<tr>
+	<td align="left" valign="top">
+
+	<table cellpadding="3" cellspacing="0" border="0" width="100%">
+	<tr>
+		<td align="left" valign="top" style="border: 1px solid #ffffff">
+
+		<table cellpadding="3" cellspacing="0" border="0" width="100%" summary="Search results for">
+
+		<form name="searchResultsForm">
+
+		<input type="hidden" name="act" value="addtofav" />
+
+<tr>
+		<th class="tdtext"><span class="maintext">&nbsp;</span></th><th class="tdtext" style="border-left: 8px solid #ffffff"><span class="maintext">Image:</span></th><th class="tdtext" nowrap="nowrap" style="border-left: 8px solid #ffffff"><span class="maintext"> <a href="/cdm4/results.php?CISOOP1=any&CISOROOT=%2Fjthom&CISOBOX1=&CISOFIELD1=CISOSEARCHALL'&CISOSORT=title|f" title="Sort by Title"> Title:</a></span></th><th class="tdtext" nowrap="nowrap" style="border-left: 8px solid #ffffff"><span class="maintext"> <a href="/cdm4/results.php?CISOOP1=any&CISOROOT=%2Fjthom&CISOBOX1=&CISOFIELD1=CISOSEARCHALL'&CISOSORT=subjec|f" title="Sort by Subject"> Subject:</a></span></th><th class="tdtext" nowrap="nowrap" style="border-left: 8px solid #ffffff"><span class="maintext"> <a href="/cdm4/results.php?CISOOP1=any&CISOROOT=%2Fjthom&CISOBOX1=&CISOFIELD1=CISOSEARCHALL'&CISOSORT=descri|f" title="Sort by Description"> Description:</a></span></th></tr>
+		<tr>
+			<td colspan="5"><hr noshade size="1" color=#ffffff></td></tr><tr>
+		<td class="tdtext" nowrap="nowrap"><input type="checkbox" name="chk[]" value="/jthom|1289" title="60 years in darkness. " /><span class="maintext"> 1. </span></td><td class="tdimage" align="left" style="border-left: 8px solid #ffffff"><span class="maintext"><a href="item_viewer.php?CISOROOT=/jthom&CISOPTR=1289&CISOBOX=1&REC=1" title="60 years in darkness. " onclick="dmSessCookie('refer','http%3A%2F%2Fdigital.library.louisville.edu%2Fcdm4%2Fresults.php%3FCISOOP1%3Dany%26CISOROOT%3D%252Fjthom%26CISOBOX1%3D%26CISOFIELD1%3DCISOSEARCHALL%27%26QUY%3D20%2C%7C%2Fjthom+1289+jpg+-1%7C%2Fjthom+581+jpg+-1%7C%2Fjthom+1000+jpg+-1%7C%2Fjthom+1002+jpg+-1%7C%2Fjthom+1001+jpg+-1%7C%2Fjthom+1003+jpg+-1%7C%2Fjthom+578+jpg+-1%7C%2Fjthom+580+jpg+-1%7C%2Fjthom+579+jpg+-1%7C%2Fjthom+582+jpg+-1%7C%2Fjthom+583+jpg+-1%7C%2Fjthom+1550+jpg+-1%7C%2Fjthom+1451+jpg+-1%7C%2Fjthom+1320+jpg+-1%7C%2Fjthom+1249+jpg+-1%7C%2Fjthom+1308+jpg+-1%7C%2Fjthom+1309+jpg+-1%7C%2Fjthom+1310+jpg+-1%7C%2Fjthom+1250+jpg+-1%7C%2Fjthom+1120+jpg+-1');dmSessCookie('DMDOCSTAT','CISOROOT=/jthom')" target="_top"><img src="/cgi-bin/thumbnail.exe?CISOROOT=/jthom&CISOPTR=1289" width="80" height="76" border="0" alt="60 years in darkness. " title="60 years in darkness. " /></a></span></td><td class="tdtext" style="border-left: 8px solid #ffffff"><span class="maintext"><a href="item_viewer.php?CISOROOT=/jthom&CISOPTR=1289&CISOBOX=1&REC=1" title="60 years in darkness. " onclick="dmSessCookie('refer','http%3A%2F%2Fdigital.library.louisville.edu%2Fcdm4%2Fresults.php%3FCISOOP1%3Dany%26CISOROOT%3D%252Fjthom%26CISOBOX1%3D%26CISOFIELD1%3DCISOSEARCHALL%27%26QUY%3D20%2C%7C%2Fjthom+1289+jpg+-1%7C%2Fjthom+581+jpg+-1%7C%2Fjthom+1000+jpg+-1%7C%2Fjthom+1002+jpg+-1%7C%2Fjthom+1001+jpg+-1%7C%2Fjthom+1003+jpg+-1%7C%2Fjthom+578+jpg+-1%7C%2Fjthom+580+jpg+-1%7C%2Fjthom+579+jpg+-1%7C%2Fjthom+582+jpg+-1%7C%2Fjthom+583+jpg+-1%7C%2Fjthom+1550+jpg+-1%7C%2Fjthom+1451+jpg+-1%7C%2Fjthom+1320+jpg+-1%7C%2Fjthom+1249+jpg+-1%7C%2Fjthom+1308+jpg+-1%7C%2Fjthom+1309+jpg+-1%7C%2Fjthom+1310+jpg+-1%7C%2Fjthom+1250+jpg+-1%7C%2Fjthom+1120+jpg+-1');dmSessCookie('DMDOCSTAT','CISOROOT=/jthom')" target="_top">60 years in darkness. </a></span></td><td class="tdtext" style="border-left: 8px solid #ffffff"><span class="maintext">Books </span></td><td class="tdtext" style="border-left: 8px solid #ffffff"><span class="maintext">First page from article about Jilson Setters (a pseudonym for James William (J.W.) Day, 1860-1942) by Jean Thomas. </span></td></tr>
+				<tr>
+					<td colspan="5"><hr noshade size="1" color=#ffffff></td>
+				</tr><tr>
+		<td class="tdtext" nowrap="nowrap"><input type="checkbox" name="chk[]" value="/jthom|581" title="A.F. Robinette and her father. " /><span class="maintext"> 2. </span></td><td class="tdimage" align="left" style="border-left: 8px solid #ffffff"><span class="maintext"><a href="item_viewer.php?CISOROOT=/jthom&CISOPTR=581&CISOBOX=1&REC=2" title="A.F. Robinette and her father. " onclick="dmSessCookie('refer','http%3A%2F%2Fdigital.library.louisville.edu%2Fcdm4%2Fresults.php%3FCISOOP1%3Dany%26CISOROOT%3D%252Fjthom%26CISOBOX1%3D%26CISOFIELD1%3DCISOSEARCHALL%27%26QUY%3D20%2C%7C%2Fjthom+1289+jpg+-1%7C%2Fjthom+581+jpg+-1%7C%2Fjthom+1000+jpg+-1%7C%2Fjthom+1002+jpg+-1%7C%2Fjthom+1001+jpg+-1%7C%2Fjthom+1003+jpg+-1%7C%2Fjthom+578+jpg+-1%7C%2Fjthom+580+jpg+-1%7C%2Fjthom+579+jpg+-1%7C%2Fjthom+582+jpg+-1%7C%2Fjthom+583+jpg+-1%7C%2Fjthom+1550+jpg+-1%7C%2Fjthom+1451+jpg+-1%7C%2Fjthom+1320+jpg+-1%7C%2Fjthom+1249+jpg+-1%7C%2Fjthom+1308+jpg+-1%7C%2Fjthom+1309+jpg+-1%7C%2Fjthom+1310+jpg+-1%7C%2Fjthom+1250+jpg+-1%7C%2Fjthom+1120+jpg+-1');dmSessCookie('DMDOCSTAT','CISOROOT=/jthom')" target="_top"><img src="/cgi-bin/thumbnail.exe?CISOROOT=/jthom&CISOPTR=581" width="80" height="53" border="0" alt="A.F. Robinette and her father. " title="A.F. Robinette and her father. " /></a></span></td><td class="tdtext" style="border-left: 8px solid #ffffff"><span class="maintext"><a href="item_viewer.php?CISOROOT=/jthom&CISOPTR=581&CISOBOX=1&REC=2" title="A.F. Robinette and her father. " onclick="dmSessCookie('refer','http%3A%2F%2Fdigital.library.louisville.edu%2Fcdm4%2Fresults.php%3FCISOOP1%3Dany%26CISOROOT%3D%252Fjthom%26CISOBOX1%3D%26CISOFIELD1%3DCISOSEARCHALL%27%26QUY%3D20%2C%7C%2Fjthom+1289+jpg+-1%7C%2Fjthom+581+jpg+-1%7C%2Fjthom+1000+jpg+-1%7C%2Fjthom+1002+jpg+-1%7C%2Fjthom+1001+jpg+-1%7C%2Fjthom+1003+jpg+-1%7C%2Fjthom+578+jpg+-1%7C%2Fjthom+580+jpg+-1%7C%2Fjthom+579+jpg+-1%7C%2Fjthom+582+jpg+-1%7C%2Fjthom+583+jpg+-1%7C%2Fjthom+1550+jpg+-1%7C%2Fjthom+1451+jpg+-1%7C%2Fjthom+1320+jpg+-1%7C%2Fjthom+1249+jpg+-1%7C%2Fjthom+1308+jpg+-1%7C%2Fjthom+1309+jpg+-1%7C%2Fjthom+1310+jpg+-1%7C%2Fjthom+1250+jpg+-1%7C%2Fjthom+1120+jpg+-1');dmSessCookie('DMDOCSTAT','CISOROOT=/jthom')" target="_top">A.F. Robinette and her father. </a></span></td><td class="tdtext" style="border-left: 8px solid #ffffff"><span class="maintext">Men; Women; Log cabins; Clotheslines; Smoking </span></td><td class="tdtext" style="border-left: 8px solid #ffffff"><span class="maintext">Two men, with hats, suits, and pipes, stand at the side of a log cabin. Allie Fair Robinette stands on the porch, and her father walks away from her, looking at the men. The laundry hangs on a line at... </span></td></tr>
+				<tr>
+					<td colspan="5"><hr noshade size="1" color=#ffffff></td>
+				</tr><tr>
+		<td class="tdtext" nowrap="nowrap"><input type="checkbox" name="chk[]" value="/jthom|1000" title="Alice Grey Burke of Prestonsburg in Traipsin&#39; Woman dance frock. " /><span class="maintext"> 3. </span></td><td class="tdimage" align="left" style="border-left: 8px solid #ffffff"><span class="maintext"><a href="item_viewer.php?CISOROOT=/jthom&CISOPTR=1000&CISOBOX=1&REC=3" title="Alice Grey Burke of Prestonsburg in Traipsin&#39; Woman dance frock. " onclick="dmSessCookie('refer','http%3A%2F%2Fdigital.library.louisville.edu%2Fcdm4%2Fresults.php%3FCISOOP1%3Dany%26CISOROOT%3D%252Fjthom%26CISOBOX1%3D%26CISOFIELD1%3DCISOSEARCHALL%27%26QUY%3D20%2C%7C%2Fjthom+1289+jpg+-1%7C%2Fjthom+581+jpg+-1%7C%2Fjthom+1000+jpg+-1%7C%2Fjthom+1002+jpg+-1%7C%2Fjthom+1001+jpg+-1%7C%2Fjthom+1003+jpg+-1%7C%2Fjthom+578+jpg+-1%7C%2Fjthom+580+jpg+-1%7C%2Fjthom+579+jpg+-1%7C%2Fjthom+582+jpg+-1%7C%2Fjthom+583+jpg+-1%7C%2Fjthom+1550+jpg+-1%7C%2Fjthom+1451+jpg+-1%7C%2Fjthom+1320+jpg+-1%7C%2Fjthom+1249+jpg+-1%7C%2Fjthom+1308+jpg+-1%7C%2Fjthom+1309+jpg+-1%7C%2Fjthom+1310+jpg+-1%7C%2Fjthom+1250+jpg+-1%7C%2Fjthom+1120+jpg+-1');dmSessCookie('DMDOCSTAT','CISOROOT=/jthom')" target="_top"><img src="/cgi-bin/thumbnail.exe?CISOROOT=/jthom&CISOPTR=1000" width="51" height="80" border="0" alt="Alice Grey Burke of Prestonsburg in Traipsin&#39; Woman dance frock. " title="Alice Grey Burke of Prestonsburg in Traipsin&#39; Woman dance frock. " /></a></span></td><td class="tdtext" style="border-left: 8px solid #ffffff"><span class="maintext"><a href="item_viewer.php?CISOROOT=/jthom&CISOPTR=1000&CISOBOX=1&REC=3" title="Alice Grey Burke of Prestonsburg in Traipsin&#39; Woman dance frock. " onclick="dmSessCookie('refer','http%3A%2F%2Fdigital.library.louisville.edu%2Fcdm4%2Fresults.php%3FCISOOP1%3Dany%26CISOROOT%3D%252Fjthom%26CISOBOX1%3D%26CISOFIELD1%3DCISOSEARCHALL%27%26QUY%3D20%2C%7C%2Fjthom+1289+jpg+-1%7C%2Fjthom+581+jpg+-1%7C%2Fjthom+1000+jpg+-1%7C%2Fjthom+1002+jpg+-1%7C%2Fjthom+1001+jpg+-1%7C%2Fjthom+1003+jpg+-1%7C%2Fjthom+578+jpg+-1%7C%2Fjthom+580+jpg+-1%7C%2Fjthom+579+jpg+-1%7C%2Fjthom+582+jpg+-1%7C%2Fjthom+583+jpg+-1%7C%2Fjthom+1550+jpg+-1%7C%2Fjthom+1451+jpg+-1%7C%2Fjthom+1320+jpg+-1%7C%2Fjthom+1249+jpg+-1%7C%2Fjthom+1308+jpg+-1%7C%2Fjthom+1309+jpg+-1%7C%2Fjthom+1310+jpg+-1%7C%2Fjthom+1250+jpg+-1%7C%2Fjthom+1120+jpg+-1');dmSessCookie('DMDOCSTAT','CISOROOT=/jthom')" target="_top">Alice Grey Burke of Prestonsburg in Traipsin&#39; Woman dance frock. </a></span></td><td class="tdtext" style="border-left: 8px solid #ffffff"><span class="maintext">Women; Costumes--United States; Fences; American Folk Song Festival </span></td><td class="tdtext" style="border-left: 8px solid #ffffff"><span class="maintext">A woman sits on a bench in a yard enclosed by a brick fence, wearing a long white dress with ruffles, a plaid bodice and hem, and the skirt spread out. She hails from Prestonsburg (Floyd County), Kentucky,... </span></td></tr>
+				<tr>
+					<td colspan="5"><hr noshade size="1" color=#ffffff></td>
+				</tr><tr>
+		<td class="tdtext" nowrap="nowrap"><input type="checkbox" name="chk[]" value="/jthom|1002" title="Alice Grey Burke of Prestonsburg in Traipsin&#39; Woman dance frock. " /><span class="maintext"> 4. </span></td><td class="tdimage" align="left" style="border-left: 8px solid #ffffff"><span class="maintext"><a href="item_viewer.php?CISOROOT=/jthom&CISOPTR=1002&CISOBOX=1&REC=4" title="Alice Grey Burke of Prestonsburg in Traipsin&#39; Woman dance frock. " onclick="dmSessCookie('refer','http%3A%2F%2Fdigital.library.louisville.edu%2Fcdm4%2Fresults.php%3FCISOOP1%3Dany%26CISOROOT%3D%252Fjthom%26CISOBOX1%3D%26CISOFIELD1%3DCISOSEARCHALL%27%26QUY%3D20%2C%7C%2Fjthom+1289+jpg+-1%7C%2Fjthom+581+jpg+-1%7C%2Fjthom+1000+jpg+-1%7C%2Fjthom+1002+jpg+-1%7C%2Fjthom+1001+jpg+-1%7C%2Fjthom+1003+jpg+-1%7C%2Fjthom+578+jpg+-1%7C%2Fjthom+580+jpg+-1%7C%2Fjthom+579+jpg+-1%7C%2Fjthom+582+jpg+-1%7C%2Fjthom+583+jpg+-1%7C%2Fjthom+1550+jpg+-1%7C%2Fjthom+1451+jpg+-1%7C%2Fjthom+1320+jpg+-1%7C%2Fjthom+1249+jpg+-1%7C%2Fjthom+1308+jpg+-1%7C%2Fjthom+1309+jpg+-1%7C%2Fjthom+1310+jpg+-1%7C%2Fjthom+1250+jpg+-1%7C%2Fjthom+1120+jpg+-1');dmSessCookie('DMDOCSTAT','CISOROOT=/jthom')" target="_top"><img src="/cgi-bin/thumbnail.exe?CISOROOT=/jthom&CISOPTR=1002" width="51" height="80" border="0" alt="Alice Grey Burke of Prestonsburg in Traipsin&#39; Woman dance frock. " title="Alice Grey Burke of Prestonsburg in Traipsin&#39; Woman dance frock. " /></a></span></td><td class="tdtext" style="border-left: 8px solid #ffffff"><span class="maintext"><a href="item_viewer.php?CISOROOT=/jthom&CISOPTR=1002&CISOBOX=1&REC=4" title="Alice Grey Burke of Prestonsburg in Traipsin&#39; Woman dance frock. " onclick="dmSessCookie('refer','http%3A%2F%2Fdigital.library.louisville.edu%2Fcdm4%2Fresults.php%3FCISOOP1%3Dany%26CISOROOT%3D%252Fjthom%26CISOBOX1%3D%26CISOFIELD1%3DCISOSEARCHALL%27%26QUY%3D20%2C%7C%2Fjthom+1289+jpg+-1%7C%2Fjthom+581+jpg+-1%7C%2Fjthom+1000+jpg+-1%7C%2Fjthom+1002+jpg+-1%7C%2Fjthom+1001+jpg+-1%7C%2Fjthom+1003+jpg+-1%7C%2Fjthom+578+jpg+-1%7C%2Fjthom+580+jpg+-1%7C%2Fjthom+579+jpg+-1%7C%2Fjthom+582+jpg+-1%7C%2Fjthom+583+jpg+-1%7C%2Fjthom+1550+jpg+-1%7C%2Fjthom+1451+jpg+-1%7C%2Fjthom+1320+jpg+-1%7C%2Fjthom+1249+jpg+-1%7C%2Fjthom+1308+jpg+-1%7C%2Fjthom+1309+jpg+-1%7C%2Fjthom+1310+jpg+-1%7C%2Fjthom+1250+jpg+-1%7C%2Fjthom+1120+jpg+-1');dmSessCookie('DMDOCSTAT','CISOROOT=/jthom')" target="_top">Alice Grey Burke of Prestonsburg in Traipsin&#39; Woman dance frock. </a></span></td><td class="tdtext" style="border-left: 8px solid #ffffff"><span class="maintext">Women; Costumes--United States; American Folk Song Festival </span></td><td class="tdtext" style="border-left: 8px solid #ffffff"><span class="maintext">A woman stands outdoors, wearing a long white dress with ruffles and a plaid bodice and hem. She hails from Prestonsburg (Floyd County), Kentucky, but is likely photographed in Boyd County as a participant... </span></td></tr>
+				<tr>
+					<td colspan="5"><hr noshade size="1" color=#ffffff></td>
+				</tr><tr>
+		<td class="tdtext" nowrap="nowrap"><input type="checkbox" name="chk[]" value="/jthom|1001" title="Alice Grey Burke of Prestonsburg in Traipsin&#39; Woman dance frock. " /><span class="maintext"> 5. </span></td><td class="tdimage" align="left" style="border-left: 8px solid #ffffff"><span class="maintext"><a href="item_viewer.php?CISOROOT=/jthom&CISOPTR=1001&CISOBOX=1&REC=5" title="Alice Grey Burke of Prestonsburg in Traipsin&#39; Woman dance frock. " onclick="dmSessCookie('refer','http%3A%2F%2Fdigital.library.louisville.edu%2Fcdm4%2Fresults.php%3FCISOOP1%3Dany%26CISOROOT%3D%252Fjthom%26CISOBOX1%3D%26CISOFIELD1%3DCISOSEARCHALL%27%26QUY%3D20%2C%7C%2Fjthom+1289+jpg+-1%7C%2Fjthom+581+jpg+-1%7C%2Fjthom+1000+jpg+-1%7C%2Fjthom+1002+jpg+-1%7C%2Fjthom+1001+jpg+-1%7C%2Fjthom+1003+jpg+-1%7C%2Fjthom+578+jpg+-1%7C%2Fjthom+580+jpg+-1%7C%2Fjthom+579+jpg+-1%7C%2Fjthom+582+jpg+-1%7C%2Fjthom+583+jpg+-1%7C%2Fjthom+1550+jpg+-1%7C%2Fjthom+1451+jpg+-1%7C%2Fjthom+1320+jpg+-1%7C%2Fjthom+1249+jpg+-1%7C%2Fjthom+1308+jpg+-1%7C%2Fjthom+1309+jpg+-1%7C%2Fjthom+1310+jpg+-1%7C%2Fjthom+1250+jpg+-1%7C%2Fjthom+1120+jpg+-1');dmSessCookie('DMDOCSTAT','CISOROOT=/jthom')" target="_top"><img src="/cgi-bin/thumbnail.exe?CISOROOT=/jthom&CISOPTR=1001" width="51" height="80" border="0" alt="Alice Grey Burke of Prestonsburg in Traipsin&#39; Woman dance frock. " title="Alice Grey Burke of Prestonsburg in Traipsin&#39; Woman dance frock. " /></a></span></td><td class="tdtext" style="border-left: 8px solid #ffffff"><span class="maintext"><a href="item_viewer.php?CISOROOT=/jthom&CISOPTR=1001&CISOBOX=1&REC=5" title="Alice Grey Burke of Prestonsburg in Traipsin&#39; Woman dance frock. " onclick="dmSessCookie('refer','http%3A%2F%2Fdigital.library.louisville.edu%2Fcdm4%2Fresults.php%3FCISOOP1%3Dany%26CISOROOT%3D%252Fjthom%26CISOBOX1%3D%26CISOFIELD1%3DCISOSEARCHALL%27%26QUY%3D20%2C%7C%2Fjthom+1289+jpg+-1%7C%2Fjthom+581+jpg+-1%7C%2Fjthom+1000+jpg+-1%7C%2Fjthom+1002+jpg+-1%7C%2Fjthom+1001+jpg+-1%7C%2Fjthom+1003+jpg+-1%7C%2Fjthom+578+jpg+-1%7C%2Fjthom+580+jpg+-1%7C%2Fjthom+579+jpg+-1%7C%2Fjthom+582+jpg+-1%7C%2Fjthom+583+jpg+-1%7C%2Fjthom+1550+jpg+-1%7C%2Fjthom+1451+jpg+-1%7C%2Fjthom+1320+jpg+-1%7C%2Fjthom+1249+jpg+-1%7C%2Fjthom+1308+jpg+-1%7C%2Fjthom+1309+jpg+-1%7C%2Fjthom+1310+jpg+-1%7C%2Fjthom+1250+jpg+-1%7C%2Fjthom+1120+jpg+-1');dmSessCookie('DMDOCSTAT','CISOROOT=/jthom')" target="_top">Alice Grey Burke of Prestonsburg in Traipsin&#39; Woman dance frock. </a></span></td><td class="tdtext" style="border-left: 8px solid #ffffff"><span class="maintext">Women; Costumes--United States; American Folk Song Festival </span></td><td class="tdtext" style="border-left: 8px solid #ffffff"><span class="maintext">A woman stands outdoors, wearing a long white dress with ruffles and a plaid bodice and hem. She hails from Prestonsburg (Floyd County), Kentucky, but is likely photographed in Boyd County as a participant... </span></td></tr>
+				<tr>
+					<td colspan="5"><hr noshade size="1" color=#ffffff></td>
+				</tr><tr>
+		<td class="tdtext" nowrap="nowrap"><input type="checkbox" name="chk[]" value="/jthom|1003" title="Alice Grey Burke of Prestonsburg in Traipsin&#39; Woman dance frock. " /><span class="maintext"> 6. </span></td><td class="tdimage" align="left" style="border-left: 8px solid #ffffff"><span class="maintext"><a href="item_viewer.php?CISOROOT=/jthom&CISOPTR=1003&CISOBOX=1&REC=6" title="Alice Grey Burke of Prestonsburg in Traipsin&#39; Woman dance frock. " onclick="dmSessCookie('refer','http%3A%2F%2Fdigital.library.louisville.edu%2Fcdm4%2Fresults.php%3FCISOOP1%3Dany%26CISOROOT%3D%252Fjthom%26CISOBOX1%3D%26CISOFIELD1%3DCISOSEARCHALL%27%26QUY%3D20%2C%7C%2Fjthom+1289+jpg+-1%7C%2Fjthom+581+jpg+-1%7C%2Fjthom+1000+jpg+-1%7C%2Fjthom+1002+jpg+-1%7C%2Fjthom+1001+jpg+-1%7C%2Fjthom+1003+jpg+-1%7C%2Fjthom+578+jpg+-1%7C%2Fjthom+580+jpg+-1%7C%2Fjthom+579+jpg+-1%7C%2Fjthom+582+jpg+-1%7C%2Fjthom+583+jpg+-1%7C%2Fjthom+1550+jpg+-1%7C%2Fjthom+1451+jpg+-1%7C%2Fjthom+1320+jpg+-1%7C%2Fjthom+1249+jpg+-1%7C%2Fjthom+1308+jpg+-1%7C%2Fjthom+1309+jpg+-1%7C%2Fjthom+1310+jpg+-1%7C%2Fjthom+1250+jpg+-1%7C%2Fjthom+1120+jpg+-1');dmSessCookie('DMDOCSTAT','CISOROOT=/jthom')" target="_top"><img src="/cgi-bin/thumbnail.exe?CISOROOT=/jthom&CISOPTR=1003" width="52" height="80" border="0" alt="Alice Grey Burke of Prestonsburg in Traipsin&#39; Woman dance frock. " title="Alice Grey Burke of Prestonsburg in Traipsin&#39; Woman dance frock. " /></a></span></td><td class="tdtext" style="border-left: 8px solid #ffffff"><span class="maintext"><a href="item_viewer.php?CISOROOT=/jthom&CISOPTR=1003&CISOBOX=1&REC=6" title="Alice Grey Burke of Prestonsburg in Traipsin&#39; Woman dance frock. " onclick="dmSessCookie('refer','http%3A%2F%2Fdigital.library.louisville.edu%2Fcdm4%2Fresults.php%3FCISOOP1%3Dany%26CISOROOT%3D%252Fjthom%26CISOBOX1%3D%26CISOFIELD1%3DCISOSEARCHALL%27%26QUY%3D20%2C%7C%2Fjthom+1289+jpg+-1%7C%2Fjthom+581+jpg+-1%7C%2Fjthom+1000+jpg+-1%7C%2Fjthom+1002+jpg+-1%7C%2Fjthom+1001+jpg+-1%7C%2Fjthom+1003+jpg+-1%7C%2Fjthom+578+jpg+-1%7C%2Fjthom+580+jpg+-1%7C%2Fjthom+579+jpg+-1%7C%2Fjthom+582+jpg+-1%7C%2Fjthom+583+jpg+-1%7C%2Fjthom+1550+jpg+-1%7C%2Fjthom+1451+jpg+-1%7C%2Fjthom+1320+jpg+-1%7C%2Fjthom+1249+jpg+-1%7C%2Fjthom+1308+jpg+-1%7C%2Fjthom+1309+jpg+-1%7C%2Fjthom+1310+jpg+-1%7C%2Fjthom+1250+jpg+-1%7C%2Fjthom+1120+jpg+-1');dmSessCookie('DMDOCSTAT','CISOROOT=/jthom')" target="_top">Alice Grey Burke of Prestonsburg in Traipsin&#39; Woman dance frock. </a></span></td><td class="tdtext" style="border-left: 8px solid #ffffff"><span class="maintext">Women; Costumes--United States; Trees; American Folk Song Festival </span></td><td class="tdtext" style="border-left: 8px solid #ffffff"><span class="maintext">A woman stands outdoors, leaning against a tree, wearing a long white dress with ruffles and a plaid bodice and hem. She hails from Prestonsburg (Floyd County), Kentucky, but is likely photographed in... </span></td></tr>
+				<tr>
+					<td colspan="5"><hr noshade size="1" color=#ffffff></td>
+				</tr><tr>
+		<td class="tdtext" nowrap="nowrap"><input type="checkbox" name="chk[]" value="/jthom|578" title="Allie Fair Robinette of Turkey Fork standing by porch of cabin holding straw purse and woven piece. " /><span class="maintext"> 7. </span></td><td class="tdimage" align="left" style="border-left: 8px solid #ffffff"><span class="maintext"><a href="item_viewer.php?CISOROOT=/jthom&CISOPTR=578&CISOBOX=1&REC=7" title="Allie Fair Robinette of Turkey Fork standing by porch of cabin holding straw purse and woven piece. " onclick="dmSessCookie('refer','http%3A%2F%2Fdigital.library.louisville.edu%2Fcdm4%2Fresults.php%3FCISOOP1%3Dany%26CISOROOT%3D%252Fjthom%26CISOBOX1%3D%26CISOFIELD1%3DCISOSEARCHALL%27%26QUY%3D20%2C%7C%2Fjthom+1289+jpg+-1%7C%2Fjthom+581+jpg+-1%7C%2Fjthom+1000+jpg+-1%7C%2Fjthom+1002+jpg+-1%7C%2Fjthom+1001+jpg+-1%7C%2Fjthom+1003+jpg+-1%7C%2Fjthom+578+jpg+-1%7C%2Fjthom+580+jpg+-1%7C%2Fjthom+579+jpg+-1%7C%2Fjthom+582+jpg+-1%7C%2Fjthom+583+jpg+-1%7C%2Fjthom+1550+jpg+-1%7C%2Fjthom+1451+jpg+-1%7C%2Fjthom+1320+jpg+-1%7C%2Fjthom+1249+jpg+-1%7C%2Fjthom+1308+jpg+-1%7C%2Fjthom+1309+jpg+-1%7C%2Fjthom+1310+jpg+-1%7C%2Fjthom+1250+jpg+-1%7C%2Fjthom+1120+jpg+-1');dmSessCookie('DMDOCSTAT','CISOROOT=/jthom')" target="_top"><img src="/cgi-bin/thumbnail.exe?CISOROOT=/jthom&CISOPTR=578" width="80" height="62" border="0" alt="Allie Fair Robinette of Turkey Fork standing by porch of cabin holding straw purse and woven piece. " title="Allie Fair Robinette of Turkey Fork standing by porch of cabin holding straw purse and woven piece. " /></a></span></td><td class="tdtext" style="border-left: 8px solid #ffffff"><span class="maintext"><a href="item_viewer.php?CISOROOT=/jthom&CISOPTR=578&CISOBOX=1&REC=7" title="Allie Fair Robinette of Turkey Fork standing by porch of cabin holding straw purse and woven piece. " onclick="dmSessCookie('refer','http%3A%2F%2Fdigital.library.louisville.edu%2Fcdm4%2Fresults.php%3FCISOOP1%3Dany%26CISOROOT%3D%252Fjthom%26CISOBOX1%3D%26CISOFIELD1%3DCISOSEARCHALL%27%26QUY%3D20%2C%7C%2Fjthom+1289+jpg+-1%7C%2Fjthom+581+jpg+-1%7C%2Fjthom+1000+jpg+-1%7C%2Fjthom+1002+jpg+-1%7C%2Fjthom+1001+jpg+-1%7C%2Fjthom+1003+jpg+-1%7C%2Fjthom+578+jpg+-1%7C%2Fjthom+580+jpg+-1%7C%2Fjthom+579+jpg+-1%7C%2Fjthom+582+jpg+-1%7C%2Fjthom+583+jpg+-1%7C%2Fjthom+1550+jpg+-1%7C%2Fjthom+1451+jpg+-1%7C%2Fjthom+1320+jpg+-1%7C%2Fjthom+1249+jpg+-1%7C%2Fjthom+1308+jpg+-1%7C%2Fjthom+1309+jpg+-1%7C%2Fjthom+1310+jpg+-1%7C%2Fjthom+1250+jpg+-1%7C%2Fjthom+1120+jpg+-1');dmSessCookie('DMDOCSTAT','CISOROOT=/jthom')" target="_top">Allie Fair Robinette of Turkey Fork standing by porch of cabin holding straw purse and woven piece. </a></span></td><td class="tdtext" style="border-left: 8px solid #ffffff"><span class="maintext">Women; Handicraft; Textiles; Purses; Log cabins </span></td><td class="tdtext" style="border-left: 8px solid #ffffff"><span class="maintext">Allie Fair (A.F.) Robinette stands near the porch of a log cabin holding a straw purse and a white woven cloth. Title supplied by cataloger. </span></td></tr>
+				<tr>
+					<td colspan="5"><hr noshade size="1" color=#ffffff></td>
+				</tr><tr>
+		<td class="tdtext" nowrap="nowrap"><input type="checkbox" name="chk[]" value="/jthom|580" title="Allie Fair Robinette&#39;s father sitting outside cabin holding carpet bag. " /><span class="maintext"> 8. </span></td><td class="tdimage" align="left" style="border-left: 8px solid #ffffff"><span class="maintext"><a href="item_viewer.php?CISOROOT=/jthom&CISOPTR=580&CISOBOX=1&REC=8" title="Allie Fair Robinette&#39;s father sitting outside cabin holding carpet bag. " onclick="dmSessCookie('refer','http%3A%2F%2Fdigital.library.louisville.edu%2Fcdm4%2Fresults.php%3FCISOOP1%3Dany%26CISOROOT%3D%252Fjthom%26CISOBOX1%3D%26CISOFIELD1%3DCISOSEARCHALL%27%26QUY%3D20%2C%7C%2Fjthom+1289+jpg+-1%7C%2Fjthom+581+jpg+-1%7C%2Fjthom+1000+jpg+-1%7C%2Fjthom+1002+jpg+-1%7C%2Fjthom+1001+jpg+-1%7C%2Fjthom+1003+jpg+-1%7C%2Fjthom+578+jpg+-1%7C%2Fjthom+580+jpg+-1%7C%2Fjthom+579+jpg+-1%7C%2Fjthom+582+jpg+-1%7C%2Fjthom+583+jpg+-1%7C%2Fjthom+1550+jpg+-1%7C%2Fjthom+1451+jpg+-1%7C%2Fjthom+1320+jpg+-1%7C%2Fjthom+1249+jpg+-1%7C%2Fjthom+1308+jpg+-1%7C%2Fjthom+1309+jpg+-1%7C%2Fjthom+1310+jpg+-1%7C%2Fjthom+1250+jpg+-1%7C%2Fjthom+1120+jpg+-1');dmSessCookie('DMDOCSTAT','CISOROOT=/jthom')" target="_top"><img src="/cgi-bin/thumbnail.exe?CISOROOT=/jthom&CISOPTR=580" width="61" height="80" border="0" alt="Allie Fair Robinette&#39;s father sitting outside cabin holding carpet bag. " title="Allie Fair Robinette&#39;s father sitting outside cabin holding carpet bag. " /></a></span></td><td class="tdtext" style="border-left: 8px solid #ffffff"><span class="maintext"><a href="item_viewer.php?CISOROOT=/jthom&CISOPTR=580&CISOBOX=1&REC=8" title="Allie Fair Robinette&#39;s father sitting outside cabin holding carpet bag. " onclick="dmSessCookie('refer','http%3A%2F%2Fdigital.library.louisville.edu%2Fcdm4%2Fresults.php%3FCISOOP1%3Dany%26CISOROOT%3D%252Fjthom%26CISOBOX1%3D%26CISOFIELD1%3DCISOSEARCHALL%27%26QUY%3D20%2C%7C%2Fjthom+1289+jpg+-1%7C%2Fjthom+581+jpg+-1%7C%2Fjthom+1000+jpg+-1%7C%2Fjthom+1002+jpg+-1%7C%2Fjthom+1001+jpg+-1%7C%2Fjthom+1003+jpg+-1%7C%2Fjthom+578+jpg+-1%7C%2Fjthom+580+jpg+-1%7C%2Fjthom+579+jpg+-1%7C%2Fjthom+582+jpg+-1%7C%2Fjthom+583+jpg+-1%7C%2Fjthom+1550+jpg+-1%7C%2Fjthom+1451+jpg+-1%7C%2Fjthom+1320+jpg+-1%7C%2Fjthom+1249+jpg+-1%7C%2Fjthom+1308+jpg+-1%7C%2Fjthom+1309+jpg+-1%7C%2Fjthom+1310+jpg+-1%7C%2Fjthom+1250+jpg+-1%7C%2Fjthom+1120+jpg+-1');dmSessCookie('DMDOCSTAT','CISOROOT=/jthom')" target="_top">Allie Fair Robinette&#39;s father sitting outside cabin holding carpet bag. </a></span></td><td class="tdtext" style="border-left: 8px solid #ffffff"><span class="maintext">Men; Luggage; Log cabins </span></td><td class="tdtext" style="border-left: 8px solid #ffffff"><span class="maintext">A man sits next to the porch of a log cabin displaying a carpet bag. Title supplied by cataloger. </span></td></tr>
+				<tr>
+					<td colspan="5"><hr noshade size="1" color=#ffffff></td>
+				</tr><tr>
+		<td class="tdtext" nowrap="nowrap"><input type="checkbox" name="chk[]" value="/jthom|579" title="Allie Fair Robinette&#39;s father standing by spinning wheel outside cabin. " /><span class="maintext"> 9. </span></td><td class="tdimage" align="left" style="border-left: 8px solid #ffffff"><span class="maintext"><a href="item_viewer.php?CISOROOT=/jthom&CISOPTR=579&CISOBOX=1&REC=9" title="Allie Fair Robinette&#39;s father standing by spinning wheel outside cabin. " onclick="dmSessCookie('refer','http%3A%2F%2Fdigital.library.louisville.edu%2Fcdm4%2Fresults.php%3FCISOOP1%3Dany%26CISOROOT%3D%252Fjthom%26CISOBOX1%3D%26CISOFIELD1%3DCISOSEARCHALL%27%26QUY%3D20%2C%7C%2Fjthom+1289+jpg+-1%7C%2Fjthom+581+jpg+-1%7C%2Fjthom+1000+jpg+-1%7C%2Fjthom+1002+jpg+-1%7C%2Fjthom+1001+jpg+-1%7C%2Fjthom+1003+jpg+-1%7C%2Fjthom+578+jpg+-1%7C%2Fjthom+580+jpg+-1%7C%2Fjthom+579+jpg+-1%7C%2Fjthom+582+jpg+-1%7C%2Fjthom+583+jpg+-1%7C%2Fjthom+1550+jpg+-1%7C%2Fjthom+1451+jpg+-1%7C%2Fjthom+1320+jpg+-1%7C%2Fjthom+1249+jpg+-1%7C%2Fjthom+1308+jpg+-1%7C%2Fjthom+1309+jpg+-1%7C%2Fjthom+1310+jpg+-1%7C%2Fjthom+1250+jpg+-1%7C%2Fjthom+1120+jpg+-1');dmSessCookie('DMDOCSTAT','CISOROOT=/jthom')" target="_top"><img src="/cgi-bin/thumbnail.exe?CISOROOT=/jthom&CISOPTR=579" width="80" height="62" border="0" alt="Allie Fair Robinette&#39;s father standing by spinning wheel outside cabin. " title="Allie Fair Robinette&#39;s father standing by spinning wheel outside cabin. " /></a></span></td><td class="tdtext" style="border-left: 8px solid #ffffff"><span class="maintext"><a href="item_viewer.php?CISOROOT=/jthom&CISOPTR=579&CISOBOX=1&REC=9" title="Allie Fair Robinette&#39;s father standing by spinning wheel outside cabin. " onclick="dmSessCookie('refer','http%3A%2F%2Fdigital.library.louisville.edu%2Fcdm4%2Fresults.php%3FCISOOP1%3Dany%26CISOROOT%3D%252Fjthom%26CISOBOX1%3D%26CISOFIELD1%3DCISOSEARCHALL%27%26QUY%3D20%2C%7C%2Fjthom+1289+jpg+-1%7C%2Fjthom+581+jpg+-1%7C%2Fjthom+1000+jpg+-1%7C%2Fjthom+1002+jpg+-1%7C%2Fjthom+1001+jpg+-1%7C%2Fjthom+1003+jpg+-1%7C%2Fjthom+578+jpg+-1%7C%2Fjthom+580+jpg+-1%7C%2Fjthom+579+jpg+-1%7C%2Fjthom+582+jpg+-1%7C%2Fjthom+583+jpg+-1%7C%2Fjthom+1550+jpg+-1%7C%2Fjthom+1451+jpg+-1%7C%2Fjthom+1320+jpg+-1%7C%2Fjthom+1249+jpg+-1%7C%2Fjthom+1308+jpg+-1%7C%2Fjthom+1309+jpg+-1%7C%2Fjthom+1310+jpg+-1%7C%2Fjthom+1250+jpg+-1%7C%2Fjthom+1120+jpg+-1');dmSessCookie('DMDOCSTAT','CISOROOT=/jthom')" target="_top">Allie Fair Robinette&#39;s father standing by spinning wheel outside cabin. </a></span></td><td class="tdtext" style="border-left: 8px solid #ffffff"><span class="maintext">Men; Spinning apparatus; Log cabins </span></td><td class="tdtext" style="border-left: 8px solid #ffffff"><span class="maintext">A man, looking away from the camera, stands next to the porch of a log cabin and behind a spinning wheel. Title supplied by cataloger. </span></td></tr>
+				<tr>
+					<td colspan="5"><hr noshade size="1" color=#ffffff></td>
+				</tr><tr>
+		<td class="tdtext" nowrap="nowrap"><input type="checkbox" name="chk[]" value="/jthom|582" title="Allie Fair Robinette&#39;s father standing on porch holding rifle. " /><span class="maintext"> 10. </span></td><td class="tdimage" align="left" style="border-left: 8px solid #ffffff"><span class="maintext"><a href="item_viewer.php?CISOROOT=/jthom&CISOPTR=582&CISOBOX=1&REC=10" title="Allie Fair Robinette&#39;s father standing on porch holding rifle. " onclick="dmSessCookie('refer','http%3A%2F%2Fdigital.library.louisville.edu%2Fcdm4%2Fresults.php%3FCISOOP1%3Dany%26CISOROOT%3D%252Fjthom%26CISOBOX1%3D%26CISOFIELD1%3DCISOSEARCHALL%27%26QUY%3D20%2C%7C%2Fjthom+1289+jpg+-1%7C%2Fjthom+581+jpg+-1%7C%2Fjthom+1000+jpg+-1%7C%2Fjthom+1002+jpg+-1%7C%2Fjthom+1001+jpg+-1%7C%2Fjthom+1003+jpg+-1%7C%2Fjthom+578+jpg+-1%7C%2Fjthom+580+jpg+-1%7C%2Fjthom+579+jpg+-1%7C%2Fjthom+582+jpg+-1%7C%2Fjthom+583+jpg+-1%7C%2Fjthom+1550+jpg+-1%7C%2Fjthom+1451+jpg+-1%7C%2Fjthom+1320+jpg+-1%7C%2Fjthom+1249+jpg+-1%7C%2Fjthom+1308+jpg+-1%7C%2Fjthom+1309+jpg+-1%7C%2Fjthom+1310+jpg+-1%7C%2Fjthom+1250+jpg+-1%7C%2Fjthom+1120+jpg+-1');dmSessCookie('DMDOCSTAT','CISOROOT=/jthom')" target="_top"><img src="/cgi-bin/thumbnail.exe?CISOROOT=/jthom&CISOPTR=582" width="63" height="80" border="0" alt="Allie Fair Robinette&#39;s father standing on porch holding rifle. " title="Allie Fair Robinette&#39;s father standing on porch holding rifle. " /></a></span></td><td class="tdtext" style="border-left: 8px solid #ffffff"><span class="maintext"><a href="item_viewer.php?CISOROOT=/jthom&CISOPTR=582&CISOBOX=1&REC=10" title="Allie Fair Robinette&#39;s father standing on porch holding rifle. " onclick="dmSessCookie('refer','http%3A%2F%2Fdigital.library.louisville.edu%2Fcdm4%2Fresults.php%3FCISOOP1%3Dany%26CISOROOT%3D%252Fjthom%26CISOBOX1%3D%26CISOFIELD1%3DCISOSEARCHALL%27%26QUY%3D20%2C%7C%2Fjthom+1289+jpg+-1%7C%2Fjthom+581+jpg+-1%7C%2Fjthom+1000+jpg+-1%7C%2Fjthom+1002+jpg+-1%7C%2Fjthom+1001+jpg+-1%7C%2Fjthom+1003+jpg+-1%7C%2Fjthom+578+jpg+-1%7C%2Fjthom+580+jpg+-1%7C%2Fjthom+579+jpg+-1%7C%2Fjthom+582+jpg+-1%7C%2Fjthom+583+jpg+-1%7C%2Fjthom+1550+jpg+-1%7C%2Fjthom+1451+jpg+-1%7C%2Fjthom+1320+jpg+-1%7C%2Fjthom+1249+jpg+-1%7C%2Fjthom+1308+jpg+-1%7C%2Fjthom+1309+jpg+-1%7C%2Fjthom+1310+jpg+-1%7C%2Fjthom+1250+jpg+-1%7C%2Fjthom+1120+jpg+-1');dmSessCookie('DMDOCSTAT','CISOROOT=/jthom')" target="_top">Allie Fair Robinette&#39;s father standing on porch holding rifle. </a></span></td><td class="tdtext" style="border-left: 8px solid #ffffff"><span class="maintext">Men; Rifles; Dogs </span></td><td class="tdtext" style="border-left: 8px solid #ffffff"><span class="maintext">An elderly man stands next to a dog on the porch of a log cabin holding a rifle. Title supplied by cataloger. </span></td></tr>
+				<tr>
+					<td colspan="5"><hr noshade size="1" color=#ffffff></td>
+				</tr><tr>
+		<td class="tdtext" nowrap="nowrap"><input type="checkbox" name="chk[]" value="/jthom|583" title="Allie Fair Robinette&#39;s father standing on porch holding rifle. " /><span class="maintext"> 11. </span></td><td class="tdimage" align="left" style="border-left: 8px solid #ffffff"><span class="maintext"><a href="item_viewer.php?CISOROOT=/jthom&CISOPTR=583&CISOBOX=1&REC=11" title="Allie Fair Robinette&#39;s father standing on porch holding rifle. " onclick="dmSessCookie('refer','http%3A%2F%2Fdigital.library.louisville.edu%2Fcdm4%2Fresults.php%3FCISOOP1%3Dany%26CISOROOT%3D%252Fjthom%26CISOBOX1%3D%26CISOFIELD1%3DCISOSEARCHALL%27%26QUY%3D20%2C%7C%2Fjthom+1289+jpg+-1%7C%2Fjthom+581+jpg+-1%7C%2Fjthom+1000+jpg+-1%7C%2Fjthom+1002+jpg+-1%7C%2Fjthom+1001+jpg+-1%7C%2Fjthom+1003+jpg+-1%7C%2Fjthom+578+jpg+-1%7C%2Fjthom+580+jpg+-1%7C%2Fjthom+579+jpg+-1%7C%2Fjthom+582+jpg+-1%7C%2Fjthom+583+jpg+-1%7C%2Fjthom+1550+jpg+-1%7C%2Fjthom+1451+jpg+-1%7C%2Fjthom+1320+jpg+-1%7C%2Fjthom+1249+jpg+-1%7C%2Fjthom+1308+jpg+-1%7C%2Fjthom+1309+jpg+-1%7C%2Fjthom+1310+jpg+-1%7C%2Fjthom+1250+jpg+-1%7C%2Fjthom+1120+jpg+-1');dmSessCookie('DMDOCSTAT','CISOROOT=/jthom')" target="_top"><img src="/cgi-bin/thumbnail.exe?CISOROOT=/jthom&CISOPTR=583" width="64" height="80" border="0" alt="Allie Fair Robinette&#39;s father standing on porch holding rifle. " title="Allie Fair Robinette&#39;s father standing on porch holding rifle. " /></a></span></td><td class="tdtext" style="border-left: 8px solid #ffffff"><span class="maintext"><a href="item_viewer.php?CISOROOT=/jthom&CISOPTR=583&CISOBOX=1&REC=11" title="Allie Fair Robinette&#39;s father standing on porch holding rifle. " onclick="dmSessCookie('refer','http%3A%2F%2Fdigital.library.louisville.edu%2Fcdm4%2Fresults.php%3FCISOOP1%3Dany%26CISOROOT%3D%252Fjthom%26CISOBOX1%3D%26CISOFIELD1%3DCISOSEARCHALL%27%26QUY%3D20%2C%7C%2Fjthom+1289+jpg+-1%7C%2Fjthom+581+jpg+-1%7C%2Fjthom+1000+jpg+-1%7C%2Fjthom+1002+jpg+-1%7C%2Fjthom+1001+jpg+-1%7C%2Fjthom+1003+jpg+-1%7C%2Fjthom+578+jpg+-1%7C%2Fjthom+580+jpg+-1%7C%2Fjthom+579+jpg+-1%7C%2Fjthom+582+jpg+-1%7C%2Fjthom+583+jpg+-1%7C%2Fjthom+1550+jpg+-1%7C%2Fjthom+1451+jpg+-1%7C%2Fjthom+1320+jpg+-1%7C%2Fjthom+1249+jpg+-1%7C%2Fjthom+1308+jpg+-1%7C%2Fjthom+1309+jpg+-1%7C%2Fjthom+1310+jpg+-1%7C%2Fjthom+1250+jpg+-1%7C%2Fjthom+1120+jpg+-1');dmSessCookie('DMDOCSTAT','CISOROOT=/jthom')" target="_top">Allie Fair Robinette&#39;s father standing on porch holding rifle. </a></span></td><td class="tdtext" style="border-left: 8px solid #ffffff"><span class="maintext">Men; Rifles </span></td><td class="tdtext" style="border-left: 8px solid #ffffff"><span class="maintext">An elderly man stands on the porch of a log cabin holding a rifle. Title supplied by cataloger. </span></td></tr>
+				<tr>
+					<td colspan="5"><hr noshade size="1" color=#ffffff></td>
+				</tr><tr>
+		<td class="tdtext" nowrap="nowrap"><input type="checkbox" name="chk[]" value="/jthom|1550" title="Alvin Kerr at Traipsin&#39; Woman Cabin, Boyd County, Kentucky, 1934. " /><span class="maintext"> 12. </span></td><td class="tdimage" align="left" style="border-left: 8px solid #ffffff"><span class="maintext"><a href="item_viewer.php?CISOROOT=/jthom&CISOPTR=1550&CISOBOX=1&REC=12" title="Alvin Kerr at Traipsin&#39; Woman Cabin, Boyd County, Kentucky, 1934. " onclick="dmSessCookie('refer','http%3A%2F%2Fdigital.library.louisville.edu%2Fcdm4%2Fresults.php%3FCISOOP1%3Dany%26CISOROOT%3D%252Fjthom%26CISOBOX1%3D%26CISOFIELD1%3DCISOSEARCHALL%27%26QUY%3D20%2C%7C%2Fjthom+1289+jpg+-1%7C%2Fjthom+581+jpg+-1%7C%2Fjthom+1000+jpg+-1%7C%2Fjthom+1002+jpg+-1%7C%2Fjthom+1001+jpg+-1%7C%2Fjthom+1003+jpg+-1%7C%2Fjthom+578+jpg+-1%7C%2Fjthom+580+jpg+-1%7C%2Fjthom+579+jpg+-1%7C%2Fjthom+582+jpg+-1%7C%2Fjthom+583+jpg+-1%7C%2Fjthom+1550+jpg+-1%7C%2Fjthom+1451+jpg+-1%7C%2Fjthom+1320+jpg+-1%7C%2Fjthom+1249+jpg+-1%7C%2Fjthom+1308+jpg+-1%7C%2Fjthom+1309+jpg+-1%7C%2Fjthom+1310+jpg+-1%7C%2Fjthom+1250+jpg+-1%7C%2Fjthom+1120+jpg+-1');dmSessCookie('DMDOCSTAT','CISOROOT=/jthom')" target="_top"><img src="/cgi-bin/thumbnail.exe?CISOROOT=/jthom&CISOPTR=1550" width="57" height="80" border="0" alt="Alvin Kerr at Traipsin&#39; Woman Cabin, Boyd County, Kentucky, 1934. " title="Alvin Kerr at Traipsin&#39; Woman Cabin, Boyd County, Kentucky, 1934. " /></a></span></td><td class="tdtext" style="border-left: 8px solid #ffffff"><span class="maintext"><a href="item_viewer.php?CISOROOT=/jthom&CISOPTR=1550&CISOBOX=1&REC=12" title="Alvin Kerr at Traipsin&#39; Woman Cabin, Boyd County, Kentucky, 1934. " onclick="dmSessCookie('refer','http%3A%2F%2Fdigital.library.louisville.edu%2Fcdm4%2Fresults.php%3FCISOOP1%3Dany%26CISOROOT%3D%252Fjthom%26CISOBOX1%3D%26CISOFIELD1%3DCISOSEARCHALL%27%26QUY%3D20%2C%7C%2Fjthom+1289+jpg+-1%7C%2Fjthom+581+jpg+-1%7C%2Fjthom+1000+jpg+-1%7C%2Fjthom+1002+jpg+-1%7C%2Fjthom+1001+jpg+-1%7C%2Fjthom+1003+jpg+-1%7C%2Fjthom+578+jpg+-1%7C%2Fjthom+580+jpg+-1%7C%2Fjthom+579+jpg+-1%7C%2Fjthom+582+jpg+-1%7C%2Fjthom+583+jpg+-1%7C%2Fjthom+1550+jpg+-1%7C%2Fjthom+1451+jpg+-1%7C%2Fjthom+1320+jpg+-1%7C%2Fjthom+1249+jpg+-1%7C%2Fjthom+1308+jpg+-1%7C%2Fjthom+1309+jpg+-1%7C%2Fjthom+1310+jpg+-1%7C%2Fjthom+1250+jpg+-1%7C%2Fjthom+1120+jpg+-1');dmSessCookie('DMDOCSTAT','CISOROOT=/jthom')" target="_top">Alvin Kerr at Traipsin&#39; Woman Cabin, Boyd County, Kentucky, 1934. </a></span></td><td class="tdtext" style="border-left: 8px solid #ffffff"><span class="maintext">Men; Log cabins </span></td><td class="tdtext" style="border-left: 8px solid #ffffff"><span class="maintext">Broadway actor Alvin Kerr sits on the steps of Jean Thomas' "Traipsin' Woman Cabin" on the Mayo Trail near Ashland, Kentucky. Title supplied by cataloger. </span></td></tr>
+				<tr>
+					<td colspan="5"><hr noshade size="1" color=#ffffff></td>
+				</tr><tr>
+		<td class="tdtext" nowrap="nowrap"><input type="checkbox" name="chk[]" value="/jthom|1451" title="American Folk Song Festival billboard. " /><span class="maintext"> 13. </span></td><td class="tdimage" align="left" style="border-left: 8px solid #ffffff"><span class="maintext"><a href="item_viewer.php?CISOROOT=/jthom&CISOPTR=1451&CISOBOX=1&REC=13" title="American Folk Song Festival billboard. " onclick="dmSessCookie('refer','http%3A%2F%2Fdigital.library.louisville.edu%2Fcdm4%2Fresults.php%3FCISOOP1%3Dany%26CISOROOT%3D%252Fjthom%26CISOBOX1%3D%26CISOFIELD1%3DCISOSEARCHALL%27%26QUY%3D20%2C%7C%2Fjthom+1289+jpg+-1%7C%2Fjthom+581+jpg+-1%7C%2Fjthom+1000+jpg+-1%7C%2Fjthom+1002+jpg+-1%7C%2Fjthom+1001+jpg+-1%7C%2Fjthom+1003+jpg+-1%7C%2Fjthom+578+jpg+-1%7C%2Fjthom+580+jpg+-1%7C%2Fjthom+579+jpg+-1%7C%2Fjthom+582+jpg+-1%7C%2Fjthom+583+jpg+-1%7C%2Fjthom+1550+jpg+-1%7C%2Fjthom+1451+jpg+-1%7C%2Fjthom+1320+jpg+-1%7C%2Fjthom+1249+jpg+-1%7C%2Fjthom+1308+jpg+-1%7C%2Fjthom+1309+jpg+-1%7C%2Fjthom+1310+jpg+-1%7C%2Fjthom+1250+jpg+-1%7C%2Fjthom+1120+jpg+-1');dmSessCookie('DMDOCSTAT','CISOROOT=/jthom')" target="_top"><img src="/cgi-bin/thumbnail.exe?CISOROOT=/jthom&CISOPTR=1451" width="80" height="43" border="0" alt="American Folk Song Festival billboard. " title="American Folk Song Festival billboard. " /></a></span></td><td class="tdtext" style="border-left: 8px solid #ffffff"><span class="maintext"><a href="item_viewer.php?CISOROOT=/jthom&CISOPTR=1451&CISOBOX=1&REC=13" title="American Folk Song Festival billboard. " onclick="dmSessCookie('refer','http%3A%2F%2Fdigital.library.louisville.edu%2Fcdm4%2Fresults.php%3FCISOOP1%3Dany%26CISOROOT%3D%252Fjthom%26CISOBOX1%3D%26CISOFIELD1%3DCISOSEARCHALL%27%26QUY%3D20%2C%7C%2Fjthom+1289+jpg+-1%7C%2Fjthom+581+jpg+-1%7C%2Fjthom+1000+jpg+-1%7C%2Fjthom+1002+jpg+-1%7C%2Fjthom+1001+jpg+-1%7C%2Fjthom+1003+jpg+-1%7C%2Fjthom+578+jpg+-1%7C%2Fjthom+580+jpg+-1%7C%2Fjthom+579+jpg+-1%7C%2Fjthom+582+jpg+-1%7C%2Fjthom+583+jpg+-1%7C%2Fjthom+1550+jpg+-1%7C%2Fjthom+1451+jpg+-1%7C%2Fjthom+1320+jpg+-1%7C%2Fjthom+1249+jpg+-1%7C%2Fjthom+1308+jpg+-1%7C%2Fjthom+1309+jpg+-1%7C%2Fjthom+1310+jpg+-1%7C%2Fjthom+1250+jpg+-1%7C%2Fjthom+1120+jpg+-1');dmSessCookie('DMDOCSTAT','CISOROOT=/jthom')" target="_top">American Folk Song Festival billboard. </a></span></td><td class="tdtext" style="border-left: 8px solid #ffffff"><span class="maintext">Billboards; Signs (Notices); Men; Guitars; American Folk Song Festival </span></td><td class="tdtext" style="border-left: 8px solid #ffffff"><span class="maintext">Two men with guitars flank a large sign reading: "American Folk Song Festival / June 11th / [arrow pointing to the right] / U.S. 23 / Traipsin' Woman Cabin / Jean Thomas, Director." Title supplied by cataloger.... </span></td></tr>
+				<tr>
+					<td colspan="5"><hr noshade size="1" color=#ffffff></td>
+				</tr><tr>
+		<td class="tdtext" nowrap="nowrap"><input type="checkbox" name="chk[]" value="/jthom|1320" title="American Folk Song Festival, Carter Caves State Park, Olive Hill, Kentucky, June 1969. " /><span class="maintext"> 14. </span></td><td class="tdimage" align="left" style="border-left: 8px solid #ffffff"><span class="maintext"><a href="item_viewer.php?CISOROOT=/jthom&CISOPTR=1320&CISOBOX=1&REC=14" title="American Folk Song Festival, Carter Caves State Park, Olive Hill, Kentucky, June 1969. " onclick="dmSessCookie('refer','http%3A%2F%2Fdigital.library.louisville.edu%2Fcdm4%2Fresults.php%3FCISOOP1%3Dany%26CISOROOT%3D%252Fjthom%26CISOBOX1%3D%26CISOFIELD1%3DCISOSEARCHALL%27%26QUY%3D20%2C%7C%2Fjthom+1289+jpg+-1%7C%2Fjthom+581+jpg+-1%7C%2Fjthom+1000+jpg+-1%7C%2Fjthom+1002+jpg+-1%7C%2Fjthom+1001+jpg+-1%7C%2Fjthom+1003+jpg+-1%7C%2Fjthom+578+jpg+-1%7C%2Fjthom+580+jpg+-1%7C%2Fjthom+579+jpg+-1%7C%2Fjthom+582+jpg+-1%7C%2Fjthom+583+jpg+-1%7C%2Fjthom+1550+jpg+-1%7C%2Fjthom+1451+jpg+-1%7C%2Fjthom+1320+jpg+-1%7C%2Fjthom+1249+jpg+-1%7C%2Fjthom+1308+jpg+-1%7C%2Fjthom+1309+jpg+-1%7C%2Fjthom+1310+jpg+-1%7C%2Fjthom+1250+jpg+-1%7C%2Fjthom+1120+jpg+-1');dmSessCookie('DMDOCSTAT','CISOROOT=/jthom')" target="_top"><img src="/cgi-bin/thumbnail.exe?CISOROOT=/jthom&CISOPTR=1320" width="80" height="35" border="0" alt="American Folk Song Festival, Carter Caves State Park, Olive Hill, Kentucky, June 1969. " title="American Folk Song Festival, Carter Caves State Park, Olive Hill, Kentucky, June 1969. " /></a></span></td><td class="tdtext" style="border-left: 8px solid #ffffff"><span class="maintext"><a href="item_viewer.php?CISOROOT=/jthom&CISOPTR=1320&CISOBOX=1&REC=14" title="American Folk Song Festival, Carter Caves State Park, Olive Hill, Kentucky, June 1969. " onclick="dmSessCookie('refer','http%3A%2F%2Fdigital.library.louisville.edu%2Fcdm4%2Fresults.php%3FCISOOP1%3Dany%26CISOROOT%3D%252Fjthom%26CISOBOX1%3D%26CISOFIELD1%3DCISOSEARCHALL%27%26QUY%3D20%2C%7C%2Fjthom+1289+jpg+-1%7C%2Fjthom+581+jpg+-1%7C%2Fjthom+1000+jpg+-1%7C%2Fjthom+1002+jpg+-1%7C%2Fjthom+1001+jpg+-1%7C%2Fjthom+1003+jpg+-1%7C%2Fjthom+578+jpg+-1%7C%2Fjthom+580+jpg+-1%7C%2Fjthom+579+jpg+-1%7C%2Fjthom+582+jpg+-1%7C%2Fjthom+583+jpg+-1%7C%2Fjthom+1550+jpg+-1%7C%2Fjthom+1451+jpg+-1%7C%2Fjthom+1320+jpg+-1%7C%2Fjthom+1249+jpg+-1%7C%2Fjthom+1308+jpg+-1%7C%2Fjthom+1309+jpg+-1%7C%2Fjthom+1310+jpg+-1%7C%2Fjthom+1250+jpg+-1%7C%2Fjthom+1120+jpg+-1');dmSessCookie('DMDOCSTAT','CISOROOT=/jthom')" target="_top">American Folk Song Festival, Carter Caves State Park, Olive Hill, Kentucky, June 1969. </a></span></td><td class="tdtext" style="border-left: 8px solid #ffffff"><span class="maintext">Music festivals; Folk festivals; Spectators; Log cabins; Musicians; Costumes--United States; Costumes--Great Britain </span></td><td class="tdtext" style="border-left: 8px solid #ffffff"><span class="maintext">Performers both backstage (behind the replica of Jean Thomas' "Traipsin' Woman Cabin") and onstage, and spectators on the grass, at the American Folk Song Festival at Carter Caves State Park in Olive Hill,... </span></td></tr>
+				<tr>
+					<td colspan="5"><hr noshade size="1" color=#ffffff></td>
+				</tr><tr>
+		<td class="tdtext" nowrap="nowrap"><input type="checkbox" name="chk[]" value="/jthom|1249" title="American Folk Song Festival, Carter Caves State Park, Olive Hill, Kentucky, June 7-9, 1968. " /><span class="maintext"> 15. </span></td><td class="tdimage" align="left" style="border-left: 8px solid #ffffff"><span class="maintext"><a href="item_viewer.php?CISOROOT=/jthom&CISOPTR=1249&CISOBOX=1&REC=15" title="American Folk Song Festival, Carter Caves State Park, Olive Hill, Kentucky, June 7-9, 1968. " onclick="dmSessCookie('refer','http%3A%2F%2Fdigital.library.louisville.edu%2Fcdm4%2Fresults.php%3FCISOOP1%3Dany%26CISOROOT%3D%252Fjthom%26CISOBOX1%3D%26CISOFIELD1%3DCISOSEARCHALL%27%26QUY%3D20%2C%7C%2Fjthom+1289+jpg+-1%7C%2Fjthom+581+jpg+-1%7C%2Fjthom+1000+jpg+-1%7C%2Fjthom+1002+jpg+-1%7C%2Fjthom+1001+jpg+-1%7C%2Fjthom+1003+jpg+-1%7C%2Fjthom+578+jpg+-1%7C%2Fjthom+580+jpg+-1%7C%2Fjthom+579+jpg+-1%7C%2Fjthom+582+jpg+-1%7C%2Fjthom+583+jpg+-1%7C%2Fjthom+1550+jpg+-1%7C%2Fjthom+1451+jpg+-1%7C%2Fjthom+1320+jpg+-1%7C%2Fjthom+1249+jpg+-1%7C%2Fjthom+1308+jpg+-1%7C%2Fjthom+1309+jpg+-1%7C%2Fjthom+1310+jpg+-1%7C%2Fjthom+1250+jpg+-1%7C%2Fjthom+1120+jpg+-1');dmSessCookie('DMDOCSTAT','CISOROOT=/jthom')" target="_top"><img src="/cgi-bin/thumbnail.exe?CISOROOT=/jthom&CISOPTR=1249" width="80" height="61" border="0" alt="American Folk Song Festival, Carter Caves State Park, Olive Hill, Kentucky, June 7-9, 1968. " title="American Folk Song Festival, Carter Caves State Park, Olive Hill, Kentucky, June 7-9, 1968. " /></a></span></td><td class="tdtext" style="border-left: 8px solid #ffffff"><span class="maintext"><a href="item_viewer.php?CISOROOT=/jthom&CISOPTR=1249&CISOBOX=1&REC=15" title="American Folk Song Festival, Carter Caves State Park, Olive Hill, Kentucky, June 7-9, 1968. " onclick="dmSessCookie('refer','http%3A%2F%2Fdigital.library.louisville.edu%2Fcdm4%2Fresults.php%3FCISOOP1%3Dany%26CISOROOT%3D%252Fjthom%26CISOBOX1%3D%26CISOFIELD1%3DCISOSEARCHALL%27%26QUY%3D20%2C%7C%2Fjthom+1289+jpg+-1%7C%2Fjthom+581+jpg+-1%7C%2Fjthom+1000+jpg+-1%7C%2Fjthom+1002+jpg+-1%7C%2Fjthom+1001+jpg+-1%7C%2Fjthom+1003+jpg+-1%7C%2Fjthom+578+jpg+-1%7C%2Fjthom+580+jpg+-1%7C%2Fjthom+579+jpg+-1%7C%2Fjthom+582+jpg+-1%7C%2Fjthom+583+jpg+-1%7C%2Fjthom+1550+jpg+-1%7C%2Fjthom+1451+jpg+-1%7C%2Fjthom+1320+jpg+-1%7C%2Fjthom+1249+jpg+-1%7C%2Fjthom+1308+jpg+-1%7C%2Fjthom+1309+jpg+-1%7C%2Fjthom+1310+jpg+-1%7C%2Fjthom+1250+jpg+-1%7C%2Fjthom+1120+jpg+-1');dmSessCookie('DMDOCSTAT','CISOROOT=/jthom')" target="_top">American Folk Song Festival, Carter Caves State Park, Olive Hill, Kentucky, June 7-9, 1968. </a></span></td><td class="tdtext" style="border-left: 8px solid #ffffff"><span class="maintext">Women; Men; Spectators; Costumes--United States; Music festivals; Folk festivals; Musicians; Log cabins; Violins; Guitars; Mouth organs; Stringed instruments; Contact sheets; American Folk Song Festival </span></td><td class="tdtext" style="border-left: 8px solid #ffffff"><span class="maintext">Jean Thomas wearing her "Narrator" costume (a long black dress with white collar and sleeves), is joined by various musicians, including fiddler J.P. Fraley and his wife Annadeene (who also works as Thomas'... </span></td></tr>
+				<tr>
+					<td colspan="5"><hr noshade size="1" color=#ffffff></td>
+				</tr><tr>
+		<td class="tdtext" nowrap="nowrap"><input type="checkbox" name="chk[]" value="/jthom|1308" title="American Folk Song Festival, Carter Caves State Park, Olive Hill, Kentucky, June 7-9, 1968. " /><span class="maintext"> 16. </span></td><td class="tdimage" align="left" style="border-left: 8px solid #ffffff"><span class="maintext"><a href="item_viewer.php?CISOROOT=/jthom&CISOPTR=1308&CISOBOX=1&REC=16" title="American Folk Song Festival, Carter Caves State Park, Olive Hill, Kentucky, June 7-9, 1968. " onclick="dmSessCookie('refer','http%3A%2F%2Fdigital.library.louisville.edu%2Fcdm4%2Fresults.php%3FCISOOP1%3Dany%26CISOROOT%3D%252Fjthom%26CISOBOX1%3D%26CISOFIELD1%3DCISOSEARCHALL%27%26QUY%3D20%2C%7C%2Fjthom+1289+jpg+-1%7C%2Fjthom+581+jpg+-1%7C%2Fjthom+1000+jpg+-1%7C%2Fjthom+1002+jpg+-1%7C%2Fjthom+1001+jpg+-1%7C%2Fjthom+1003+jpg+-1%7C%2Fjthom+578+jpg+-1%7C%2Fjthom+580+jpg+-1%7C%2Fjthom+579+jpg+-1%7C%2Fjthom+582+jpg+-1%7C%2Fjthom+583+jpg+-1%7C%2Fjthom+1550+jpg+-1%7C%2Fjthom+1451+jpg+-1%7C%2Fjthom+1320+jpg+-1%7C%2Fjthom+1249+jpg+-1%7C%2Fjthom+1308+jpg+-1%7C%2Fjthom+1309+jpg+-1%7C%2Fjthom+1310+jpg+-1%7C%2Fjthom+1250+jpg+-1%7C%2Fjthom+1120+jpg+-1');dmSessCookie('DMDOCSTAT','CISOROOT=/jthom')" target="_top"><img src="/cgi-bin/thumbnail.exe?CISOROOT=/jthom&CISOPTR=1308" width="80" height="75" border="0" alt="American Folk Song Festival, Carter Caves State Park, Olive Hill, Kentucky, June 7-9, 1968. " title="American Folk Song Festival, Carter Caves State Park, Olive Hill, Kentucky, June 7-9, 1968. " /></a></span></td><td class="tdtext" style="border-left: 8px solid #ffffff"><span class="maintext"><a href="item_viewer.php?CISOROOT=/jthom&CISOPTR=1308&CISOBOX=1&REC=16" title="American Folk Song Festival, Carter Caves State Park, Olive Hill, Kentucky, June 7-9, 1968. " onclick="dmSessCookie('refer','http%3A%2F%2Fdigital.library.louisville.edu%2Fcdm4%2Fresults.php%3FCISOOP1%3Dany%26CISOROOT%3D%252Fjthom%26CISOBOX1%3D%26CISOFIELD1%3DCISOSEARCHALL%27%26QUY%3D20%2C%7C%2Fjthom+1289+jpg+-1%7C%2Fjthom+581+jpg+-1%7C%2Fjthom+1000+jpg+-1%7C%2Fjthom+1002+jpg+-1%7C%2Fjthom+1001+jpg+-1%7C%2Fjthom+1003+jpg+-1%7C%2Fjthom+578+jpg+-1%7C%2Fjthom+580+jpg+-1%7C%2Fjthom+579+jpg+-1%7C%2Fjthom+582+jpg+-1%7C%2Fjthom+583+jpg+-1%7C%2Fjthom+1550+jpg+-1%7C%2Fjthom+1451+jpg+-1%7C%2Fjthom+1320+jpg+-1%7C%2Fjthom+1249+jpg+-1%7C%2Fjthom+1308+jpg+-1%7C%2Fjthom+1309+jpg+-1%7C%2Fjthom+1310+jpg+-1%7C%2Fjthom+1250+jpg+-1%7C%2Fjthom+1120+jpg+-1');dmSessCookie('DMDOCSTAT','CISOROOT=/jthom')" target="_top">American Folk Song Festival, Carter Caves State Park, Olive Hill, Kentucky, June 7-9, 1968. </a></span></td><td class="tdtext" style="border-left: 8px solid #ffffff"><span class="maintext">Women; Men; Spectators; Costumes--United States; Costumes--Great Britain; Music festivals; Folk festivals; Musicians; Log cabins; Contact sheets; American Folk Song Festival </span></td><td class="tdtext" style="border-left: 8px solid #ffffff"><span class="maintext">Jean Thomas, wearing a long black dress with white collar and sleeves, is joined by various musicians, including some in Elizabethan costume, children doing play-party games, and an audience at the thirty-eighth... </span></td></tr>
+				<tr>
+					<td colspan="5"><hr noshade size="1" color=#ffffff></td>
+				</tr><tr>
+		<td class="tdtext" nowrap="nowrap"><input type="checkbox" name="chk[]" value="/jthom|1309" title="American Folk Song Festival, Carter Caves State Park, Olive Hill, Kentucky, June 7-9, 1968. " /><span class="maintext"> 17. </span></td><td class="tdimage" align="left" style="border-left: 8px solid #ffffff"><span class="maintext"><a href="item_viewer.php?CISOROOT=/jthom&CISOPTR=1309&CISOBOX=1&REC=17" title="American Folk Song Festival, Carter Caves State Park, Olive Hill, Kentucky, June 7-9, 1968. " onclick="dmSessCookie('refer','http%3A%2F%2Fdigital.library.louisville.edu%2Fcdm4%2Fresults.php%3FCISOOP1%3Dany%26CISOROOT%3D%252Fjthom%26CISOBOX1%3D%26CISOFIELD1%3DCISOSEARCHALL%27%26QUY%3D20%2C%7C%2Fjthom+1289+jpg+-1%7C%2Fjthom+581+jpg+-1%7C%2Fjthom+1000+jpg+-1%7C%2Fjthom+1002+jpg+-1%7C%2Fjthom+1001+jpg+-1%7C%2Fjthom+1003+jpg+-1%7C%2Fjthom+578+jpg+-1%7C%2Fjthom+580+jpg+-1%7C%2Fjthom+579+jpg+-1%7C%2Fjthom+582+jpg+-1%7C%2Fjthom+583+jpg+-1%7C%2Fjthom+1550+jpg+-1%7C%2Fjthom+1451+jpg+-1%7C%2Fjthom+1320+jpg+-1%7C%2Fjthom+1249+jpg+-1%7C%2Fjthom+1308+jpg+-1%7C%2Fjthom+1309+jpg+-1%7C%2Fjthom+1310+jpg+-1%7C%2Fjthom+1250+jpg+-1%7C%2Fjthom+1120+jpg+-1');dmSessCookie('DMDOCSTAT','CISOROOT=/jthom')" target="_top"><img src="/cgi-bin/thumbnail.exe?CISOROOT=/jthom&CISOPTR=1309" width="80" height="62" border="0" alt="American Folk Song Festival, Carter Caves State Park, Olive Hill, Kentucky, June 7-9, 1968. " title="American Folk Song Festival, Carter Caves State Park, Olive Hill, Kentucky, June 7-9, 1968. " /></a></span></td><td class="tdtext" style="border-left: 8px solid #ffffff"><span class="maintext"><a href="item_viewer.php?CISOROOT=/jthom&CISOPTR=1309&CISOBOX=1&REC=17" title="American Folk Song Festival, Carter Caves State Park, Olive Hill, Kentucky, June 7-9, 1968. " onclick="dmSessCookie('refer','http%3A%2F%2Fdigital.library.louisville.edu%2Fcdm4%2Fresults.php%3FCISOOP1%3Dany%26CISOROOT%3D%252Fjthom%26CISOBOX1%3D%26CISOFIELD1%3DCISOSEARCHALL%27%26QUY%3D20%2C%7C%2Fjthom+1289+jpg+-1%7C%2Fjthom+581+jpg+-1%7C%2Fjthom+1000+jpg+-1%7C%2Fjthom+1002+jpg+-1%7C%2Fjthom+1001+jpg+-1%7C%2Fjthom+1003+jpg+-1%7C%2Fjthom+578+jpg+-1%7C%2Fjthom+580+jpg+-1%7C%2Fjthom+579+jpg+-1%7C%2Fjthom+582+jpg+-1%7C%2Fjthom+583+jpg+-1%7C%2Fjthom+1550+jpg+-1%7C%2Fjthom+1451+jpg+-1%7C%2Fjthom+1320+jpg+-1%7C%2Fjthom+1249+jpg+-1%7C%2Fjthom+1308+jpg+-1%7C%2Fjthom+1309+jpg+-1%7C%2Fjthom+1310+jpg+-1%7C%2Fjthom+1250+jpg+-1%7C%2Fjthom+1120+jpg+-1');dmSessCookie('DMDOCSTAT','CISOROOT=/jthom')" target="_top">American Folk Song Festival, Carter Caves State Park, Olive Hill, Kentucky, June 7-9, 1968. </a></span></td><td class="tdtext" style="border-left: 8px solid #ffffff"><span class="maintext">Women; Men; Children; Spectators; Costumes--United States; Costumes--Great Britain; Music festivals; Folk festivals; Musicians; Log cabins; Guitars; Zithers; Stringed instruments; Contact sheets; American Folk Song Festival </span></td><td class="tdtext" style="border-left: 8px solid #ffffff"><span class="maintext">Various musicians, including some in Elizabethan costume; a hammered dulcimer player; a guitar player; a group of children; and an audience at the thirty-eighth annual American Folk Song Festival, now... </span></td></tr>
+				<tr>
+					<td colspan="5"><hr noshade size="1" color=#ffffff></td>
+				</tr><tr>
+		<td class="tdtext" nowrap="nowrap"><input type="checkbox" name="chk[]" value="/jthom|1310" title="American Folk Song Festival, Carter Caves State Park, Olive Hill, Kentucky, June 7-9, 1968. " /><span class="maintext"> 18. </span></td><td class="tdimage" align="left" style="border-left: 8px solid #ffffff"><span class="maintext"><a href="item_viewer.php?CISOROOT=/jthom&CISOPTR=1310&CISOBOX=1&REC=18" title="American Folk Song Festival, Carter Caves State Park, Olive Hill, Kentucky, June 7-9, 1968. " onclick="dmSessCookie('refer','http%3A%2F%2Fdigital.library.louisville.edu%2Fcdm4%2Fresults.php%3FCISOOP1%3Dany%26CISOROOT%3D%252Fjthom%26CISOBOX1%3D%26CISOFIELD1%3DCISOSEARCHALL%27%26QUY%3D20%2C%7C%2Fjthom+1289+jpg+-1%7C%2Fjthom+581+jpg+-1%7C%2Fjthom+1000+jpg+-1%7C%2Fjthom+1002+jpg+-1%7C%2Fjthom+1001+jpg+-1%7C%2Fjthom+1003+jpg+-1%7C%2Fjthom+578+jpg+-1%7C%2Fjthom+580+jpg+-1%7C%2Fjthom+579+jpg+-1%7C%2Fjthom+582+jpg+-1%7C%2Fjthom+583+jpg+-1%7C%2Fjthom+1550+jpg+-1%7C%2Fjthom+1451+jpg+-1%7C%2Fjthom+1320+jpg+-1%7C%2Fjthom+1249+jpg+-1%7C%2Fjthom+1308+jpg+-1%7C%2Fjthom+1309+jpg+-1%7C%2Fjthom+1310+jpg+-1%7C%2Fjthom+1250+jpg+-1%7C%2Fjthom+1120+jpg+-1');dmSessCookie('DMDOCSTAT','CISOROOT=/jthom')" target="_top"><img src="/cgi-bin/thumbnail.exe?CISOROOT=/jthom&CISOPTR=1310" width="80" height="77" border="0" alt="American Folk Song Festival, Carter Caves State Park, Olive Hill, Kentucky, June 7-9, 1968. " title="American Folk Song Festival, Carter Caves State Park, Olive Hill, Kentucky, June 7-9, 1968. " /></a></span></td><td class="tdtext" style="border-left: 8px solid #ffffff"><span class="maintext"><a href="item_viewer.php?CISOROOT=/jthom&CISOPTR=1310&CISOBOX=1&REC=18" title="American Folk Song Festival, Carter Caves State Park, Olive Hill, Kentucky, June 7-9, 1968. " onclick="dmSessCookie('refer','http%3A%2F%2Fdigital.library.louisville.edu%2Fcdm4%2Fresults.php%3FCISOOP1%3Dany%26CISOROOT%3D%252Fjthom%26CISOBOX1%3D%26CISOFIELD1%3DCISOSEARCHALL%27%26QUY%3D20%2C%7C%2Fjthom+1289+jpg+-1%7C%2Fjthom+581+jpg+-1%7C%2Fjthom+1000+jpg+-1%7C%2Fjthom+1002+jpg+-1%7C%2Fjthom+1001+jpg+-1%7C%2Fjthom+1003+jpg+-1%7C%2Fjthom+578+jpg+-1%7C%2Fjthom+580+jpg+-1%7C%2Fjthom+579+jpg+-1%7C%2Fjthom+582+jpg+-1%7C%2Fjthom+583+jpg+-1%7C%2Fjthom+1550+jpg+-1%7C%2Fjthom+1451+jpg+-1%7C%2Fjthom+1320+jpg+-1%7C%2Fjthom+1249+jpg+-1%7C%2Fjthom+1308+jpg+-1%7C%2Fjthom+1309+jpg+-1%7C%2Fjthom+1310+jpg+-1%7C%2Fjthom+1250+jpg+-1%7C%2Fjthom+1120+jpg+-1');dmSessCookie('DMDOCSTAT','CISOROOT=/jthom')" target="_top">American Folk Song Festival, Carter Caves State Park, Olive Hill, Kentucky, June 7-9, 1968. </a></span></td><td class="tdtext" style="border-left: 8px solid #ffffff"><span class="maintext">Women; Men; Children; Spectators; Costumes--United States; Costumes--Great Britain; Music festivals; Folk festivals; Musicians; Log cabins; Contact sheets; American Folk Song Festival </span></td><td class="tdtext" style="border-left: 8px solid #ffffff"><span class="maintext">Primarily photographs of the audience at the thirty-eighth annual American Folk Song Festival, held at Carter Caves State Park in Olive Hill, Kentucky with a replica of Jean Thomas' "Traipsin' Woman Cabin"... </span></td></tr>
+				<tr>
+					<td colspan="5"><hr noshade size="1" color=#ffffff></td>
+				</tr><tr>
+		<td class="tdtext" nowrap="nowrap"><input type="checkbox" name="chk[]" value="/jthom|1250" title="American Folk Song Festival, Carter Caves State Park, Olive Hill, Kentucky, June 7-9, 1968. " /><span class="maintext"> 19. </span></td><td class="tdimage" align="left" style="border-left: 8px solid #ffffff"><span class="maintext"><a href="item_viewer.php?CISOROOT=/jthom&CISOPTR=1250&CISOBOX=1&REC=19" title="American Folk Song Festival, Carter Caves State Park, Olive Hill, Kentucky, June 7-9, 1968. " onclick="dmSessCookie('refer','http%3A%2F%2Fdigital.library.louisville.edu%2Fcdm4%2Fresults.php%3FCISOOP1%3Dany%26CISOROOT%3D%252Fjthom%26CISOBOX1%3D%26CISOFIELD1%3DCISOSEARCHALL%27%26QUY%3D20%2C%7C%2Fjthom+1289+jpg+-1%7C%2Fjthom+581+jpg+-1%7C%2Fjthom+1000+jpg+-1%7C%2Fjthom+1002+jpg+-1%7C%2Fjthom+1001+jpg+-1%7C%2Fjthom+1003+jpg+-1%7C%2Fjthom+578+jpg+-1%7C%2Fjthom+580+jpg+-1%7C%2Fjthom+579+jpg+-1%7C%2Fjthom+582+jpg+-1%7C%2Fjthom+583+jpg+-1%7C%2Fjthom+1550+jpg+-1%7C%2Fjthom+1451+jpg+-1%7C%2Fjthom+1320+jpg+-1%7C%2Fjthom+1249+jpg+-1%7C%2Fjthom+1308+jpg+-1%7C%2Fjthom+1309+jpg+-1%7C%2Fjthom+1310+jpg+-1%7C%2Fjthom+1250+jpg+-1%7C%2Fjthom+1120+jpg+-1');dmSessCookie('DMDOCSTAT','CISOROOT=/jthom')" target="_top"><img src="/cgi-bin/thumbnail.exe?CISOROOT=/jthom&CISOPTR=1250" width="80" height="62" border="0" alt="American Folk Song Festival, Carter Caves State Park, Olive Hill, Kentucky, June 7-9, 1968. " title="American Folk Song Festival, Carter Caves State Park, Olive Hill, Kentucky, June 7-9, 1968. " /></a></span></td><td class="tdtext" style="border-left: 8px solid #ffffff"><span class="maintext"><a href="item_viewer.php?CISOROOT=/jthom&CISOPTR=1250&CISOBOX=1&REC=19" title="American Folk Song Festival, Carter Caves State Park, Olive Hill, Kentucky, June 7-9, 1968. " onclick="dmSessCookie('refer','http%3A%2F%2Fdigital.library.louisville.edu%2Fcdm4%2Fresults.php%3FCISOOP1%3Dany%26CISOROOT%3D%252Fjthom%26CISOBOX1%3D%26CISOFIELD1%3DCISOSEARCHALL%27%26QUY%3D20%2C%7C%2Fjthom+1289+jpg+-1%7C%2Fjthom+581+jpg+-1%7C%2Fjthom+1000+jpg+-1%7C%2Fjthom+1002+jpg+-1%7C%2Fjthom+1001+jpg+-1%7C%2Fjthom+1003+jpg+-1%7C%2Fjthom+578+jpg+-1%7C%2Fjthom+580+jpg+-1%7C%2Fjthom+579+jpg+-1%7C%2Fjthom+582+jpg+-1%7C%2Fjthom+583+jpg+-1%7C%2Fjthom+1550+jpg+-1%7C%2Fjthom+1451+jpg+-1%7C%2Fjthom+1320+jpg+-1%7C%2Fjthom+1249+jpg+-1%7C%2Fjthom+1308+jpg+-1%7C%2Fjthom+1309+jpg+-1%7C%2Fjthom+1310+jpg+-1%7C%2Fjthom+1250+jpg+-1%7C%2Fjthom+1120+jpg+-1');dmSessCookie('DMDOCSTAT','CISOROOT=/jthom')" target="_top">American Folk Song Festival, Carter Caves State Park, Olive Hill, Kentucky, June 7-9, 1968. </a></span></td><td class="tdtext" style="border-left: 8px solid #ffffff"><span class="maintext">Women; Men; Children; Costumes--United States; Costumes--Great Britain; Music festivals; Folk festivals; Musicians; Log cabins; Guitars; Zithers; Violins; Banjos; Mouth organs; Stringed instruments; Contact sheets; American Folk Song Festival </span></td><td class="tdtext" style="border-left: 8px solid #ffffff"><span class="maintext">Various musicians, including children playing hammered dulcimer; men playing guitar and harmonica; a young woman playing guitar; and a string band featuring J.P. Fraley on fiddle join Jean Thomas, wearing... </span></td></tr>
+				<tr>
+					<td colspan="5"><hr noshade size="1" color=#ffffff></td>
+				</tr><tr>
+		<td class="tdtext" nowrap="nowrap"><input type="checkbox" name="chk[]" value="/jthom|1120" title="An unnamed man plays banjo while Ed Morrison plays a fiddle-like instrument in yard of &#34;Wee House in " /><span class="maintext"> 20. </span></td><td class="tdimage" align="left" style="border-left: 8px solid #ffffff"><span class="maintext"><a href="item_viewer.php?CISOROOT=/jthom&CISOPTR=1120&CISOBOX=1&REC=20" title="An unnamed man plays banjo while Ed Morrison plays a fiddle-like instrument in yard of &#34;Wee House in " onclick="dmSessCookie('refer','http%3A%2F%2Fdigital.library.louisville.edu%2Fcdm4%2Fresults.php%3FCISOOP1%3Dany%26CISOROOT%3D%252Fjthom%26CISOBOX1%3D%26CISOFIELD1%3DCISOSEARCHALL%27%26QUY%3D20%2C%7C%2Fjthom+1289+jpg+-1%7C%2Fjthom+581+jpg+-1%7C%2Fjthom+1000+jpg+-1%7C%2Fjthom+1002+jpg+-1%7C%2Fjthom+1001+jpg+-1%7C%2Fjthom+1003+jpg+-1%7C%2Fjthom+578+jpg+-1%7C%2Fjthom+580+jpg+-1%7C%2Fjthom+579+jpg+-1%7C%2Fjthom+582+jpg+-1%7C%2Fjthom+583+jpg+-1%7C%2Fjthom+1550+jpg+-1%7C%2Fjthom+1451+jpg+-1%7C%2Fjthom+1320+jpg+-1%7C%2Fjthom+1249+jpg+-1%7C%2Fjthom+1308+jpg+-1%7C%2Fjthom+1309+jpg+-1%7C%2Fjthom+1310+jpg+-1%7C%2Fjthom+1250+jpg+-1%7C%2Fjthom+1120+jpg+-1');dmSessCookie('DMDOCSTAT','CISOROOT=/jthom')" target="_top"><img src="/cgi-bin/thumbnail.exe?CISOROOT=/jthom&CISOPTR=1120" width="47" height="80" border="0" alt="An unnamed man plays banjo while Ed Morrison plays a fiddle-like instrument in yard of &#34;Wee House in " title="An unnamed man plays banjo while Ed Morrison plays a fiddle-like instrument in yard of &#34;Wee House in " /></a></span></td><td class="tdtext" style="border-left: 8px solid #ffffff"><span class="maintext"><a href="item_viewer.php?CISOROOT=/jthom&CISOPTR=1120&CISOBOX=1&REC=20" title="An unnamed man plays banjo while Ed Morrison plays a fiddle-like instrument in yard of &#34;Wee House in " onclick="dmSessCookie('refer','http%3A%2F%2Fdigital.library.louisville.edu%2Fcdm4%2Fresults.php%3FCISOOP1%3Dany%26CISOROOT%3D%252Fjthom%26CISOBOX1%3D%26CISOFIELD1%3DCISOSEARCHALL%27%26QUY%3D20%2C%7C%2Fjthom+1289+jpg+-1%7C%2Fjthom+581+jpg+-1%7C%2Fjthom+1000+jpg+-1%7C%2Fjthom+1002+jpg+-1%7C%2Fjthom+1001+jpg+-1%7C%2Fjthom+1003+jpg+-1%7C%2Fjthom+578+jpg+-1%7C%2Fjthom+580+jpg+-1%7C%2Fjthom+579+jpg+-1%7C%2Fjthom+582+jpg+-1%7C%2Fjthom+583+jpg+-1%7C%2Fjthom+1550+jpg+-1%7C%2Fjthom+1451+jpg+-1%7C%2Fjthom+1320+jpg+-1%7C%2Fjthom+1249+jpg+-1%7C%2Fjthom+1308+jpg+-1%7C%2Fjthom+1309+jpg+-1%7C%2Fjthom+1310+jpg+-1%7C%2Fjthom+1250+jpg+-1%7C%2Fjthom+1120+jpg+-1');dmSessCookie('DMDOCSTAT','CISOROOT=/jthom')" target="_top">An unnamed man plays banjo while Ed Morrison plays a fiddle-like instrument in yard of &#34;Wee House in the Wood,&#34; Ashland, Kentucky. </a></span></td><td class="tdtext" style="border-left: 8px solid #ffffff"><span class="maintext">Men; Stringed instruments; Banjos; Violins </span></td><td class="tdtext" style="border-left: 8px solid #ffffff"><span class="maintext">An unidentified man (left) wearing a three-piece suit plays banjo, with Ed Morrison (right) playing a fiddle-like instrument. They are in the yard of Jean Thomas' "Wee House in the Wood" in Ashland, Kentucky.... </span></td>
+		</form>
+
+		</table>
+
+		</td>
+	</tr>
+	</table>
+
+	</td>
+</tr>
+
+</table>	<table cellpadding="0" cellspacing="0" border="0" width="100%">
+<tr>
+	<td align="left" width="5"><img src="images/spacer.gif" width="5" height="28" alt="" /></td>
+	<td align="left" nowrap="nowrap"><span class="maintext">
+	
+	<a href="javascript:checkAll()" title="Select all items">select all</a> : <a href="javascript:clearAll()" title="Clear all items">clear all</a> :	
+	<a id="adfav[2]" class="addfavoffstatus" href="javascript:addItemsFav(document.searchResultsForm)" title="Add item(s) to My Favorites">
+	add to favorites</a></span></td>
+
+	<td align="right"><span class="maintext"></span></td>	
+</tr>
+</table>	<table cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="#ffffff">
+<tr>
+	<td align="left" style="border-top: 1px solid #777777;border-bottom: 1px solid #777777;border-left: 1px solid #777777" width="5"><img src="images/spacer.gif" width="5" height="18" alt="" /></td>
+	<td align="left" style="border-top: 1px solid #777777;border-bottom: 1px solid #777777" nowrap="nowrap" width="70%"><span class="res_submenu">results <b>1</b>-<b>20</b> of <b>1077</b> item(s)&nbsp;</span></td>
+	<td align="right" style="border-top: 1px solid #777777;border-bottom: 1px solid #777777" nowrap="nowrap"><span class="res_submenu">
+
+page 1 of 54 : ( <span class="res_offstatus"><<</span> &#160;1&#160;&#160;<a class="res_submenu" href="/cdm4/results.php?CISOOP1=any&CISOROOT=%2Fjthom&CISOBOX1=&CISOFIELD1=CISOSEARCHALL'&CISOSTART=1,21" title="Go to page 2">2</a>&#160;&#160;<a class="res_submenu" href="/cdm4/results.php?CISOOP1=any&CISOROOT=%2Fjthom&CISOBOX1=&CISOFIELD1=CISOSEARCHALL'&CISOSTART=1,41" title="Go to page 3">3</a>&#160;&#160;<a class="res_submenu" href="/cdm4/results.php?CISOOP1=any&CISOROOT=%2Fjthom&CISOBOX1=&CISOFIELD1=CISOSEARCHALL'&CISOSTART=1,61" title="Go to page 4">4</a>&#160;&#160;<a class="res_submenu" href="/cdm4/results.php?CISOOP1=any&CISOROOT=%2Fjthom&CISOBOX1=&CISOFIELD1=CISOSEARCHALL'&CISOSTART=1,81" title="Go to page 5">5</a>&#160;&#160;<a class="res_submenu" href="/cdm4/results.php?CISOOP1=any&CISOROOT=%2Fjthom&CISOBOX1=&CISOFIELD1=CISOSEARCHALL'&CISOSTART=1,101" title="Go to page 6">6</a>&#160;&#160;<a class="res_submenu" href="/cdm4/results.php?CISOOP1=any&CISOROOT=%2Fjthom&CISOBOX1=&CISOFIELD1=CISOSEARCHALL'&CISOSTART=1,121" title="Go to page 7">7</a>&#160;&#160;<a class="res_submenu" href="/cdm4/results.php?CISOOP1=any&CISOROOT=%2Fjthom&CISOBOX1=&CISOFIELD1=CISOSEARCHALL'&CISOSTART=1,141" title="Go to page 8">8</a>&#160;&#160;<a class="res_submenu" href="/cdm4/results.php?CISOOP1=any&CISOROOT=%2Fjthom&CISOBOX1=&CISOFIELD1=CISOSEARCHALL'&CISOSTART=1,161" title="Go to page 9">9</a>&#160;&#160;<a class="res_submenu" href="/cdm4/results.php?CISOOP1=any&CISOROOT=%2Fjthom&CISOBOX1=&CISOFIELD1=CISOSEARCHALL'&CISOSTART=1,181" title="Go to page 10">10</a>&#160; <a class="res_submenu" href="/cdm4/results.php?CISOOP1=any&CISOROOT=%2Fjthom&CISOBOX1=&CISOFIELD1=CISOSEARCHALL'&CISOSTART=11,201" title="Next page">>></a> ) ::  <span class="res_offstatus">previous</span> : <a class="res_submenu" href="/cdm4/results.php?CISOOP1=any&CISOROOT=%2Fjthom&CISOBOX1=&CISOFIELD1=CISOSEARCHALL'&CISOSTART=1,21" title="Next page">next</a>
+
+	</span></td>
+	<td align="left" style="border-top: 1px solid #777777;border-bottom: 1px solid #777777;border-right: 1px solid #777777"><img src="images/spacer.gif" width="5" height="18" alt="" /></td>	
+</tr>
+</table>
+	</td>
+</tr>
+</table>
+
+
+<!-- +++++++ <<< end content here +++++++ //-->
+<!-- +++++++ <<< end content here +++++++ //-->
+<!-- +++++++ <<< end content here +++++++ //-->
+
+
+		</td>
+	</tr>
+	</table>
+
+
+</td>
+</tr>
+
+<tr>
+	<td>
+
+
+	<table cellpadding="0" cellspacing="0" border="0" bgcolor="#333333" width="100%">
+	<tr>
+		<td>
+
+
+       <div id="librariesFooter">
+            <p><a href="http://louisville.edu/library">University Libraries</a> | 
+            <a href="http://louisville.edu/">University of Louisville</a> | 
+            Louisville, KY 40292 <br />
+            Phone: 502-852-4476 | <a href="mailto:digital@louisville.edu">Email</a> | 
+			<a href="http://digital.library.louisville.edu/collections/chat/index.php">Chat</a> <br />
+			Copyright &copy; 2010  <script type="text/javascript">document.write('<img width="1" height="1" src="/log_analysis_screen_info.gif?' +'width=' + screen.width + '&height=' + screen.height + '&depth=' + screen.colorDepth + '">\n');</script>
+            </p>
+            
+                            
+                            
+ </div> <!-- librariesFooter --> 
+
+		
+		
+
+		</td>
+	</tr>
+	</table>
+
+
+	</td>
+</tr>
+
+
+</table>
+
+</body>
+</html>
