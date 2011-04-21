@@ -175,11 +175,11 @@ def read_contentdm(site, collection=None, query=None, limit=None, logger=logging
         #e.g. of page 2: http://digital.library.louisville.edu/cdm4/browse.php?CISOROOT=/afamoh&CISOSTART=1,21
         page_start = 1
         while True:
-            items = doc.xml_select(u'//a[starts-with(@href, "item_viewer.php")]')
+            items = doc.xml_select(u'//a[starts-with(@href, "item_viewer.php") or starts-with(@href, "document.php")]')
             #items = list(items)
             #for i in items: yield i
             for i in items:
-                logger.debug("i: {0}".format(unicode(i)))
+                #logger.debug("item: {0}".format(i.title.encode('utf-8')))
                 yield i
             next = [ l.href for l in doc.xml_select(u'//a[@class="res_submenu"]') if int(l.href.split(u',')[-1]) > page_start ]
             if not next:
@@ -231,7 +231,7 @@ def read_contentdm(site, collection=None, query=None, limit=None, logger=logging
                 value = u''.join(CONTENT.dispatch(f.td[1].span))
                 entry[key] = unicode(value)
             if u'Title' in entry:
-                logger.debug("{0}".format(entry['Title']))
+                #logger.debug("{0}".format(entry['Title']))
                 entry['label'] = entry['Title']
             if u"Location_Depicted" in entry:
                 locations = entry[u"Location_Depicted"].split(u', ')
