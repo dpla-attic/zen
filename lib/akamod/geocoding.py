@@ -7,11 +7,6 @@ Copyright 2008-2010 Zepheira LLC
 
 Services for geocoding
 
-Accesses a Moin wiki (via the Akara moinrest wrapper) to use as a source for a
-authoring and metadata aextraction
-
-Based on Moin/CMS (see http://wiki.xml3k.org/Akara/Services/MoinCMS )
-
 This file is part of the open source Zen project,
 provided under the Apache 2.0 license.
 See the files LICENSE and NOTICE for details.
@@ -24,25 +19,16 @@ See:
  
 = Defined REST entry points =
 
-http://purl.org/com/zepheira/services/ct.gov.moin (ct.gov.moin) Handles POST
-http://labwiki.semioclinical.com/mywiki/resources/ct.gov/zen (ct.gov.zen.js) Handles GET
 
 = Configuration =
 
-moinrestbase (required) - the base Moin/REST URI for the place where pages should
-                          be added/updated
-A closer look at moinrestbase.  In the example value: http://localhost:8880/moin/wikiid/
-
- * http://localhost:8880/... - the URL to the root of an Akara instance
- * ...moin... - the moint point of the Moin/REST wrapper module under Akara (moinrest.py)
- * ...wikiid... - the wiki ID for a specific, wrapped Moin wiki, as defined e.g.
-   in a target-xxx config var for moinrest.py e.g. "wikiid" above would correspond to
-   "target-wikiid" config var for moinrest
 
 Sample config:
 
-[zen]
-moinrestbase = http://localhost:8880/moin/wikiid/
+class geocoding:
+    cache_max_age = 86400
+    geocoder = 'http://purl.org/com/zepheira/services/geocoders/local-geonames'
+    geonames_dbfile = 'path/to/geonames.sqlite3'
 
 = Notes on security =
 
@@ -58,7 +44,6 @@ To-do
 #configure to set: ipgeo.db 
 
 
-from __future__ import with_statement
 import sys, re, os, time, sqlite3
 import socket
 import urllib2, urllib
@@ -66,12 +51,10 @@ import hashlib
 import httplib
 from datetime import datetime
 from cStringIO import StringIO
-from contextlib import closing
 
 import amara
 from amara import bindery
 from amara.thirdparty import json
-from geopy import geocoders
 
 from akara.services import simple_service
 from akara.util import status_response
@@ -79,18 +62,58 @@ from akara import response
 from akara import logger
 from akara import module_config
 
-from zen.latlong import latlong
+#from zen.latlong import latlong
+from zen.geo import local_geonames
 
-GEOCODER = module_config().get('geocoder', "geocoders.get_geocoder('geonames')")
-#GEOCODER = module_config().get('geocoder', "geocoders.get_geocoder('google', resource='maps')")
-GEOCODER = eval(GEOCODER)
-DBFILE = module_config().get('dbfile')
+LOCAL_GEONAMES = 'http://purl.org/com/zepheira/services/geocoders/local-geonames'
 
-#See NOTES for info about setting
+GEOCODER = module_config().get('geocoder', LOCAL_GEONAMES)
+
 GEONAMES_PLUS_DBFILE = module_config().get('geonames_dbfile')
 
 # Specifies the default max-age of across-the-board lookups
 CACHE_MAX_AGE = str(module_config().get('cache_max_age'))
+
+
+GEOCODERS = {
+    LOCAL_GEONAMES: local_geonames(GEONAMES_PLUS_DBFILE, logger),
+}
+
+
+SERVICE_ID = 'http://purl.org/com/zepheira/services/geolookup.json'
+@simple_service('GET', SERVICE_ID, 'geolookup.json', 'application/json')
+def geolookup_json(place=None):
+    '''
+    Transform to return the latitude/longitude of a place name, if found
+    
+    Sample request:
+    * curl "http://localhost:8880/geolookup.json?place=Superior,%20CO"
+    * curl "http://localhost:8880/geolookup.json?place=1600%20Amphitheatre%20Parkway,%20Mountain%20View,%20VA,%2094043"
+    * curl "http://localhost:8880/geolookup.json?place=Cerqueira%20C%C3%A9sar%2C%20Brazil"
+    * curl "http://localhost:8880/geolookup.json?place=Georgia"
+    '''
+    geoquery = place.decode('utf-8')
+    logger.debug("geolookup_json: " + repr((geoquery, )))
+    if CACHE_MAX_AGE: response.add_header("Cache-Control", "max-age="+CACHE_MAX_AGE)
+    return GEOCODERS[GEOCODER](place)
+
+
+##
+## FIXME: CLEAN UP THE BELOW!
+##
+
+
+
+
+
+
+
+#GEOCODER = module_config().get('geocoder', "geocoders.get_geocoder('geonames')")
+#GEOCODER = module_config().get('geocoder', "geocoders.get_geocoder('google', resource='maps')")
+#GEOCODER = eval(GEOCODER)
+#DBFILE = module_config().get('dbfile')
+
+#See NOTES for info about setting
 
 
 def state_lookup(s):
@@ -112,16 +135,16 @@ def check_local_ll():
     return ll
 
 
-SERVICE_ID = 'http://purl.org/com/zepheira/services/geolookup.json'
-@simple_service('GET', SERVICE_ID, 'geolookup.json', 'application/json')
-def geolookup_json(place=None):
+SERVICE_ID = 'http://purl.org/com/zepheira/services/geolookup-old.json'
+@simple_service('GET', SERVICE_ID, 'geolookup-old.json', 'application/json')
+def geolookup_json_old(place=None):
     '''
     Transform to return the latitude/longitude of a place name, if found
     
     Sample request:
-    * curl "http://localhost:8880/geolookup.json?place=Superior,%20CO"
-    * curl "http://localhost:8880/geolookup.json?place=1600%20Amphitheatre%20Parkway,%20Mountain%20View,%20VA,%2094043"
-    * curl "http://localhost:8880/geolookup.json?place=Cerqueira%20C%C3%A9sar%2C%20Brazil"
+    * curl "http://localhost:8880/geolookup-old.json?place=Superior,%20CO"
+    * curl "http://localhost:8880/geolookup-old.json?place=1600%20Amphitheatre%20Parkway,%20Mountain%20View,%20VA,%2094043"
+    * curl "http://localhost:8880/geolookup-old.json?place=Cerqueira%20C%C3%A9sar%2C%20Brazil"
     '''
     geoquery = place.decode('utf-8')
     #geoquery = "%s in %s, %s"%(address_line, city, state_name)
@@ -186,8 +209,8 @@ def geohash_json(place=None):
     else:
         query = urllib.urlencode({'q' : geoquery})
         url = 'http://geohash.org/?%s' % (query)
-        with closing(urllib.urlopen(url)) as search_results:
-            json = json.loads(search_results.read())
+        #with closing(urllib.urlopen(url)) as search_results:
+        #    json = json.loads(search_results.read())
         results = json['responseData']['results']
         return results[0]['url'].encode('utf-8') + '\n'
 

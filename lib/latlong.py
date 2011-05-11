@@ -137,6 +137,49 @@ SELECT latitude, longitude
   limit 1
 """
 
+RAW_LOOKUP_SQL = """
+SELECT latitude, longitude
+  FROM geoname
+  WHERE geonameid in
+  (
+    SELECT geonameid
+    FROM geoname
+    WHERE country_code = :name
+
+    UNION
+
+    SELECT geonameid
+    FROM country_alias
+    WHERE name = :name
+
+    UNION
+
+    SELECT geonameid
+    FROM geoname
+    WHERE city_name = :name
+
+    UNION
+
+    SELECT geonameid
+    FROM geoname
+    WHERE city_asciiname = :name
+
+    UNION
+
+    SELECT geonameid
+    FROM city_alias
+    WHERE name = :name
+
+    UNION
+
+    SELECT geonameid
+    FROM state_alias
+    WHERE name = :name
+  )
+  ORDER BY population DESC
+  limit 1
+"""
+
 
 ## Handle all sorts of names like
 # Kindhausen(Dorf)
@@ -357,6 +400,18 @@ SELECT country_alias.name, geoname.country_code
         city = normalize_name(city)
         return self._get_lat_long(CITY_SQL, dict(city_name=city))
 
+    def raw_lookup(self, text):
+        """Find the largest city in the world with the given name.
+
+        >>> latlong.raw_lookup("Miami")
+        (u'25.77427', u'-80.19366')
+        >>> latlong.raw_lookup("Georgia")
+        (u'42', u'43.5')
+
+        """
+        text = normalize_name(text)
+        return self._get_lat_long(RAW_LOOKUP_SQL, dict(name=text))
+
 
 # Make SQLite return dictionaries for the row results.
 def dict_factory(cursor, row):
@@ -365,7 +420,8 @@ def dict_factory(cursor, row):
         d[col[0]] = row[idx]
     return d
 
-
     
 if __name__ == "__main__":
+    #FIXME: doctest as below does not work because we have no SQL file to initialize the connection
     import doctest
+    #doctest.testmod(verbose=True, raise_on_error=True)

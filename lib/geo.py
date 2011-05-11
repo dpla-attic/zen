@@ -2,6 +2,7 @@
 # From geo.py
 
 import sys, urllib
+import logging
 
 from amara.thirdparty import httplib2, json
 
@@ -10,6 +11,8 @@ from akara import request
 from akara.caching import cache
 from akara import global_config
 from akara.util import find_peer_service
+
+from zen.latlong import latlong
 
 GEOLOOKUP_URI = None
 
@@ -54,17 +57,33 @@ def s(place):
 GEOLOOKUP_CACHE = cache(
     'http://purl.org/com/zepheira/services/geolookup.json', expires=24*60*60)
 
-def old_geolookup(place):
-    if not place:
-        return None
-    if isinstance(place, unicode):
-        place = place.encode('utf-8')
-    resp = GEOLOOKUP_CACHE.get(place=place)
-    result = resp.read()
-    try:
-        latlong = json.loads(result).itervalues().next()
-        return latlong
-    except (ValueError, StopIteration), e:
-        logger.debug("Not found: " + repr(place))
-        return None
+class local_geonames(object):
+    '''
+    >>> from zen.geo import local_geonames
+    >>> lg = local_geonames('/Users/uche/.local/lib/akara/geonames.sqlite3')
+    >>> lg('Superior, CO')
+    '{"Superior, CO": "39.95276,-105.1686"}'
+    >>> lg('Georgia')
+    '{"Georgia": "42,43.5"}'
+    '''
+    def __init__(self, support_dbfile, logger=logging):
+        self._support_dbfile = latlong(support_dbfile)
+        self._logger = logger
+        return
+
+    def __call__(self, place):
+        components = [ comp.strip() for comp in place.split(u',')]
+        if len(components) == 1:
+            result = self._support_dbfile.raw_lookup(components[0])
+        else:
+            result = self._support_dbfile.using_city_and_state_then_country(components[0], components[-1])
+        if result:
+            (lat, long_) = result
+            logger.debug(u"local geolookup: " + repr((place, lat, long_)))
+            ll = "%s,%s"%(lat, long_)
+            return json.dumps({place: ll}) if ll else "{}"
+        else:
+            return "{}"
+
+
 
