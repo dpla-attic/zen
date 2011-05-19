@@ -66,15 +66,24 @@ class local_geonames(object):
     >>> lg('Georgia')
     '{"Georgia": "42,43.5"}'
     '''
-    def __init__(self, support_dbfile, logger=logging):
+    def __init__(self, support_dbfile, heuristics=[], logger=logging):
         self._support_dbfile = latlong(support_dbfile)
         self._logger = logger
+        for h in heuristics:
+            h(self)
         return
+
+    def _single_name_query(self, place):
+        '''
+        This function is called for the case where a user queries for a single
+        name with no formatting to suggest province or country
+        '''
+        return self._support_dbfile.raw_lookup(place)
 
     def __call__(self, place):
         components = [ comp.strip() for comp in place.split(u',')]
         if len(components) == 1:
-            result = self._support_dbfile.raw_lookup(components[0])
+            result = self._single_name_query(components[0])
         else:
             result = self._support_dbfile.using_city_and_state_then_country(components[0], components[-1])
         if result:
@@ -86,4 +95,21 @@ class local_geonames(object):
             return "{}"
 
 
+#Heuristics functions
+def US_STATE_FIRST(lg_obj):
+    '''
+    This is a ridiculously US centric heuristic, but here it is.
+    It's for the case where formatting to suggest province or country is missing
+    The rule is first to look for a US state with the name, and then
+    Do a raw look up for the largest geo entity
+    '''
+    #XXX: this is using the closure to provide the instance rather than self
+    #Should be OK, but could cause breakage if we ever do anything really funky
+    #in class local_geonames.  We might want to revisit the monkey-patching mechanism some day
+    def state_first_query(place):
+        result = lg_obj._support_dbfile.using_state(place)
+        if not result:
+            result = lg_obj._support_dbfile.raw_lookup(place)
+        return result
+    lg_obj._single_name_query = state_first_query
 

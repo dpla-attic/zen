@@ -17,7 +17,7 @@ except ImportError:
 
 from zen.services import register_service, zservice
 from zen.temporal import smart_parse_date
-from zen.geo import geolookup
+from zen.geo import geolookup, local_geonames
 
 import time; from functools import partial; isobase = partial(time.strftime, "%Y-%m-%dT%H:%M:%S")
 
@@ -30,6 +30,8 @@ def UU(obj, k):
     else:
         return result.strip()
 
+GEOCODER = None
+
 
 @zservice(u'http://purl.org/com/zepheira/augmentation/location')
 def augment_location(source, propertyinfo, augmented, failed):
@@ -37,7 +39,7 @@ def augment_location(source, propertyinfo, augmented, failed):
     Sample propertyinfo
     {
         "property": "latlong",
-        "enabled": true,
+        "enabled": True,
         "label": "Mapped place",
         "tags": ["property:type=location"],
         "composite": [
@@ -47,7 +49,34 @@ def augment_location(source, propertyinfo, augmented, failed):
             "zip"
         ]
     }
+
+    A few composite examples
+
+    >>> from zen import augmentation
+    >>> from zen.geo import local_geonames
+    >>> augmentation.GEOCODER = local_geonames('/Users/uche/.local/lib/akara/geonames.sqlite3')
+    >>> augmentation.GEOCODER('Superior, CO')
+
+    >>> source = [{u"id": u"_1", u"label": u"_1", u"orig": u"text, text, text"}]
+    >>> propinfo = {u"enabled": True, u"property": u"latlong", u"enabled": True, u"label": "mapped result", u"tags": [u"property:type=location"], u"composite": ["place1", "place2"]}
+    >>> result = []
+    >>> failed = {}
+    >>> augmentation.augment_location(source, propinfo, result, failed)
+    >>> result
+    [{u'shredded': [u'text', u'text', u'text'], u'id': u'_1', u'label': u'_1'}]
+
+    A few non-composite examples
+
+    >>> source = [{u"id": u"_1", u"label": u"_1", u"placename": u"Georgia"}]
+    >>> propinfo = {u"enabled": True, u"property": u"latlong", u"enabled": True, u"label": "mapped result", u"tags": [u"property:type=location"], u"composite": ["placename"]}
+    >>> result = []
+    >>> failed = {}
+    >>> augmentation.augment_location(source, propinfo, result, failed)
+    >>> result
+    [{u'latlong': '{"Georgia": "42,43.5"}', u'id': u'_1', u'label': u'_1'}]
     '''
+    #In the above "Georgia" example, if you wanted the US state instead (83.50,32.71)
+    #You need to specify heuristics for the geocoder
     composite = propertyinfo[u"composite"]
     pname = propertyinfo.get(u"property", u'location_latlong')
     def each_obj(obj, id):
@@ -57,7 +86,7 @@ def augment_location(source, propertyinfo, augmented, failed):
             return
         location = u', '.join(address_parts)
         if logger: logger.debug("location input: " + repr(location))
-        location_latlong = geolookup(location)
+        location_latlong = GEOCODER(location) if GEOCODER else geolookup(location)
         if location_latlong:
             augmented.append({u'id': id, u'label': obj[u'label'],
                                 pname: location_latlong})

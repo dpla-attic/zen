@@ -137,6 +137,19 @@ SELECT latitude, longitude
   limit 1
 """
 
+STATE_SQL = """
+SELECT latitude, longitude
+  FROM geoname
+  WHERE geonameid in
+  (
+    SELECT geonameid
+    FROM state_alias
+    WHERE name = :state_name
+  )
+  ORDER BY population DESC
+  limit 1
+"""
+
 RAW_LOOKUP_SQL = """
 SELECT latitude, longitude
   FROM geoname
@@ -400,8 +413,22 @@ SELECT country_alias.name, geoname.country_code
         city = normalize_name(city)
         return self._get_lat_long(CITY_SQL, dict(city_name=city))
 
+    def using_state(self, state):
+        """Find the largest state with the given name.
+
+        >>> latlong.using_city("Georgia")
+        (u'25.77427', u'-80.19366')
+        >>> latlong.using_city("Paris")
+        (u'48.85341', u'2.3488')
+        >>> latlong.using_city("Gothenburg")
+        (u'57.70716', u'11.96679')
+
+        """
+        state = normalize_name(state)
+        return self._get_lat_long(STATE_SQL, dict(state_name=state))
+
     def raw_lookup(self, text):
-        """Find the largest city in the world with the given name.
+        """Find the largest geographical entity in the world with the given name.
 
         >>> latlong.raw_lookup("Miami")
         (u'25.77427', u'-80.19366')

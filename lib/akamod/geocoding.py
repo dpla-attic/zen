@@ -3,7 +3,7 @@
 """
 geocoding.py
 
-Copyright 2008-2010 Zepheira LLC
+Copyright 2008-2011 Zepheira LLC
 
 Services for geocoding
 
@@ -29,6 +29,7 @@ class geocoding:
     cache_max_age = 86400
     geocoder = 'http://purl.org/com/zepheira/services/geocoders/local-geonames'
     geonames_dbfile = 'path/to/geonames.sqlite3'
+    #e.g.: geonames_dbfile = Akara.ConfigRoot+'/caches/geonames.sqlite3'
 
 = Notes on security =
 
@@ -76,7 +77,7 @@ CACHE_MAX_AGE = str(module_config().get('cache_max_age'))
 
 
 GEOCODERS = {
-    LOCAL_GEONAMES: local_geonames(GEONAMES_PLUS_DBFILE, logger),
+    LOCAL_GEONAMES: local_geonames(GEONAMES_PLUS_DBFILE, logger=logger),
 }
 
 
