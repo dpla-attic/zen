@@ -179,7 +179,7 @@ def read_contentdm(site, collection=None, query=None, limit=None, logger=logging
         #e.g. of page 2: http://digital.library.louisville.edu/cdm4/browse.php?CISOROOT=/afamoh&CISOSTART=1,21
         page_start = 1
         while True:
-            items = doc.xml_select(u'//a[starts-with(@href, "item_viewer.php") or starts-with(@href, "document.php")]')
+            items = doc.xml_select(u'//a[contains(@href, "item_viewer.php") or contains(@href, "document.php")]')
             #items = list(items)
             #for i in items: yield i
             for i in items:
