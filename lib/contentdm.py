@@ -150,7 +150,7 @@ def read_contentdm(site, collection=None, query=None, limit=None, logger=logging
     #Execute the main query URL for ContentDM
     qstr = urllib.urlencode({'CISOBOX1' : query or '', 'CISOROOT' : collection})
     #Note the "sort by title" which is there because it seems default sort has a bug in CDM4
-    url = join(site, 'results.php?CISOOP1=any&{0}&CISOFIELD1=CISOSEARCHALL&CISOSORT=title'.format(qstr))
+    url = join(site, 'results.php?CISOOP1=all&{0}&CISOFIELD1=CISOSEARCHALL&CISOSORT=title'.format(qstr))
     usersite = site #We might have to change the site URL we use as a base from the user's entry point
 
     yield {'basequeryurl': url}
@@ -161,7 +161,7 @@ def read_contentdm(site, collection=None, query=None, limit=None, logger=logging
         #Soemtimes people mount CDM for the user at say http://content.lib.auburn.edu but you still need to access the pages with the stem http://content.lib.auburn.edu/cdm4/
         if not site.rstrip('/').endswith('cdm4'):
             site = join(site, 'cdm4/')
-            url = join(site, 'results.php?CISOOP1=any&{0}&CISOFIELD1=CISOSEARCHALL'.format(qstr))
+            url = join(site, 'results.php?CISOOP1=all&{0}&CISOFIELD1=CISOSEARCHALL&CISOSORT=title'.format(qstr))
             resp, content = h.request(url)
             if not resp['status'].startswith('20'):
                 raise RuntimeError('Http Error acessing {0}: {1}'.format(url, repr(resp)))
