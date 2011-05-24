@@ -149,7 +149,8 @@ def read_contentdm(site, collection=None, query=None, limit=None, logger=logging
     site = site.rstrip('/')+'/'
     #Execute the main query URL for ContentDM
     qstr = urllib.urlencode({'CISOBOX1' : query or '', 'CISOROOT' : collection})
-    url = join(site, 'results.php?CISOOP1=any&{0}&CISOFIELD1=CISOSEARCHALL'.format(qstr))
+    #Note the "sort by title" which is there because it seems default sort has a bug in CDM4
+    url = join(site, 'results.php?CISOOP1=any&{0}&CISOFIELD1=CISOSEARCHALL&CISOSORT=title'.format(qstr))
     usersite = site #We might have to change the site URL we use as a base from the user's entry point
 
     yield {'basequeryurl': url}
@@ -166,7 +167,10 @@ def read_contentdm(site, collection=None, query=None, limit=None, logger=logging
                 raise RuntimeError('Http Error acessing {0}: {1}'.format(url, repr(resp)))
     resultsdoc = htmlparse(content)
 
-    seen = set()
+    #You might see an ID accessed more than once throughout the scraping process
+    seen_ids = set()
+    #You might see more than one of the same link from scraping an index page
+    seen_links = set()
     
     #items = resultsdoc.xml_select(u'//form[@name="searchResultsForm"]//a[starts-with(@href, "item_viewer.php")]')
 
@@ -196,17 +200,21 @@ def read_contentdm(site, collection=None, query=None, limit=None, logger=logging
     count = 0
     for it in items:
         at_least_one = True
-        entry = {}
         pageuri = absolutize(it.href, site)
+        if pageuri in seen_links:
+            continue
+        seen_links.add(pageuri)
+        entry = {}
         logger.debug("Processing item URL: {0}".format(pageuri))
         (scheme, netloc, path, query, fragment) = split_uri_ref(pageuri)
         entry['domain'] = netloc
         params = parse_qs(query)
         entry['cdm-coll'] = params['CISOROOT'][0].strip('/').split('/')[0]
         entry['id'] = params['CISOPTR'][0]
-        if entry['id'] in seen:
+        logger.debug("Item id: {0}".format(entry['id']))
+        if entry['id'] in seen_ids:
             continue
-        seen.add(entry['id'])
+        seen_ids.add(entry['id'])
         entry['link'] = unicode(pageuri)
         entry['local_link'] = '#' + entry['id']
 
@@ -233,6 +241,8 @@ def read_contentdm(site, collection=None, query=None, limit=None, logger=logging
             if u'Title' in entry:
                 #logger.debug("{0}".format(entry['Title']))
                 entry['label'] = entry['Title']
+            else:
+                entry['label'] = u'[NO LABEL AVAILABLE]'
             if u"Location_Depicted" in entry:
                 locations = entry[u"Location_Depicted"].split(u', ')
                 #locations = [ l.replace(' (', ', ').replace(')', '').replace(' ', '+') for l in locations if l.strip() ]
