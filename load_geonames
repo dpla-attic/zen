@@ -82,58 +82,58 @@ other_postal_regions = """
 
 # Ignoring the armed forces designations
 
-US_postal_regions = """
-US.AL \t ALABAMA                    \t   AL \t 86.63 \t 32.84
-US.AK \t ALASKA                     \t   AK \t 152.47 \t 64.73
-US.AZ \t ARIZONA                    \t   AZ \t 111.79 \t 34.31
-US.AR \t ARKANSAS                   \t   AR \t 92.30 \t 34.81
-US.CA \t CALIFORNIA                 \t   CA \t 120.08 \t 36.97
-US.CO \t COLORADO                   \t   CO \t 105.64 \t 39.00
-US.CT \t CONNECTICUT                \t   CT \t 72.71 \t 41.59
-US.DE \t DELAWARE                   \t   DE \t 75.51 \t 38.98
-US.DC \t DISTRICT OF COLUMBIA       \t   DC \t 76.85 \t 39.17
-US.FL \t FLORIDA                    \t   FL \t 81.63 \t 28.13
-US.GA \t GEORGIA                    \t   GA \t 83.50 \t 32.71
-US.HI \t HAWAII                     \t   HI \t 157.28 \t 20.95
-US.ID \t IDAHO                      \t   ID \t 114.96 \t 44.26
-US.IL \t ILLINOIS                   \t   IL \t 89.31 \t 40.01
-US.IN \t INDIANA                    \t   IN \t 86.27 \t 39.90
-US.IA \t IOWA                       \t   IA \t 93.39 \t 41.96
-US.KS \t KANSAS                     \t   KS \t 98.70 \t 38.50
-US.KY \t KENTUCKY                   \t   KY \t 85.51 \t 37.36
-US.LA \t LOUISIANA                  \t   LA \t 92.54 \t 30.97
-US.ME \t MAINE                      \t   ME \t 69.23 \t 45.25
-US.MD \t MARYLAND                   \t   MD \t 77.37 \t 39.44
-US.MA \t MASSACHUSETTS              \t   MA \t 72.03 \t 42.34
-US.MI \t MICHIGAN                   \t   MI \t 84.94 \t 45.06
-US.MN \t MINNESOTA                  \t   MN \t 95.33 \t 46.02
-US.MS \t MISSISSIPPI                \t   MS \t 89.72 \t 32.81
-US.MO \t MISSOURI                   \t   MO \t 92.63 \t 38.49
-US.MT \t MONTANA                    \t   MT \t 109.64 \t 47.03
-US.NE \t NEBRASKA                   \t   NE \t 99.86 \t 41.52
-US.NV \t NEVADA                     \t   NV \t 116.93 \t 39.51
-US.NH \t NEW HAMPSHIRE              \t   NH \t 71.57 \t 43.64
-US.NJ \t NEW JERSEY                 \t   NJ \t 74.56 \t 40.07
-US.NM \t NEW MEXICO                 \t   NM \t 106.11 \t 34.50
-US.NY \t NEW YORK                   \t   NY \t 76.02 \t 42.97
-US.NC \t NORTH CAROLINA             \t   NC \t 79.45 \t 35.60
-US.ND \t NORTH DAKOTA               \t   ND \t 100.57 \t 47.41
-US.OH \t OHIO                       \t   OH \t 82.74 \t 40.36
-US.OK \t OKLAHOMA                   \t   OK \t 97.66 \t 35.54
-US.OR \t OREGON                     \t   OR \t 120.98 \t 43.87
-US.PA \t PENNSYLVANIA               \t   PA \t 77.75 \t 40.90
-US.RI \t RHODE ISLAND               \t   RI \t 71.58 \t 41.67
-US.SC \t SOUTH CAROLINA             \t   SC \t 80.87 \t 33.83
-US.SD \t SOUTH DAKOTA               \t   SD \t 100.48 \t 44.40
-US.TN \t TENNESSEE                  \t   TN \t 86.62 \t 35.80
-US.TX \t TEXAS                      \t   TX \t 99.46 \t 31.24
-US.UT \t UTAH                       \t   UT \t 111.69 \t 39.39
-US.VT \t VERMONT                    \t   VT \t 72.67 \t 43.93
-US.VA \t VIRGINIA                   \t   VA \t 78.56 \t 37.49
-US.WA \t WASHINGTON                 \t   WA \t 120.27 \t 47.33
-US.WV \t WEST VIRGINIA              \t   WV \t 80.70 \t 38.60
-US.WI \t WISCONSIN                  \t   WI \t 89.76 \t 44.43
-US.WY \t WYOMING                    \t   WY \t 107.67 \t 42.97
+US_postal_regions = """\
+US.AL \t ALABAMA                    \t   AL \t 32.84 \t -86.63
+US.AK \t ALASKA                     \t   AK \t 64.73 \t -152.47
+US.AZ \t ARIZONA                    \t   AZ \t 34.31 \t -111.79
+US.AR \t ARKANSAS                   \t   AR \t 34.81 \t -92.30
+US.CA \t CALIFORNIA                 \t   CA \t 36.97 \t -120.08
+US.CO \t COLORADO                   \t   CO \t 39.00 \t -105.64
+US.CT \t CONNECTICUT                \t   CT \t 41.59 \t -72.71
+US.DE \t DELAWARE                   \t   DE \t 38.98 \t -75.51
+US.DC \t DISTRICT OF COLUMBIA       \t   DC \t 39.17 \t -76.85
+US.FL \t FLORIDA                    \t   FL \t 28.13 \t -81.63
+US.GA \t GEORGIA                    \t   GA \t 32.71 \t -83.50
+US.HI \t HAWAII                     \t   HI \t 20.95 \t -157.28
+US.ID \t IDAHO                      \t   ID \t 44.26 \t -114.96
+US.IL \t ILLINOIS                   \t   IL \t 40.01 \t -89.31
+US.IN \t INDIANA                    \t   IN \t 39.90 \t -86.27
+US.IA \t IOWA                       \t   IA \t 41.96 \t -93.39
+US.KS \t KANSAS                     \t   KS \t 38.50 \t -98.70
+US.KY \t KENTUCKY                   \t   KY \t 37.36 \t -85.51
+US.LA \t LOUISIANA                  \t   LA \t 30.97 \t -92.54
+US.ME \t MAINE                      \t   ME \t 45.25 \t -69.23
+US.MD \t MARYLAND                   \t   MD \t 39.44 \t -77.37
+US.MA \t MASSACHUSETTS              \t   MA \t 42.34 \t -72.03
+US.MI \t MICHIGAN                   \t   MI \t 45.06 \t -84.94
+US.MN \t MINNESOTA                  \t   MN \t 46.02 \t -95.33
+US.MS \t MISSISSIPPI                \t   MS \t 32.81 \t -89.72
+US.MO \t MISSOURI                   \t   MO \t 38.49 \t -92.63
+US.MT \t MONTANA                    \t   MT \t 47.03 \t -109.64
+US.NE \t NEBRASKA                   \t   NE \t 41.52 \t -99.86
+US.NV \t NEVADA                     \t   NV \t 39.51 \t -116.93
+US.NH \t NEW HAMPSHIRE              \t   NH \t 43.64 \t -71.57
+US.NJ \t NEW JERSEY                 \t   NJ \t 40.07 \t -74.56
+US.NM \t NEW MEXICO                 \t   NM \t 34.50 \t -106.11
+US.NY \t NEW YORK                   \t   NY \t 42.97 \t -76.02
+US.NC \t NORTH CAROLINA             \t   NC \t 35.60 \t -79.45
+US.ND \t NORTH DAKOTA               \t   ND \t 47.41 \t -100.57
+US.OH \t OHIO                       \t   OH \t 40.36 \t -82.74
+US.OK \t OKLAHOMA                   \t   OK \t 35.54 \t -97.66
+US.OR \t OREGON                     \t   OR \t 43.87 \t -120.98
+US.PA \t PENNSYLVANIA               \t   PA \t 40.90 \t -77.75
+US.RI \t RHODE ISLAND               \t   RI \t 41.67 \t -71.58
+US.SC \t SOUTH CAROLINA             \t   SC \t 33.83 \t -80.87
+US.SD \t SOUTH DAKOTA               \t   SD \t 44.40 \t -100.48
+US.TN \t TENNESSEE                  \t   TN \t 35.80 \t -86.62
+US.TX \t TEXAS                      \t   TX \t 31.24 \t -99.46
+US.UT \t UTAH                       \t   UT \t 39.39 \t -111.69
+US.VT \t VERMONT                    \t   VT \t 43.93 \t -72.67
+US.VA \t VIRGINIA                   \t   VA \t 37.49 \t -78.56
+US.WA \t WASHINGTON                 \t   WA \t 47.33 \t -120.27
+US.WV \t WEST VIRGINIA              \t   WV \t 38.60 \t -80.70
+US.WI \t WISCONSIN                  \t   WI \t 44.43 \t -89.76
+US.WY \t WYOMING                    \t   WY \t 42.97 \t -107.67
 """
 
 Canada_postal_regions = """

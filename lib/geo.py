@@ -88,7 +88,7 @@ class local_geonames(object):
             result = self._support_dbfile.using_city_and_state_then_country(components[0], components[-1])
         if result:
             (lat, long_) = result
-            logger.debug(u"local geolookup: " + repr((place, lat, long_)))
+            self._logger.debug(u"local geolookup: " + repr((place, lat, long_)))
             ll = "%s,%s"%(lat, long_)
             return {place: ll} if ll else {}
         else:
