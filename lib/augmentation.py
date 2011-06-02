@@ -86,7 +86,12 @@ def augment_location(source, propertyinfo, augmented, failed):
             return
         location = u', '.join(address_parts)
         if logger: logger.debug("location input: " + repr(location))
-        location_latlong = GEOCODER(location) if GEOCODER else geolookup(location)
+        if GEOCODER:
+            result = GEOCODER(location)
+            location_latlong = result.values()[0] if result else ""
+        else:
+            #Use an HTTP server for the geoname
+            location_latlong = geolookup(location)
         if location_latlong:
             augmented.append({u'id': id, u'label': obj[u'label'],
                                 pname: location_latlong})

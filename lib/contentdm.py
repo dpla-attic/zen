@@ -261,7 +261,7 @@ def read_contentdm(site, collection=None, query=None, limit=None, logger=logging
 
         yield entry
         count += 1
-        if limit and count > limit:
+        if limit and count >= limit:
             logger.debug("Limit reached")
             break
     return

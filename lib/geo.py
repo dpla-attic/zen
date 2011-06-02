@@ -62,9 +62,9 @@ class local_geonames(object):
     >>> from zen.geo import local_geonames
     >>> lg = local_geonames('/Users/uche/.local/lib/akara/geonames.sqlite3')
     >>> lg('Superior, CO')
-    '{"Superior, CO": "39.95276,-105.1686"}'
+    {"Superior, CO": "39.95276,-105.1686"}
     >>> lg('Georgia')
-    '{"Georgia": "42,43.5"}'
+    {"Georgia": "42,43.5"}
     '''
     def __init__(self, support_dbfile, heuristics=[], logger=logging):
         self._support_dbfile = latlong(support_dbfile)
@@ -90,9 +90,9 @@ class local_geonames(object):
             (lat, long_) = result
             logger.debug(u"local geolookup: " + repr((place, lat, long_)))
             ll = "%s,%s"%(lat, long_)
-            return json.dumps({place: ll}) if ll else "{}"
+            return {place: ll} if ll else {}
         else:
-            return "{}"
+            return {}
 
 
 #Heuristics functions
