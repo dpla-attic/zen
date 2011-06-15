@@ -28,6 +28,9 @@ from amara.bindery.model import examplotron_model, generate_metadata, metadata_d
 from amara.bindery.util import dispatcher, node_handler
 from amara.thirdparty import httplib2, json
 
+from zen.exhibit import UNSUPPORTED_IN_EXHIBITKEY
+
+
 #QUERY = sys.argv[2]
 #URL = 'item_viewer.php?CISOROOT=/jthom&CISOPTR=920&CISOBOX=1&REC=1'
 
@@ -232,11 +235,15 @@ def read_contentdm(site, collection=None, query=None, limit=None, logger=logging
                 except AttributeError:
                     logger.debug("No thumbnail")
             #entry['thumbnail'] = DEFAULT_RESOLVER.normalize(it.xml_parent.a.img.src, root)
-            fields = page.xml_select(u'//tr[td[@class="tdtext"]]')
+            #fields = page.xml_select(u'//tr[td[@class="tdtext"]]')
+            #fields = page.xml_select(u'//table[@class="metatable"]/tr')
+            fields = chain(page.xml_select(u'//tr[td[@class="tdtext"]]'), page.xml_select(u'//table[@class="metatable"]//tr'))
             for f in fields:
-                key = unicode(f.td[0].span.b).replace(' ', '_')
+                #key = unicode(f.td[0].span.b).replace(' ', '_')
+                key = UNSUPPORTED_IN_EXHIBITKEY.sub(u'_', U(f.xml_select(u'td[1]//b')))
                 #logger.debug("{0}".format(key))
-                value = u''.join(CONTENT.dispatch(f.td[1].span))
+                value = u''.join(CONTENT.dispatch(f.td[1]))
+                #value = u''.join(CONTENT.dispatch(f.xml_select(u'td[2]')))
                 entry[key] = unicode(value)
             if u'Title' in entry:
                 #logger.debug("{0}".format(entry['Title']))
