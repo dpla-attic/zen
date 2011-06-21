@@ -190,8 +190,11 @@ def read_contentdm(site, collection=None, query=None, limit=None, logger=logging
                 yield i
             next = [ l.href for l in doc.xml_select(u'//a[@class="res_submenu"]') if int(l.href.split(u',')[-1]) > page_start ]
             if not next:
-                break
-            page_start = int(l.href.split(u',')[-1])
+                #e.g. http://vilda.alaska.edu/ uses yet another pattern with just @class=submenu links *sigh*
+                next = [ l.href for l in doc.xml_select(u'//a[@class="submenu"]') if u'CISOSTART' in l.href and int(l.href.split(u',')[-1]) > page_start ]
+                if not next:
+                    break
+            page_start = int(next[0].split(u',')[-1])
             url = absolutize(next[0], site)
 
             resp, doc = cdmsite.index_page(url, "Next page URL: {0}")
