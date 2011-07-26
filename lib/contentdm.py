@@ -20,6 +20,7 @@ import logging
 
 from amara.bindery.html import parse as htmlparse
 
+#from amara.lib import inputsource
 from amara.lib.iri import join, absolutize, split_uri_ref
 from amara.lib.util import first_item
 from amara.lib import U

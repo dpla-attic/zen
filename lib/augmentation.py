@@ -77,6 +77,10 @@ def augment_location(source, propertyinfo, augmented, failed):
     '''
     #In the above "Georgia" example, if you wanted the US state instead (83.50,32.71)
     #You need to specify heuristics for the geocoder
+    #It is possible for us to get passed in a data profile which includes a property of type location which is not meant to be augmented.
+    #In that case there will be no composite param
+    if not u"composite" in propertyinfo:
+        return
     composite = propertyinfo[u"composite"]
     pname = propertyinfo.get(u"property", u'location_latlong')
     def each_obj(obj, id):
@@ -129,6 +133,10 @@ def augment_date(source, propertyinfo, augmented, failed):
         ]
     }
     '''
+    #It is possible for us to get passed in a data profile which includes a property of type datetime which is not meant to be augmented.
+    #In that case there will be no composite param
+    if not u"composite" in propertyinfo:
+        return
     composite = propertyinfo[u"composite"]
     pname = propertyinfo.get(u"property", u'iso_datetime')
     def each_obj(obj, id):
@@ -163,6 +171,10 @@ def augment_luckygoogle(source, propertyinfo, augmented, failed):
     '''
     '''
     #logger.debug("Not found: " + place)
+    #It is possible for us to get passed in a data profile which includes a property of type luckygoogle which is not meant to be augmented.
+    #In that case there will be no composite param
+    if not u"composite" in propertyinfo:
+        return
     composite = propertyinfo[u"composite"]
     pname = propertyinfo.get(u"property", u'luckygoogle')
     for obj in source:
@@ -207,6 +219,10 @@ def augment_shredded_list(source, propertyinfo, augmented, failed):
     >>> result
     [{u'shredded': [u'text', u'text', u'text'], u'id': u'_1', u'label': u'_1'}]
     '''
+    #It is possible for us to get passed in a data profile which includes a property of type shredded_list which is not meant to be augmented.
+    #In that case there will be no extract param
+    if not u"extract" in propertyinfo:
+        return
     extract = propertyinfo[u"extract"]
     pname = propertyinfo.get(u"property", u'shreddedlist')
     pattern = propertyinfo.get(u"pattern")
