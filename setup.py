@@ -3,6 +3,7 @@
 from distutils.core import setup
 
 execfile('lib/version.py')
+__version__ = '.'.join(version_info)
 
 setup(name = "zen",
       version = __version__,
