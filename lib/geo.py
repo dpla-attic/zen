@@ -26,7 +26,7 @@ def geolookup(place):
     '''
     A convenience function to call the local/peer geolookup service.
 
-    Can only be called from within an Akara module handler.  E.g. thefollowing sample module:
+    Can only be called from within an Akara module handler.  E.g. the following sample module:
     
     -- %< --
 from akara.services import simple_service
