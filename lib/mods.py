@@ -142,7 +142,7 @@ DISPATCH_PATTERNS = {
     u'location-url-active-site': mcompose(select(u'm:location/m:url[contains(@displayLabel, "Active")]'), foreach(U)),
     u'location-url-archived-site': mcompose(select(u'm:location/m:url[contains(@displayLabel, "Archived")]'), foreach(U)),
     u'location-url-digital-file-from-original-neg': mcompose(select(u'm:location/m:url[contains(@displayLabel, "digital file from original neg.")]'), foreach(U)),
-    u'location-url': mcompose(select(u'm:location/m:url[not @displayLabel]'), foreach(U)),
+    u'location-url': mcompose(select(u'm:location/m:url[not(@displayLabel)]'), foreach(U)),
 
     u'language': mcompose(select(u'm:language/m:languageTerm'), foreach(U)),
     u'form': mcompose(select(u'm:physicalDescription/m:form'), foreach(U)),
