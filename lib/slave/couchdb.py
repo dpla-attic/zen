@@ -182,7 +182,7 @@ class space(object):
             docid = self.environ['PATH_INFO'].lstrip('/').rsplit(self.space_tag, 1)[1].lstrip('/') #e.g. '/mydb/MyDoc' -> 'MyDoc'
 
         if logger: logger.debug('query ' + repr((self.remotedb, docid, join(self.remotedb, docid))))
-        resp, content = self.h.request(join(self.remotedb, docid), "DELETE", body=body)#, headers=headers)
+        resp, content = self.h.request(join(self.remotedb, docid), "DELETE")#, headers=headers)
         
         if logger: logger.debug('resp ' + repr((content[:100], resp)))
 
