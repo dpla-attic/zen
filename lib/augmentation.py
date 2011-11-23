@@ -127,7 +127,7 @@ def augment_date(source, propertyinfo, augmented, failed):
         "property": "start_date",
         "enabled": true,
         "label": "Start date",
-        "tags": ["property:type=datetime"],
+        "tags": ["property:type=date"],
         "composite": [
             "start"
         ]
@@ -135,7 +135,7 @@ def augment_date(source, propertyinfo, augmented, failed):
 
     >>> from zen import augmentation
     >>> source = [{u"id": u"_1", u"label": u"_1", u"end": u"2011-01-01"}]
-    >>> propinfo = {u"enabled": True, u"property": u"iso_end_date", u"enabled": True, u"label": "ISO end date", u"tags": [u"property:type=datetime"], "composite": ["end"]}
+    >>> propinfo = {u"enabled": True, u"property": u"iso_end_date", u"enabled": True, u"label": "ISO end date", u"tags": [u"property:type=date"], "composite": ["end"]}
     >>> result = []
     >>> failed = {}
     >>> augmentation.augment_date(source, propinfo, result, failed)
@@ -145,7 +145,7 @@ def augment_date(source, propertyinfo, augmented, failed):
     {}
     [{u'shredded': [u'text', u'text', u'text'], u'id': u'_1', u'label': u'_1'}]
     '''
-    #It is possible for us to get passed in a data profile which includes a property of type datetime which is not meant to be augmented.
+    #It is possible for us to get passed in a data profile which includes a property of type datewhich is not meant to be augmented.
     #In that case there will be no composite param
     if not u"composite" in propertyinfo:
         return
