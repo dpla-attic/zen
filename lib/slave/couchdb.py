@@ -15,6 +15,7 @@
 import cStringIO
 import hashlib
 import datetime
+import urllib
 from gettext import gettext as _
 
 from functools import partial
@@ -44,6 +45,9 @@ FIND_PEER_SERVICE_KEY = 'akara.FIND_PEER_SERVICE'
 
 RESOURCE_TYPE_TYPE = u'http://purl.org/xml3k/akara/cms/resource-type'
 
+DOCID_SAFE   = u':@&=+$,'
+DOCID_ENCODE = lambda x: urllib.quote(x,safe=DOCID_SAFE)
+DOCID_DECODE = lambda x: urllib.unquote(x,safe=DOCID_SAFE)
 
 class space(object):
     def __init__(self, params, space_tag, logger, zensecret, initial_environ=None):
@@ -87,7 +91,7 @@ class space(object):
         self.environ['couchdb.RESOURCE_URI'] = self.remotedb
         return
 
-    def prep_slave_response(self, resp):
+    def _prep_slave_response(self, resp):
         '''
         Convert CouchDB response to Zen response
         '''
@@ -97,24 +101,43 @@ class space(object):
         self.resp_headers = filter(COPY_HEADERS,resp.iteritems())
 
         self.resp_status = status_response(resp.get('status') or '500')
+
+    def _get_docid(self, path=None):
+        '''
+        Determine the target document id
+
+        We're faking hierarchy here by quoting paths. CouchDB (1.0.1 at least)
+        unquotes the path for us in _id, strangely enough, so we don't need to
+        worry about that.
+        '''
+        logger.debug("docid in-path = "+repr(path))
+        if path:
+            docid = path
+            logger.debug("docid1 = "+repr(docid))
+            if is_absolute(path):
+                logger.debug("rdb = "+repr(self.remotedb))
+                docid = relativize(path, self.remotedb)
+                logger.debug("docid2 = "+repr(docid))
+        else:
+            docid = '/'.join(self.environ['PATH_INFO'].lstrip('/').rsplit('/')[1:]) #e.g. '/mydb/MyDoc' -> 'MyDoc'
+            logger.debug("docid3 = "+repr(docid))
+
+        docid = DOCID_ENCODE(docid)
+
+        if logger: logger.debug('docid = ' + docid)
+        return docid
         
     def resource_factory(self, path=None):
         '''
         Look up and retrieve a new resource based on WSGI environment or a uri path
         '''
-        if path:
-            docid = path
-            if is_absolute(path):
-                docid = relativize(path, self.remotedb)
-        else:
-            docid = self.environ['PATH_INFO'].lstrip('/').rsplit(self.space_tag, 1)[1].lstrip('/') #e.g. '/mydb/MyDoc' -> 'MyDoc'
-        #resp, content = self.h.request(slave_uri + ';history', "GET", headers=auth_headers)
-        if logger: logger.debug('query ' + repr((self.remotedb, docid, join(self.remotedb, docid))))
+        docid = self._get_docid(path)
+
         resp, content = self.h.request(join(self.remotedb, docid))
         
         if logger: logger.debug('resp ' + repr((content[:100], resp)))
 
-        self.prep_slave_response(resp)
+        self._prep_slave_response(resp)
 
         if not (self.resp_status.startswith('2') or self.resp_status.startswith('304')):
             if logger: logger.debug("Error looking up resource: %s: %s\n" % (content, self.resp_status))
@@ -127,16 +150,12 @@ class space(object):
         '''
         Update a resource based on WSGI environment or a uri path
         '''
-        if path:
-            docid = path
-            if is_absolute(path):
-                docid = relativize(path, self.remotedb)
-        else:
-            docid = self.environ['PATH_INFO'].lstrip('/').rsplit(self.space_tag, 1)[1].lstrip('/') #e.g. '/mydb/MyDoc' -> 'MyDoc'
-
-        if logger: logger.debug('query ' + repr((self.remotedb, docid, join(self.remotedb, docid))))
+        docid = self._get_docid(path)
 
         body = self.environ['wsgi.input'].read()
+
+        # FIXME would be more efficient for many apps if we try the PUT then compensate
+        # if it fails with a 409
 
         # If the document already exists, we need to determine its current rev and add it to the
         # input body, skipping the process if rev is provided in the PUT request body
@@ -159,7 +178,7 @@ class space(object):
         
         if logger: logger.debug('resp ' + repr((content[:100], resp)))
 
-        self.prep_slave_response(resp)
+        self._prep_slave_response(resp)
 
         if not (self.resp_status.startswith('2') or self.resp_status.startswith('304')):
             if logger: logger.debug("Error looking up resource: %s: %s\n" % (content, self.resp_status))
@@ -174,26 +193,19 @@ class space(object):
         '''
         Delete a resource based on WSGI environment or a uri path
         '''
-        if path:
-            docid = path
-            if is_absolute(path):
-                docid = relativize(path, self.remotedb)
-        else:
-            docid = self.environ['PATH_INFO'].lstrip('/').rsplit(self.space_tag, 1)[1].lstrip('/') #e.g. '/mydb/MyDoc' -> 'MyDoc'
+        logger.debug("DELETEing")
+        docid = self._get_docid(path)
 
-        if logger: logger.debug('query ' + repr((self.remotedb, docid, join(self.remotedb, docid))))
         resp, content = self.h.request(join(self.remotedb, docid), "DELETE")#, headers=headers)
-        
         if logger: logger.debug('resp ' + repr((content[:100], resp)))
 
-        self.prep_slave_response(resp)
+        self._prep_slave_response(resp)
 
         if not (self.resp_status.startswith('2') or self.resp_status.startswith('304')):
             if logger: logger.debug("Error looking up resource: %s: %s\n" % (content, self.resp_status))
             return '' #No resource could be retrieved
 
         return content
-
 
 #FIXME: Detect resource reference loops
 
