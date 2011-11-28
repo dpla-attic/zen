@@ -45,7 +45,7 @@ FIND_PEER_SERVICE_KEY = 'akara.FIND_PEER_SERVICE'
 
 RESOURCE_TYPE_TYPE = u'http://purl.org/xml3k/akara/cms/resource-type'
 
-DOCID_SAFE   = u':@&=+$,'
+DOCID_SAFE   = ':@&=+$,'
 DOCID_ENCODE = lambda x: urllib.quote(x,safe=DOCID_SAFE)
 DOCID_DECODE = lambda x: urllib.unquote(x,safe=DOCID_SAFE)
 
