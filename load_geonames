@@ -6,8 +6,10 @@ This is a command-line program with several different interfaces. See
 'usage' for details.
 
 """
-# Copyright 2009-2010 by Zepheira, LLC
-# This module written by Andrew Dalke <dalke@dalkescientific.com>
+# Copyright 2009-2012 by Zepheira, LLC
+# Contributors:
+#  * Andrew Dalke <dalke@dalkescientific.com>
+#  * Uche Ogbuji <uche@ogbuji.net>
 
 import os
 import shutil
@@ -46,7 +48,6 @@ def fetch(remote_url, local_filename):
         sys.stdout.flush()
     sys.stdout.write("... Done.\n")
     sys.stdout.flush()
-    
     
 
 def mirror():
@@ -348,7 +349,7 @@ def read_country_lat_long(infile):
     reader = csv.reader(infile)
     reader.next()
     for row in reader:
-        yield CountryLatLong(*row)
+        if not row[0].startswith('#'): yield CountryLatLong(*row)
 
 ########### Working with the database schema
 
@@ -366,7 +367,7 @@ create table geoname (
   latitude text,
   longitude text
 )""")
-    # I have state_alias and country_alias to disambituate 
+    # I have state_alias and country_alias to disambiguate 
     # some name names like "CO", which is Colorado and Colombia.
     # I also have to deal with some countries, like Puerto Rico,
     # which the USPS allows in a state field.
@@ -441,6 +442,7 @@ def _add_city_aliases(cursor, city_fields):
     cursor.executemany("insert into city_alias values (?, ?)", city_fields)
 
 
+#Republic of 
 def add_country_info(cursor):
     # Get the country lat/long info
     country_lat_long = {}

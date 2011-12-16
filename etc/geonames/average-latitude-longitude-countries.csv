@@ -6,7 +6,6 @@
 "AI","Anguilla",18.25,-63.17
 "AL","Albania",41,20
 "AM","Armenia",40,45
-"AN","Netherlands Antilles",12.25,-68.75
 "AO","Angola",-12.5,18.5
 "AQ","Antarctica",-90,0
 "AR","Argentina",-34,-64
@@ -29,6 +28,7 @@
 "BM","Bermuda",32.33,-64.75
 "BN","Brunei Darussalam",4.5,114.67
 "BO","Bolivia",-17,-65
+"BQ","Bonaire, Saint Eustatius and Saba",12.25,-68.75
 "BR","Brazil",-10,-55
 "BS","Bahamas",24.25,-76
 "BT","Bhutan",27.5,90.5
@@ -51,6 +51,7 @@
 "CR","Costa Rica",10,-84
 "CU","Cuba",21.5,-80
 "CV","Cape Verde",16,-24
+"CW","Curaçao",12.25,-68.75
 "CX","Christmas Island",-10.5,105.67
 "CY","Cyprus",35,33
 "CZ","Czech Republic",49.75,15.5
@@ -206,7 +207,9 @@
 "SO","Somalia",10,49
 "SR","Suriname",4,-56
 "ST","Sao Tome and Principe",1,7
+"SS","South Sudan",7.95,29.775
 "SV","El Salvador",13.83,-88.92
+"SX","Dutch Sint Maarten",12.25,-68.75
 "SY","Syrian Arab Republic",35,38
 "SZ","Swaziland",-26.5,31.5
 "TC","Turks and Caicos Islands",21.75,-71.58

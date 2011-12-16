@@ -3,9 +3,9 @@
 The names are based on the geonames.org data dumps, available from
    http://download.geonames.org/export/
 
-This library uses a SQLite data base created by "latlong_loader.py".
+This library uses a SQLite data base created by "load_geonames.py".
 
-Use the program "latlong_loader.py" to create a sqlite database
+Use the program "load_geonames.py" to create a sqlite database
 containing a cleaned and normalized data set. The database tables are:
 
   - geonames is a set of cities, "states", and country code information
@@ -15,7 +15,7 @@ containing a cleaned and normalized data set. The database tables are:
   - city_alias contains alternate names for a city, which might be
        a foreign name or an ASCII transliteration of non-ASCII characters
 
-See the latlong_loader.py program for details.
+See load_geonames.py for details.
 
 In this context, "state" is one of the US states or Canadian provinces
 (by postal code or the common English name), or the countries of the
