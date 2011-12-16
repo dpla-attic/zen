@@ -5,11 +5,11 @@ The catalog of local services supplied with Zen
 from zen.services import register_service
 
 #Local services
-from zen.geo import geolookup
+from zen.akamod import geolookup_service
 
-geolookup.serviceid = u'http://purl.org/com/zepheira/geo/geolookup'
+geolookup_service.serviceid = u'http://purl.org/com/zepheira/geo/geolookup'
 
-register_service(geolookup)
+register_service(geolookup_service)
 
 from zen.temporal import smart_parse_date
 

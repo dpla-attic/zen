@@ -17,7 +17,8 @@ except ImportError:
 
 from zen.services import register_service, zservice
 from zen.temporal import smart_parse_date
-from zen.geo import geolookup, local_geonames
+from zen.akamod import geolookup_service
+#from zen.geo import local_geonames
 
 import time; from functools import partial; isobase = partial(time.strftime, "%Y-%m-%dT%H:%M:%S")
 

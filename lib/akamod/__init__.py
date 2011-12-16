@@ -1,7 +1,9 @@
 #zen.akamod
 
 #Some helper classes for accessing local Zen/Akara services
+import urllib
 
+from amara.thirdparty import httplib2, json
 from akara import logger
 from akara import request
 from akara.caching import cache
@@ -38,12 +40,15 @@ def s(place):
         if isinstance(place, unicode):
             place = place.encode('utf-8')
 
-        if not GEOLOOKUP_URI: setup()
-        logger.debug('geolookup' + repr((place, GEOLOOKUP_URI)))
-        resp, body = H.request(GEOLOOKUP_URI + '?place=' + urllib.quote(place))
+        if not self.GEOLOOKUP_URI: setup()
+        logger.debug('geolookup' + repr((place, self.GEOLOOKUP_URI)))
+        resp, body = self.H.request(self.GEOLOOKUP_URI + '?' + urllib.urlencode({'place': place}))
+        logger.debug('geolookup result: {0}'.format(repr(body)))
         try:
-            latlong = json.loads(body).itervalues().next()
-            return latlong
+            result = json.loads(body)
+            return result
+            #latlong = json.loads(body).itervalues().next()
+            #return latlong
         except (ValueError, StopIteration), e:
             logger.debug("Not found: " + repr(place))
             return None
