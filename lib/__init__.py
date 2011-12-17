@@ -1,4 +1,4 @@
-#zenlib
+#zen
 from version import version_info
 __version__ = '.'.join(version_info)
 

@@ -18,7 +18,7 @@ class geolookup_service(object):
     
     -- %< --
 from akara.services import simple_service
-from zenlib.akamod import geolookup_service
+from zen.akamod import geolookup_service
 
 geolookup = geolookup_service()
 
