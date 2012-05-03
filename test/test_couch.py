@@ -12,11 +12,17 @@ import os, sys
 from amara.thirdparty import httplib2, json
 from amara.lib import iri
 
-import couchdb
+from string import Template
+
 import subprocess
 import os
 import tempfile
 import shutil
+
+try:
+    import couchdb
+except:
+    assert False, "CouchDB (and python-couchdb) needs to be installed and running on port 5984 for these tests to run"
 
 COUCH_DB_BASE = os.environ.get('COUCH_DB_BASE', 'http://localhost:5984')
 AKARA_BASE = os.environ.get('AKARA_BASE', 'http://localhost:8788')
@@ -32,8 +38,11 @@ BLAH_FEED_ZEN_URI = (FEED_ZEN_URI%'blah')
 BLAH_FEED_ZEN_PUT_URI = BLAH_FEED_ZEN_URI+'?type=feed'
 
 HTTP_AC = 'accept'
+HTTP_AC_LANG = 'accept-language'
 HTTP_CT = 'content-type'
-JSON_IMT = 'application/json'
+HTTP_CL = 'content-language'
+IMT_JSON = 'application/json'
+IMT_TEXT = 'text/plain'
 
 ASSERT_2XX = 'Response to %s of %s was %s, expected 2xx'
 
@@ -54,10 +63,11 @@ class TestCouchDB :
         """
 
         # Check that couchdb is running
-        resp, content = H.request(COUCH_DB_BASE, 'GET', headers={HTTP_AC:JSON_IMT})
+        resp, content = H.request(COUCH_DB_BASE, 'GET', headers={HTTP_AC:IMT_JSON})
         assert HTTP_CT in resp, repr(resp)
-        assert resp[HTTP_CT] == JSON_IMT, repr(resp)
+        assert resp[HTTP_CT] == IMT_JSON, repr(resp)
 
+        orig_cwd = sys.path[0]
         os.chdir(os.path.join(sys.path[0],'../etc/feedhub/bootstrap'))
 
         cls.couch = couchdb.Server()
@@ -92,14 +102,21 @@ class TestCouchDB :
         cls.feed_uri = FEED_URI%(COUCH_DB_NAME,feed_ret[0])
         cls.feed_zen_uri = FEED_ZEN_URI%feed_ret[0]
 
-        # Start Akara/Zen
+        # Copy akara.conf to temp dir
+        os.chdir(orig_cwd)
         cls.akara_wd = tempfile.mkdtemp(prefix='zentest_akara_')
-        shutil.rmtree(cls.akara_wd)
-        shutil.copytree(os.path.join(sys.path[0],'testakara'),cls.akara_wd)
+        akc_orig = open('testakara/akara.conf','r').read()
+        ak_template = Template(akc_orig)
+        akc_new = ak_template.substitute({"configRoot":cls.akara_wd})
+        akara_conf = open(os.path.join(cls.akara_wd,'akara.conf'),'w')
+        akara_conf.write(akc_new)
+        akara_conf.close()
 
         # CD to the Akara working directory, and start it
         os.chdir(cls.akara_wd)
-        akara_instance = subprocess.Popen(['akara','-f','akara.conf','start'])
+        akara_instance = subprocess.Popen(['akara','-f','akara.conf','setup'])
+        akara_instance.wait()
+        akara_instance = subprocess.Popen(['akara','-f','akara.conf','start','-f'])
 
         # Give it time to start up properly
         import time; time.sleep(5)
@@ -116,13 +133,13 @@ class TestCouchDB :
         shutil.rmtree(cls.akara_wd)
 
     def test_feed(self):
-        resp, content = H.request(self.feed_uri,'GET',headers={HTTP_AC:JSON_IMT})
+        resp, content = H.request(self.feed_uri,'GET',headers={HTTP_AC:IMT_JSON})
         assert resp['status'].startswith('2'), ASSERT_2XX%('GET',self.feed_uri,resp['status'])
 
     def test_zen_feed(self):
-        resp, content = H.request(self.feed_zen_uri,'GET',headers={HTTP_AC:JSON_IMT})
+        resp, content = H.request(self.feed_zen_uri,'GET',headers={HTTP_AC:IMT_JSON})
         assert resp['status'].startswith('2'), ASSERT_2XX%('GET',self.feed_zen_uri,resp['status'])
-        assert resp[HTTP_CT] == JSON_IMT
+        assert resp[HTTP_CT] == IMT_JSON
 
     def test_zen_feed_update(self):
         new_feed = {
@@ -134,13 +151,13 @@ class TestCouchDB :
         # Update it...
         resp, content = H.request(self.feed_zen_uri,'PUT',
                                   body=json.dumps(new_feed),
-                                  headers={HTTP_CT:JSON_IMT,HTTP_AC:JSON_IMT})
+                                  headers={HTTP_CT:IMT_JSON,HTTP_AC:IMT_JSON})
         assert resp['status'].startswith('2'), ASSERT_2XX%('PUT',self.feed_zen_uri,resp['status'])
 
         # ... then check it was updated
-        resp, content = H.request(self.feed_zen_uri,'GET',headers={HTTP_AC:JSON_IMT})
+        resp, content = H.request(self.feed_zen_uri,'GET',headers={HTTP_AC:IMT_JSON})
         assert resp['status'].startswith('2'), ASSERT_2XX%('GET',self.feed_zen_uri,resp['status'])
-        assert resp[HTTP_CT] == JSON_IMT
+        assert resp.get(HTTP_CT,"") == IMT_JSON
         read_feed = json.loads(content)
         assert read_feed.get('description') == new_feed['description'], read_feed
 
@@ -158,11 +175,38 @@ class TestCouchDB :
 
         resp, content = H.request(BLAH_FEED_ZEN_PUT_URI,'PUT',
                                   body=json.dumps(new_feed),
-                                  headers={HTTP_CT:JSON_IMT,HTTP_AC:JSON_IMT})
+                                  headers={HTTP_CT:IMT_JSON,HTTP_AC:IMT_JSON})
         assert resp['status'].startswith('2'), ASSERT_2XX%('PUT',BLAH_FEED_ZEN_PUT_URI,resp['status'])
 
         # Check that it works as expected
-        resp, content = H.request(BLAH_FEED_ZEN_URI,'GET',headers={HTTP_AC:JSON_IMT})
+        resp, content = H.request(BLAH_FEED_ZEN_URI,'GET',headers={HTTP_AC:IMT_JSON})
         assert resp['status'].startswith('2'), ASSERT_2XX%('GET',BLAH_FEED_ZEN_URI,resp['status'])
-        assert resp[HTTP_CT] == JSON_IMT
-        print >> sys.stderr, repr(content)
+        assert resp.get(HTTP_CT,"") == IMT_JSON
+
+    def test_zen_language_conneg1(self):
+        # No preferred language, so first wins (English)
+
+        resp, content = H.request(self.feed_zen_uri,'GET',headers={HTTP_AC:IMT_TEXT})
+        assert resp.get(HTTP_CL,"") == "en", "Content-Language response is %s, expecting en"%resp.get(HTTP_CL,None)
+        assert content == "en feed", content
+
+    def test_zen_language_conneg2(self):
+        # Request French feed
+
+        resp, content = H.request(self.feed_zen_uri,'GET',headers={HTTP_AC:IMT_TEXT,HTTP_AC_LANG:"fr"})
+        assert resp.get(HTTP_CL,"") == "fr", "Content-Language response is %s, expecting fr"%resp.get(HTTP_CL,None)
+        assert content == "fr feed", content
+
+    def test_zen_language_conneg3(self):
+        # Request English feed
+
+        resp, content = H.request(self.feed_zen_uri,'GET',headers={HTTP_AC:IMT_TEXT,HTTP_AC_LANG:"en"})
+        assert resp.get(HTTP_CL,"") == "en", "Content-Language response is %s, expecting en"%resp.get(HTTP_CL,None)
+        assert content == "en feed", content
+
+    def _test_zen_language_conneg4(self): # FIXME good test but fails atm and not sure how best to fix
+        # Request non-existent German feed. Should return English
+
+        resp, content = H.request(self.feed_zen_uri,'GET',headers={HTTP_AC:IMT_TEXT,HTTP_AC_LANG:"de"})
+        assert resp.get(HTTP_CL,"") == "en", "Content-Language response is %s, not en"%resp.get(HTTP_CL,None)
+        assert content == "en feed", content

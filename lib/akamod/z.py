@@ -78,7 +78,7 @@ from akara.services import method_dispatcher
 from akara import request, logger, module_config
 from akara.opensearch import apply_template
 
-from zen.util import requested_imt
+from zen.util import requested_imt, requested_lang
 from zen import ZEN_SERVICE_ID
 
 #import zenlib.moinmodel
@@ -163,14 +163,18 @@ def get_resource(environ, start_response):
         return ["Unable to access resource\n"]
 
     imt = requested_imt(environ)
+    lang = requested_lang(environ)
+    logger.debug('environ = ' + repr(environ))
 
-    handler = resource.type.run_rulesheet(environ, 'GET', imt)
+    handler = resource.type.run_rulesheet(environ, 'GET', imt, lang)
     rendered = handler(resource)
 
     headers = [("Content-Type", str(handler.imt)),
-               ("Vary", "Accept")]
+               ("Vary", "Accept,Accept-Language")]
     if handler.ttl:
         headers.append(("Cache-Control", "max-age="+str(handler.ttl)))
+    if handler.lang:
+        headers.append(("Content-Language", str(handler.lang)))
 
     start_response(status_response(httplib.OK), headers)
     return rendered
@@ -223,6 +227,7 @@ def put_resource(environ, start_response):
     resource_type = check_forced_type(environ, start_response, slaveinfo)
 
     imt = environ['CONTENT_TYPE'].split(';')[0]
+    lang = environ.get('CONTENT_LANGUAGE') #FIXME support multiple 
 
     temp_fpath = read_http_body_to_temp(environ, start_response)
     body = open(temp_fpath, "r").read()
@@ -231,7 +236,7 @@ def put_resource(environ, start_response):
         resource = slaveinfo.resource_factory()
         resource_type = resource.type
 
-    handler = resource_type.run_rulesheet(environ, environ['REQUEST_METHOD'], imt)
+    handler = resource_type.run_rulesheet(environ, environ['REQUEST_METHOD'], imt, lang)
 
     content = handler(resource_type, body)
 
@@ -286,8 +291,9 @@ def post_resource(environ, start_response):
 
     resource_type = slaveinfo.resource_factory()
     imt = environ['CONTENT_TYPE'].split(';')[0]
+    lang = environ.get('CONTENT_LANGUAGE')
 
-    handler = resource_type.run_rulesheet(environ, environ['REQUEST_METHOD'], imt)
+    handler = resource_type.run_rulesheet(environ, environ['REQUEST_METHOD'], imt, lang)
 
     new_path, content = handler(resource_type, body)
 

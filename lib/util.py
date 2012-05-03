@@ -34,6 +34,24 @@ def requested_imt(environ):
     imt = first_item(dropwhile(lambda x: '*' in x, accepted_imts))
     return imt
 
+def requested_lang(environ):
+    # Similar to request_imt but for language instead of media type. Also similar
+    # in its need for handling of q parameters
+    #
+    # No default language is used, so a return of None means "no preference"
+
+    #logger.debug("in requested_lang, environ = "+repr(environ))
+
+    accept_lang_header = environ.get('HTTP_ACCEPT_LANGUAGE')
+    if accept_lang_header:
+        accepted_langs = [ type.split(';')[0].strip() for type in accept_lang_header.split(',') ]
+    else:
+        return None
+    
+    if len(accepted_langs) > 0:
+        return accepted_langs[0]
+    else:
+        return None
 
 def use(pymodule):
     '''
