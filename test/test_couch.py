@@ -204,7 +204,7 @@ class TestCouchDB :
         assert resp.get(HTTP_CL,"") == "en", "Content-Language response is %s, expecting en"%resp.get(HTTP_CL,None)
         assert content == "en feed", content
 
-    def _test_zen_language_conneg4(self): # FIXME good test but fails atm and not sure how best to fix
+    def test_zen_language_conneg4(self):
         # Request non-existent German feed. Should return English
 
         resp, content = H.request(self.feed_zen_uri,'GET',headers={HTTP_AC:IMT_TEXT,HTTP_AC_LANG:"de"})

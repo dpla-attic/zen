@@ -344,11 +344,13 @@ class rulesheet(object):
         default = None
         matching_handler = None
         for (match, lang, func) in handlers.get(method, []):
-            if logger: logger.debug('(match, lang, func), method : ' + repr((match, lang, func)) + "," + method )
+            if logger:logger.debug('(match, lang, func), method : ' + repr((match, lang, func)) + "," + method )
             if isinstance(match, basestring):
                 if match == accept_imt:
                     if not accept_lang or lang in accept_lang.split(","):
                         matching_handler = func
+                    else:
+                        default = func # need a default in case no match for lang preference is found
             elif (match is None):
                 default = func
             else:
