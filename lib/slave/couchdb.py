@@ -29,6 +29,9 @@ from akara.util import status_response, requested_imt, header_credentials, extra
 from akara.util.moin import wiki_uri, wiki_normalize, ORIG_BASE_HEADER, XML_IMT
 from akara.services import convert_body, service_method_dispatcher
 
+# Extracts languages from Accept string, stripping q values
+EXTRACT_LANG = lambda x: [ s.split(';')[0] for s in x.split(',') ]
+
 try:
     from akara import logger
 except ImportError:
@@ -347,7 +350,7 @@ class rulesheet(object):
             if logger:logger.debug('(match, lang, func), method : ' + repr((match, lang, func)) + "," + method )
             if isinstance(match, basestring):
                 if match == accept_imt:
-                    if not accept_lang or lang in accept_lang.split(","):
+                    if not accept_lang or lang in EXTRACT_LANG(accept_lang):
                         matching_handler = func
                     else:
                         default = func # need a default in case no match for lang preference is found
