@@ -15,6 +15,7 @@
 import cStringIO
 import hashlib
 import datetime
+import urllib
 from gettext import gettext as _
 
 from functools import partial
@@ -113,7 +114,7 @@ class space(object):
             docid = self.environ['PATH_INFO'].lstrip('/').rsplit(self.space_tag, 1)[1].lstrip('/') #e.g. '/mydb/MyDoc' -> 'MyDoc'
         #resp, content = self.h.request(slave_uri + ';history', "GET", headers=auth_headers)
         if logger: logger.debug('query ' + repr((self.remotedb, docid, join(self.remotedb, docid))))
-        resp, content = self.h.request(join(self.remotedb, docid))
+        resp, content = self.h.request(join(self.remotedb, urllib.quote_plus(docid)))
         
         if logger: logger.debug('resp ' + repr((content[:100], resp)))
 
