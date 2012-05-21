@@ -164,17 +164,18 @@ def get_resource(environ, start_response):
 
     imt = requested_imt(environ)
     lang = requested_lang(environ)
-    logger.debug('environ = ' + repr(environ))
 
     handler = resource.type.run_rulesheet(environ, 'GET', imt, lang)
     rendered = handler(resource)
 
-    headers = [("Content-Type", str(handler.imt)),
-               ("Vary", "Accept,Accept-Language")]
+    headers = [("Content-Type", str(handler.imt))]
+    vary_header = "Accept"
     if handler.ttl:
         headers.append(("Cache-Control", "max-age="+str(handler.ttl)))
     if handler.lang:
+        vary_header += ",Accept-Language"
         headers.append(("Content-Language", str(handler.lang)))
+    headers.append(("Vary",vary_header))
 
     start_response(status_response(httplib.OK), headers)
     return rendered
