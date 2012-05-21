@@ -12,6 +12,11 @@ import string
 import threading
 import itertools
 
+try:
+    import MoinMoin
+except:
+    assert False, "Moinmoin needs to be installed for these tests to run"
+
 """
 Nosetests for Zen's Moin-targetted features such as media type handling, bootstrapping, rulesheets,
 cache control, ...
@@ -63,7 +68,7 @@ def setup_module():
 
     # CD to the Akara working directory, and start it
     os.chdir(akara_wd)
-    akara_instance = subprocess.Popen(['akara','-f','akara.conf','start'])
+    akara_instance = subprocess.Popen(['akara','-f','akara.conf','start','-f'])
 
     # Give them both time to start up properly
     import time; time.sleep(5)

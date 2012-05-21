@@ -15,6 +15,7 @@
 import cStringIO
 import hashlib
 import datetime
+import urllib
 from gettext import gettext as _
 
 from functools import partial
@@ -28,6 +29,9 @@ from akara.util import status_response, requested_imt, header_credentials, extra
 #from akara.util.moin import wiki_uri, wiki_normalize, WSGI_ORIG_BASE_HEADER, XML_IMT
 from akara.util.moin import wiki_uri, wiki_normalize, ORIG_BASE_HEADER, XML_IMT
 from akara.services import convert_body, service_method_dispatcher
+
+# Extracts languages from Accept string, stripping q values
+EXTRACT_LANG = lambda x: [ s.split(';')[0] for s in x.split(',') ]
 
 try:
     from akara import logger
@@ -110,7 +114,7 @@ class space(object):
             docid = self.environ['PATH_INFO'].lstrip('/').rsplit(self.space_tag, 1)[1].lstrip('/') #e.g. '/mydb/MyDoc' -> 'MyDoc'
         #resp, content = self.h.request(slave_uri + ';history', "GET", headers=auth_headers)
         if logger: logger.debug('query ' + repr((self.remotedb, docid, join(self.remotedb, docid))))
-        resp, content = self.h.request(join(self.remotedb, docid))
+        resp, content = self.h.request(join(self.remotedb, urllib.quote_plus(docid)))
         
         if logger: logger.debug('resp ' + repr((content[:100], resp)))
 
@@ -244,8 +248,8 @@ class resource(object):
         if logger: logger.debug('Retrieved zen_type: ' + repr((tid, tpath)))
         return (tid, tpath)
 
-    def get_proxy(self, environ, method, accept=None):
-        return self.resource_type.run_rulesheet(environ, method, accept)
+    def get_proxy(self, environ, method, accept_imt=None, accept_lang=None):
+        return self.resource_type.run_rulesheet(environ, method, accept_imt, accept_lang)
 
 
 UNSPECIFIED = object()
@@ -263,10 +267,10 @@ class resource_type(resource):
         if self.space: self.space.logger.debug('resource_type.get_rulesheet slave_uri, rulesheet: ' + repr((self.slave_uri, self.rulesheet)))
         return self.rulesheet
     
-    def run_rulesheet(self, environ, method='GET', accept='application/json'):
+    def run_rulesheet(self, environ, method='GET', accept_imt='application/json', accept_lang=None):
         #FIXME: Deprecate
         auth = extract_auth(environ)
-        return rulesheet(self.get_rulesheet(), self.space, auth).run(environ, method, accept)
+        return rulesheet(self.get_rulesheet(), self.space, auth).run(environ, method, accept_imt, accept_lang)
 
 
 class rulesheet(object):
@@ -293,7 +297,7 @@ class rulesheet(object):
         self.space = space
         return
 
-    def run(self, environ, method='GET', accept='application/json'):
+    def run(self, environ, method='GET', accept_imt='application/json', accept_lang=None):
         #e.g. you can sign a rulesheet as follows:
         #python -c "import sys, hashlib; print hashlib.sha1('MYSECRET' + sys.stdin.read()).hexdigest()" < rsheet.py 
         #Make sure the rulesheet has not already been signed (i.e. does not have a hash on the first line)
@@ -309,13 +313,13 @@ class rulesheet(object):
 
         handlers = {}
         #Decorator that allows the user to define request handler functions in rule sheets
-        def handles(method, match=None, ttl=3600):
+        def handles(method, match=None, lang=None, ttl=3600):
             '''
             method - HTTP method for this handler to use, e.g. 'GET' or 'PUT'
                      Might be a non-standard, internal method for special cases (e.g. 'collect')
             match - condition to determine when this handler is to be invoked for a given method
-                    if a Unicode object, this should be an IMT to compare to the Accept info for the request
-                    if a callable, should have signature match(accept), return ing True or False
+                    if a tuple, this should be an IMT and lang to compare to the Accept[-Language] info
+                    if a callable, should have signature match(accept_imt), returning True or False
             ttl - time-to-live for (GET) requests, for setting cache-control headers
             '''
             def deco(func):
@@ -323,9 +327,11 @@ class rulesheet(object):
                 # Set appropriate default media type when no match is specified in @handles
                 if match is None :
                     func.imt = 'application/json'
+                    func.lang = None
                 else :
                     func.imt = match
-                handlers.setdefault(method, []).append((match, func))
+                    func.lang = lang
+                handlers.setdefault(method, []).append((match, lang, func))
                 return func
             return deco
 
@@ -338,17 +344,21 @@ class rulesheet(object):
 
         #Execute the rule sheet
         exec self.body in env
+
         default = None
         matching_handler = None
-        for (match, func) in handlers.get(method, []):
-            if logger: logger.debug('(match, func), method : ' + repr((match, func)) + "," + method )
+        for (match, lang, func) in handlers.get(method, []):
+            if logger:logger.debug('(match, lang, func), method : ' + repr((match, lang, func)) + "," + method )
             if isinstance(match, basestring):
-                if match == accept:
-                    matching_handler = func
+                if match == accept_imt:
+                    if not accept_lang or lang in EXTRACT_LANG(accept_lang):
+                        matching_handler = func
+                    else:
+                        default = func # need a default in case no match for lang preference is found
             elif (match is None):
                 default = func
             else:
-                if match(accept):
+                if match(accept_imt):
                     matching_handler = func
         if logger: logger.debug('(matching_handler, default): ' + repr((matching_handler, default)))
         return matching_handler or default

@@ -14,8 +14,11 @@ def setup_module():
     """
      
     os.chdir(os.path.join(sys.path[0],"..")) # cwd is set so that all tests will run in Zen root
-    if os.path.getsize(GEO_DB) > 0:
-        return # Database already exists and isn't empty
+    try :
+        if os.path.getsize(GEO_DB) > 0:
+            return # Database already exists and isn't empty
+    except:
+        pass
 
     lg = subprocess.Popen(['load_geonames','mirror'])
     lg.wait()

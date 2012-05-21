@@ -4,7 +4,7 @@ from nose.tools import raises
 from amara import bindery
 from amara.test.xslt import filesource, stringsource
 
-from zen import moin
+from zen.slave import moin
 
 STRUCT1 = '''\
 == Locations ==

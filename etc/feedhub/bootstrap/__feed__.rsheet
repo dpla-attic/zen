@@ -27,6 +27,15 @@ def objectify(resource):
 def get_feed(resource):
     return json.dumps(objectify(resource), indent=4)
 
+# For language conneg
+@handles('GET', 'text/plain', lang="fr")
+def get_feed_fr(resource):
+    return "fr feed"
+
+@handles('GET', 'text/plain', lang="en")
+def get_feed_en(resource):
+    return "en feed"
+
 #Used to serve requests for a collection of resources, in raw form
 @handles('collect', 'raw/pydict')
 def collect_feeds(resources):
