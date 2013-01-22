@@ -11,6 +11,7 @@ import os
 from itertools import tee, izip
 
 import xlrd
+#A really good resource: http://www.simplistix.co.uk/presentations/python-excel.pdf
 
 EMPTY_CELL = ''
 
