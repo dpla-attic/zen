@@ -17,11 +17,12 @@ def is_json(data, output=None):
     in the output placeholder.  If it's not JSON, return False
     '''
     try:
-        obj = json.loads(body)
+        obj = json.loads(data)
+        if output is not None: output.append(obj)
     except ValueError, e:
         return False
-    output.append(obj)
     return True
+
 
 def pull_ejson_by_patterns(obj, patterns):
     '''
@@ -65,4 +66,52 @@ def pull_ejson_by_patterns(obj, patterns):
                 items.append(item)
 
     return items
+
+
+def analyze_for_nav(data, sample_max=3):
+    '''
+    Analyze data from JSON and generate:
+
+     * A list of viable arrays in order of length
+     * Per array:
+      * The array JSON "XPath"
+      * The array length
+      * A limited set of items for each array if the count exceeds some N
+      * A list of all properties used in the items for each array
+        * Where each property has the property name and the count of its use
+
+    Assume everything is a dict, a list or a scalar, which would be the
+    case the source is indeed JSON
+    '''
+    arrays = []
+    path = []
+    def handle_dict(d, path):
+        for k, v in d.iteritems():
+            if isinstance(v, list):
+                handle_list(v, path + [k])
+            elif isinstance(v, dict):
+                handle_dict(v, path + [k])
+    def handle_list(l, path):
+        for count, i in enumerate(l):
+            if isinstance(i, list):
+                handle_list(i, path + [count])
+            elif isinstance(i, dict):
+                handle_dict(i, path + [count])
+        #Each list is also an output item
+        def freq_dict(l):
+            fd = {}
+            for li in l:
+                if isinstance(li, dict):
+                    for k in li:
+                        if k in fd:
+                            fd[k] += 1
+                        else:
+                            fd[k] = 1
+            return fd
+        arrays.append((len(l), path, l[:sample_max], freq_dict(l)))
+    if isinstance(data, list):
+        handle_list(data, path)
+    elif isinstance(data, dict):
+        handle_dict(data, path)
+    return sorted(arrays, reverse=True)
 
