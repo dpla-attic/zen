@@ -10,6 +10,7 @@
 import logging
 
 from amara.thirdparty import json
+from amara.lib import U
 
 def is_json(data, output=None):
     '''
@@ -24,7 +25,7 @@ def is_json(data, output=None):
     return True
 
 
-def pull_ejson_by_patterns(obj, patterns):
+def pull_ejson_by_patterns(obj, patterns=None):
     '''
     Extract data JSON from an object based on XML-XPath-like patterns provided.
 
@@ -35,6 +36,9 @@ def pull_ejson_by_patterns(obj, patterns):
     ('docs',), {'date': ('dpla.date',), 'format': ('dpla.format', 0)}
 
     '''
+    if patterns is None:
+        return obj
+
     items = []
 
     #def process_pattern()
@@ -43,7 +47,8 @@ def pull_ejson_by_patterns(obj, patterns):
         #First navigate the "cursor" to refer to the desired root container
         for pathcomp in root:
             if isinstance(pathcomp, basestring) or isinstance(pathcomp, int):
-                if isinstance(pathcomp, str): pathcomp = pathcomp.decode('utf-8')
+                #if isinstance(pathcomp, str): pathcomp = pathcomp.decode('utf-8')
+                pathcomp = U(pathcomp)
                 try:
                     cursor = cursor[pathcomp]
                 except (TypeError, KeyError):
@@ -54,15 +59,30 @@ def pull_ejson_by_patterns(obj, patterns):
                 item = {}
                 for key, path in iteminfo.items():
                     subcursor = contained
+                    missing_key_flag = False
                     for pathcomp in path:
                         #logging.debug(str((pathcomp, subcursor)))
-                        if isinstance(pathcomp, basestring) or isinstance(pathcomp, int):
-                            if isinstance(pathcomp, str): pathcomp = pathcomp.decode('utf-8')
-                            subcursor = subcursor[pathcomp]
-                            if isinstance(subcursor, unicode):
-                                #If we find a string, just abort the search for lower structures
-                                break
-                    item[key] = subcursor
+                        if isinstance(pathcomp, basestring):
+                            #if isinstance(pathcomp, str): pathcomp = pathcomp.decode('utf-8')
+                            pathcomp = U(pathcomp)
+                            if pathcomp in subcursor:
+                                subcursor = subcursor[pathcomp]
+                            else:
+                                missing_key_flag = True
+                        elif isinstance(pathcomp, int):
+                            try:
+                                subcursor = subcursor[pathcomp]
+                            except IndexError:
+                                missing_key_flag = True
+                                continue
+                        else:
+                            missing_key_flag = True
+                            continue
+                        if isinstance(subcursor, unicode):
+                            #If we find a string, just abort the search for lower structures
+                            break
+                    if not missing_key_flag:
+                        item[key] = subcursor
                 items.append(item)
 
     return items
