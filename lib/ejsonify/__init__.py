@@ -55,6 +55,11 @@ def pull_ejson_by_patterns(obj, patterns=None):
                     cursor = None
         #Now iterate over the container, if found
         if cursor:
+            if not iteminfo:
+                #Mock up an identity pattern set from the union of all properties specified on some item in the list
+                iteminfo = {}
+                for contained in cursor:
+                    iteminfo.update(dict(((k, (k,)) for k in contained.iterkeys())))
             for contained in cursor:
                 item = {}
                 for key, path in iteminfo.items():
@@ -85,7 +90,7 @@ def pull_ejson_by_patterns(obj, patterns=None):
                         item[key] = subcursor
                 items.append(item)
 
-    return items
+    return {u"items": items}
 
 
 def analyze_for_nav(data, sample_max=3):
