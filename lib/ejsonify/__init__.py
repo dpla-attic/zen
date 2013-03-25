@@ -40,6 +40,7 @@ def pull_ejson_by_patterns(obj, patterns=None):
         return obj
 
     items = []
+    count = 1
 
     #def process_pattern()
     for root, iteminfo in patterns:
@@ -88,6 +89,10 @@ def pull_ejson_by_patterns(obj, patterns=None):
                             break
                     if not missing_key_flag:
                         item[key] = subcursor
+                id_ = u'_' + unicode(count)
+                if not u'id' in item: item[u'id'] = id_
+                if not u'label' in item: item[u'label'] = id_
+                count += 1
                 items.append(item)
 
     return {u"items": items}

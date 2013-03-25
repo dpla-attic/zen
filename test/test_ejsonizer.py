@@ -10,7 +10,7 @@ from zen import ejsonify
 
 
 def test_pull_ejson_by_patterns1():
-    expected = {u'items': [{'date': u'2009', 'format': u'audio'}, {'date': u'2007', 'format': u'audio'}, {'date': u'1997', 'format': u'language material -- serial'}]}
+    expected = {u'items': [{'date': u'2009', u'label': u'_1', u'id': u'_1', 'format': u'audio'}, {'date': u'2007', u'label': u'_2', u'id': u'_2', 'format': u'audio'}, {'date': u'1997', u'label': u'_3', u'id': u'_3', 'format': u'language material -- serial'}]}
     patterns = [(('docs',), {'date': ('dpla.date',), 'format': ('dpla.format', 0)})]
     items = ejsonify.pull_ejson_by_patterns(json.loads(DPLA_TEST), patterns)
     assert items == expected, items
@@ -18,14 +18,14 @@ def test_pull_ejson_by_patterns1():
 
 
 def test_pull_ejson_by_patterns2():
-    patterns = {u'items': [(('spam',), {'date': ('dpla.date',), 'format': ('dpla.format', 0)})]}
+    patterns = [(('spam',), {'date': ('dpla.date',), 'format': ('dpla.format', 0)})]
     items = ejsonify.pull_ejson_by_patterns(json.loads(DPLA_TEST), patterns)
-    assert items == [], items
+    assert items == {u'items': []}, items
     return
 
 
 def test_pull_ejson_by_patterns3():
-    expected = {u'items': [{'date': u'2009', 'format': [u'audio', u'mp3'], 'creator': [u'Susan Jane Gilman']}, {'date': u'2007', 'format': [u'audio', u'mp3'], 'creator': [u'Linda Kulman']}, {'date': u'1997', 'format': u'language material -- serial', 'creator': [u"B'nai B'rith. Albert Einstein Lodge No. 5020"]}]}
+    expected = {u'items': [{'date': u'2009', u'label': u'_1', 'format': [u'audio', u'mp3'], u'id': u'_1', 'creator': [u'Susan Jane Gilman']}, {'date': u'2007', u'label': u'_2', 'format': [u'audio', u'mp3'], u'id': u'_2', 'creator': [u'Linda Kulman']}, {'date': u'1997', u'label': u'_3', 'format': u'language material -- serial', u'id': u'_3', 'creator': [u"B'nai B'rith. Albert Einstein Lodge No. 5020"]}]}
     patterns = [(('docs',), {'date': ('dpla.date',), 'format': ('dpla.format',), 'creator': ('dpla.creator',)})]
     items = ejsonify.pull_ejson_by_patterns(json.loads(DPLA_TEST), patterns)
     assert items == expected, items
@@ -33,7 +33,7 @@ def test_pull_ejson_by_patterns3():
 
 
 def test_pull_ejson_by_patterns4():
-    expected = {u'items': [{'date': u'2009', 'bogon': u'spam', 'format': u'audio'}, {'date': u'2007', 'format': u'audio'}, {'date': u'1997', '710a': u"B'nai B'rith.", 'format': u'language material -- serial'}]}
+    expected = {u'items': [{'date': u'2009', 'bogon': u'spam', u'label': u'_1', u'id': u'_1', 'format': u'audio'}, {'date': u'2007', u'label': u'_2', u'id': u'_2', 'format': u'audio'}, {'date': u'1997', '710a': u"B'nai B'rith.", u'label': u'_3', u'id': u'_3', 'format': u'language material -- serial'}]}
     patterns = [[["docs"], {"date": ["dpla.date"], "format": ["dpla.format", 0], "bogon": ["dpla.bogon"], "710a": ["710a"]}]]
     DPLA_TEST_PARSED = json.loads(DPLA_TEST)
     DPLA_TEST_PARSED[u"docs"][0][u"dpla.bogon"] = u"spam"
@@ -43,7 +43,7 @@ def test_pull_ejson_by_patterns4():
 
 
 def test_pull_ejson_by_patterns5():
-    expected = {u'items': [{'date': u'2009', 'format': u'audio'}, {'date': u'2007', 'format': u'audio'}, {'date': u'1997', 'format': u'language material -- serial'}]}
+    expected = {u'items': [{'date': u'2009', u'label': u'_1', u'id': u'_1', 'format': u'audio'}, {'date': u'2007', u'label': u'_2', u'id': u'_2', 'format': u'audio'}, {'date': u'1997', u'label': u'_3', u'id': u'_3', 'format': u'language material -- serial'}]}
     patterns = [(('docs',), {'date': ('dpla.date',), 'format': ('dpla.format', 0)})]
     DPLA_TEST_PARSED = json.loads(DPLA_TEST)
     DPLA_TEST_PARSED[u"docs"][0][u"dpla.bogon"] = u"spam"
@@ -54,7 +54,7 @@ def test_pull_ejson_by_patterns5():
 
 def test_pull_ejson_by_patterns6():
     #FIXME: Vet this last expected result
-    expected = {u'items': [{u'dpla.date': u'2009', u'dpla.id': u'EF2485B2-0EF6-B47F-59EC-3F54E252AD79', u'dpla.bogon': u'spam', u'dpla.contributor': u'npr_org', u'dpla.dataset_id': u'npr_org_1312156800', u'dpla.language': u'English', u'dpla.contributor_record_id': u'2636', u'dpla.creator': [u'Susan Jane Gilman'], u'dpla.resource_type': u'item', u'dpla.description': [u"<em>Time and Again</em> spans time, finds mystery, delves into Science-Fiction, grounds itself in Einstein's theories and ultimately, settles into romance fantasy.  So what's the problem?  Author Susan Jane Gilman explains her guilty addiction to this cult pop thriller."], u'dpla.format': [u'audio', u'mp3'], u'dpla.publisher': u'National Public Radio', u'dpla.title': u'<em>Time and Again</em> spans time, delves into Science Fiction, and ultimately becomes romance fantasy.'}, {u'dpla.date': u'2007', u'dpla.id': u'159920DE-B8FE-2626-7252-ACF35F34E044', u'dpla.contributor': u'npr_org', u'dpla.dataset_id': u'npr_org_1312156800', u'dpla.language': u'English', u'dpla.contributor_record_id': u'1360', u'dpla.creator': [u'Linda Kulman'], u'dpla.resource_type': u'item', u'dpla.description': [u"It was Albert Einstein's tendency to rebel that was the source of his great creativity, says Walter Isaacson in a new bestseller. Einstein's real genius was his ability to focus on mundane things that most people overlook."], u'dpla.format': [u'audio', u'mp3'], u'dpla.publisher': u'National Public Radio', u'dpla.title': u"A new biography argues that Einstein's tendency to rebel was the source of his creative genius."}, {u'dpla.date': u'1997', u'710a': u"B'nai B'rith.", u'710b': u'Albert Einstein Lodge No. 5020.', u'dpla.dataset_id': u'harvard_edu_1334336961', u'dpla.contributor': u'harvard_edu', u'988a': u'20040722', u'dpla.language': u'English', u'9060': u'MH', u'dpla.contributor_record_id': u'009416163', u'dpla.creator': [u"B'nai B'rith. Albert Einstein Lodge No. 5020"], u'dpla.id': u'BB275112-5EFB-A228-0E2B-D4E62FCC5208', u'dpla.resource_type': u'item', u'dpla.format': u'language material -- serial', u'dpla.publisher': u"B'nai B'rith, Albert Einstein Lodge No. 5020,", u'260b': u"B'nai B'rith, Albert Einstein Lodge No. 5020,", u'dpla.title': u'Albert Einstein Lodge newsletter', u'245a': u'Albert Einstein Lodge newsletter.', u'260a': u'Jerusalem :'}]}
+    expected = {u'items': [{u'dpla.date': u'2009', u'dpla.id': u'EF2485B2-0EF6-B47F-59EC-3F54E252AD79', u'dpla.bogon': u'spam', u'dpla.contributor': u'npr_org', u'dpla.dataset_id': u'npr_org_1312156800', u'dpla.language': u'English', u'dpla.contributor_record_id': u'2636', u'dpla.creator': [u'Susan Jane Gilman'], u'dpla.resource_type': u'item', u'label': u'_1', u'dpla.description': [u"<em>Time and Again</em> spans time, finds mystery, delves into Science-Fiction, grounds itself in Einstein's theories and ultimately, settles into romance fantasy.  So what's the problem?  Author Susan Jane Gilman explains her guilty addiction to this cult pop thriller."], u'dpla.format': [u'audio', u'mp3'], u'dpla.publisher': u'National Public Radio', u'dpla.title': u'<em>Time and Again</em> spans time, delves into Science Fiction, and ultimately becomes romance fantasy.', u'id': u'_1'}, {u'dpla.date': u'2007', u'dpla.id': u'159920DE-B8FE-2626-7252-ACF35F34E044', u'dpla.contributor': u'npr_org', u'dpla.dataset_id': u'npr_org_1312156800', u'dpla.language': u'English', u'dpla.contributor_record_id': u'1360', u'dpla.creator': [u'Linda Kulman'], u'dpla.resource_type': u'item', u'label': u'_2', u'dpla.description': [u"It was Albert Einstein's tendency to rebel that was the source of his great creativity, says Walter Isaacson in a new bestseller. Einstein's real genius was his ability to focus on mundane things that most people overlook."], u'dpla.format': [u'audio', u'mp3'], u'dpla.publisher': u'National Public Radio', u'dpla.title': u"A new biography argues that Einstein's tendency to rebel was the source of his creative genius.", u'id': u'_2'}, {u'dpla.date': u'1997', u'710a': u"B'nai B'rith.", u'710b': u'Albert Einstein Lodge No. 5020.', u'dpla.dataset_id': u'harvard_edu_1334336961', u'dpla.contributor': u'harvard_edu', u'988a': u'20040722', u'dpla.language': u'English', u'9060': u'MH', u'dpla.contributor_record_id': u'009416163', u'dpla.creator': [u"B'nai B'rith. Albert Einstein Lodge No. 5020"], u'dpla.id': u'BB275112-5EFB-A228-0E2B-D4E62FCC5208', u'dpla.resource_type': u'item', u'label': u'_3', u'dpla.format': u'language material -- serial', u'dpla.publisher': u"B'nai B'rith, Albert Einstein Lodge No. 5020,", u'260b': u"B'nai B'rith, Albert Einstein Lodge No. 5020,", u'dpla.title': u'Albert Einstein Lodge newsletter', u'245a': u'Albert Einstein Lodge newsletter.', u'id': u'_3', u'260a': u'Jerusalem :'}]}
     patterns = [(('docs',), None)]
     DPLA_TEST_PARSED = json.loads(DPLA_TEST)
     DPLA_TEST_PARSED[u"docs"][0][u"dpla.bogon"] = u"spam"
