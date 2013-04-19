@@ -69,7 +69,14 @@ def guess_imt(body):
     if 'CDF' in imt:
         #Hackaround (see http://foundry.zepheira.com/issues/399)
         return GENERIC_CDF_IMT
-    imt = imt.split(':')[-1].split(';')[0].split()[0].strip()
+
+    imt_pre = imt.split(':')[-1].split(';')[0].split()
+    if len(imt_pre) > 0:
+        imt = imt_pre[0].strip()
+    else:
+        # On Ubuntu 12.04, 'file -i' fails to report any media type for some XLS files
+        imt = "application/octet-stream"
+
     #imt = fileguesser.from_buffer(body)
     return imt
 
