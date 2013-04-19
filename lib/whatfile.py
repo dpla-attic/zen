@@ -63,7 +63,7 @@ def guess_imt(body):
         raise RuntimeError('Empty output from the command line.  Probably a failure.  Command line: "%s"'%cmdline)
         #raise ValueError('Empty output from the command line.  Probably a failure.  Command line: "%s"'%cmdline)
         imt = "application/unknown"
-    elif not returncode == 0:
+    if not returncode == 0:
         # Seeing this on Ubuntu 12.04, not sure why yet
         raise RuntimeError('Error status code %d from Popen, response: %s. Command line: "%s"'%(returncode,imt,cmdline))
 
