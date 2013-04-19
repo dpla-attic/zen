@@ -57,11 +57,16 @@ def guess_imt(body):
     process.stdin.close()
     #imt, perr = process.communicate(input=string_body)
     imt = process.stdout.read()
+    returncode = process.wait()
     if not imt:
         #FIXME: L10N
         raise RuntimeError('Empty output from the command line.  Probably a failure.  Command line: "%s"'%cmdline)
         #raise ValueError('Empty output from the command line.  Probably a failure.  Command line: "%s"'%cmdline)
         imt = "application/unknown"
+    elif not returncode == 0:
+        # Seeing this on Ubuntu 12.04, not sure why yet
+        raise RuntimeError('Error status code %d from Popen, response: %s. Command line: "%s"'%(returncode,imt,cmdline))
+
     #print >> sys.stderr, imt
     #imt might look like:
     # * foo.dat: text/plain; charset=us-ascii
