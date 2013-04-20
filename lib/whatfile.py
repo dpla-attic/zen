@@ -71,7 +71,7 @@ def guess_imt(body):
     #imt might look like:
     # * foo.dat: text/plain; charset=us-ascii
     # * foo.dat: text/plain charset=us-ascii
-    if 'CDF' in imt:
+    if 'CDF' in imt or "Composite Document File" in imt:
         #Hackaround (see http://foundry.zepheira.com/issues/399)
         return GENERIC_CDF_IMT
 
