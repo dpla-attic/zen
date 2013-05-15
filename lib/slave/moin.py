@@ -140,7 +140,7 @@ class space(object):
         slave_wrapper = get_slave_wrapper(self.service.handler, environ)
         response, ctype, clength = convert_body(response, slave_wrapper.content_type, slave_wrapper.encoding, slave_wrapper.writer)
         response = response[0]
-        if logger: logger.debug('resp ' + repr((response[:100],)))
+        if logger: logger.debug('resp ' + repr((response[:500],)))
 
         if not (self.resp_status.startswith('20') or self.resp_status == '304'):
             if logger: logger.debug("Error looking up resource: %s\n" % self.resp_status)

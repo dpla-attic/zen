@@ -28,7 +28,7 @@ def run(targetbase=None, root=None, out=None, usersecret=None, zensecret=None):
     See the command line help
     '''
     #print >> sys.stderr, 'ARGS ', (search, filesource, limit, out)
-    H = httplib2.Http('.cache')
+    H = httplib2.Http('/tmp/.zencache')
     auth_headers = {}
     if usersecret:
         user, passwd = usersecret.read().split(':')
@@ -43,9 +43,11 @@ def run(targetbase=None, root=None, out=None, usersecret=None, zensecret=None):
 
     #Try out the target, and figure out where it is relative to wiki root
     try:
-        resp, respbody = H.request(targetbase)
+        headers = auth_headers
+        headers.update({'Cache-Control':'no-cache'})
+        resp, respbody = H.request(targetbase,headers=headers)
         if resp.get('status').startswith('20'):
-            original_base, wrapped_base, original_page = resp[ORIG_BASE_HEADER].split()
+            original_base, wrapped_base, original_page = resp[ORIG_BASE_HEADER].split(' ')
             rel_baselink = relativize(targetbase, wrapped_base)
         else:
             print >> sys.stderr, 'An exception here might mean you do not have Akara running at localhost:8880:', e
