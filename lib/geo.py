@@ -97,7 +97,7 @@ class geonames_service(object):
         if resultset.get(u'geonames'):
             result = resultset[u'geonames'][0]
             #lat, long_ = result[u'lat'], result[u'lng']
-            ll = "%f,%f"%(result[u'lat'], result[u'lng'])
+            ll = "{lat},{lng}".format(**result)
             self._logger.debug(u"geolookup via geonames {0} yields: {1}".format(self._servicebase + query, repr((place, ll))))
             return {place: ll} if ll else {}
         else:
