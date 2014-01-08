@@ -11,7 +11,7 @@ def readcsv(text):
     #Heuristic: is this really a CSV?  Sniffer is pretty lax
     sanity_check_length = None
     try:
-        dialect = csv.Sniffer().sniff(text[:1024])
+        dialect = csv.Sniffer().sniff(text[:2048])
         sniff_success = True
     except (KeyboardInterrupt, SystemExit):
         raise
